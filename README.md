@@ -475,9 +475,20 @@ The course project prioritizes Phase 1, with selected Phase 2 features as time p
 
 ## Getting Started
 
-This version is a design README. Runnable installation instructions are not yet available. Implementation will add pinned dependency versions, an environment variable template, mock-data initialization, startup instructions, and test commands.
+The running app is a chat page. `main.jac` mounts `ui/chat.cl.jac`. Each message goes through `harness/pipeline.jac`, which currently returns the conversation unchanged, and `server/llm.jac` makes one OpenAI-compatible chat-completions call. `server/chat.jac` is the walker the page calls. `config.jac` holds the model settings.
 
-The intended `mock` mode will support demonstrations without retailer accounts. A `live` mode will be enabled after a real provider is configured. Jac and model-call interfaces will be documented against the versions verified by the implementation.
+These folders are reserved for the later shopping logic and are empty for now: `models/`, `profile/`, `interests/`, `planning/`, `providers/`, `feedback/`, `sync/`, `notify/`, and `data/mock/`.
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+pip install jaclang jac-client
+cp .env.example .env
+jac start
+jac test
+```
+
+Open http://localhost:8000. Put your key in `.env`. The checked-in example points at DeepSeek (`https://api.deepseek.com`, model `deepseek-chat`). `jac start` reads `.env` from the project directory; restart it after changing the file. Without `LLM_API_KEY`, the page still opens and the reply tells you the key is missing.
 
 ## Design Decisions
 
