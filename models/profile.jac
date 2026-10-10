@@ -10,6 +10,7 @@ node UserProfile {
         max_transfers: int = 1,
         carry_limit_kg: float = 6.0,
         weekly_budget: float = 0.0,
+        time_value_per_hour: float = 25.0, # what an hour of the user's time is worth; 0 = time is free
         free_windows: list[str] = [],      # e.g. "SAT 14:00-17:00"
         brand_prefs: dict = {},            # category -> preferred brand
         dietary: list[str] = [],
@@ -30,6 +31,7 @@ node UserProfile {
 """This trip only, e.g. no bus this week. Deleted when the trip ends."""
 node TripConstraints {
     has budget: float = -1.0,              # -1 = use the profile value
+        time_value_per_hour: float = -1.0, # -1 = use the profile value
         transport: list[str] = [],         # empty = use the profile value
         deadline: str = "",
         free_windows: list[str] = [],
@@ -44,6 +46,7 @@ def effective_constraints(p: UserProfile, t: TripConstraints | None) -> dict {
         "max_transfers": p.max_transfers,
         "carry_limit_kg": p.carry_limit_kg,
         "budget": p.weekly_budget,
+        "time_value": max(p.time_value_per_hour, 0.0),
         "free_windows": p.free_windows,
         "deadline": "",
         "weights": p.weights
@@ -51,6 +54,9 @@ def effective_constraints(p: UserProfile, t: TripConstraints | None) -> dict {
     if t is not None {
         if t.budget >= 0 {
             c["budget"] = t.budget;
+        }
+        if t.time_value_per_hour >= 0 {
+            c["time_value"] = t.time_value_per_hour;
         }
         if t.transport {
             c["transport"] = t.transport;
