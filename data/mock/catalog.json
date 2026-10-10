@@ -1,0 +1,102 @@
+{
+  "_note": "Fictional stores and simulated prices for demos and tests. Not real merchant data.",
+  "observed_at": "2026-10-10T08:00",
+  "valid_until": "2026-10-17T08:00",
+  "stores": [
+    {
+      "key": "huron",
+      "name": "Huron Fresh Market",
+      "area": "Kerrytown",
+      "hours": {"MON-FRI": "07:00-22:00", "SAT": "08:00-22:00", "SUN": "09:00-20:00"},
+      "channels": ["IN_STORE", "PICKUP"],
+      "routes": {
+        "WALK": {"min": 36, "cost": 0.0, "transfers": 0, "walk_min": 18},
+        "BUS": {"min": 30, "cost": 3.0, "transfers": 0, "walk_min": 6}
+      },
+      "delivery": {}
+    },
+    {
+      "key": "corner",
+      "name": "Campus Corner Grocery",
+      "area": "Central Campus",
+      "hours": {"MON-SUN": "07:00-23:00"},
+      "channels": ["IN_STORE"],
+      "routes": {
+        "WALK": {"min": 20, "cost": 0.0, "transfers": 0, "walk_min": 10}
+      },
+      "delivery": {}
+    },
+    {
+      "key": "bulk",
+      "name": "Arbor Bulk Club",
+      "area": "Briarwood",
+      "hours": {"MON-SAT": "09:00-21:00", "SUN": "10:00-18:00"},
+      "channels": ["IN_STORE", "DELIVERY"],
+      "routes": {
+        "BUS": {"min": 70, "cost": 3.0, "transfers": 1, "walk_min": 10},
+        "CAR": {"min": 30, "cost": 0.0, "transfers": 0, "walk_min": 2}
+      },
+      "delivery": {"min_order": 35.0, "fee": 5.99, "free_over": 75.0, "service_pct": 0.05,
+                   "windows": ["SAT 10:00-12:00", "SAT 16:00-18:00", "SUN 10:00-12:00"]}
+    },
+    {
+      "key": "quick",
+      "name": "QuickBasket Delivery",
+      "area": "Ann Arbor",
+      "hours": {"MON-SUN": "08:00-22:00"},
+      "channels": ["DELIVERY"],
+      "routes": {},
+      "delivery": {"min_order": 10.0, "fee": 3.99, "free_over": 35.0, "service_pct": 0.10,
+                   "windows": ["SAT 12:00-14:00", "SAT 18:00-20:00", "SUN 12:00-14:00"]}
+    }
+  ],
+  "products": [
+    {"key": "milk-whole-1gal", "name": "Whole milk, 1 gal", "category": "milk", "size": 1, "unit": "gal", "weight_kg": 3.9, "storage": "CHILLED", "tags": ["dairy"]},
+    {"key": "eggs-large-12", "name": "Large eggs, 12 ct", "category": "eggs", "size": 12, "unit": "ct", "weight_kg": 0.7, "storage": "CHILLED", "tags": []},
+    {"key": "rice-jasmine-5lb", "name": "Jasmine rice, 5 lb", "category": "rice", "size": 5, "unit": "lb", "weight_kg": 2.3, "storage": "AMBIENT", "tags": ["asian"]},
+    {"key": "rice-jasmine-20lb", "name": "Jasmine rice, 20 lb", "category": "rice", "size": 20, "unit": "lb", "weight_kg": 9.1, "storage": "AMBIENT", "tags": ["asian"]},
+    {"key": "detergent-92oz", "name": "Liquid laundry detergent, 92 fl oz", "category": "laundry detergent", "size": 92, "unit": "fl oz", "weight_kg": 3.0, "storage": "AMBIENT", "tags": []},
+    {"key": "paper-towels-6", "name": "Paper towels, 6 rolls", "category": "paper towels", "size": 6, "unit": "ct", "weight_kg": 1.0, "storage": "AMBIENT", "tags": []},
+    {"key": "yogurt-plain-32oz", "name": "Plain unsweetened yogurt, 32 oz", "category": "yogurt", "size": 32, "unit": "oz", "weight_kg": 0.9, "storage": "CHILLED", "tags": ["unsweetened"]},
+    {"key": "yogurt-honey-32oz", "name": "Honey yogurt, 32 oz", "category": "yogurt", "size": 32, "unit": "oz", "weight_kg": 0.9, "storage": "CHILLED", "tags": ["sweetened", "honey"]},
+    {"key": "dish-soap-19oz", "name": "Dish soap, 19 fl oz", "category": "dish soap", "size": 19, "unit": "fl oz", "weight_kg": 0.6, "storage": "AMBIENT", "tags": []},
+    {"key": "tofu-firm-14oz", "name": "Firm tofu, 14 oz", "category": "tofu", "size": 14, "unit": "oz", "weight_kg": 0.4, "storage": "CHILLED", "tags": ["asian", "vegan"]},
+    {"key": "soy-sauce-16oz", "name": "Soy sauce, 16.9 fl oz", "category": "soy sauce", "size": 16.9, "unit": "fl oz", "weight_kg": 0.6, "storage": "AMBIENT", "tags": ["asian"]},
+    {"key": "coffee-ground-12oz", "name": "Ground coffee, 12 oz", "category": "coffee", "size": 12, "unit": "oz", "weight_kg": 0.34, "storage": "AMBIENT", "tags": []}
+  ],
+  "offers": [
+    {"store": "huron", "product": "milk-whole-1gal", "channel": "IN_STORE", "price": 4.29, "availability": "IN_STOCK"},
+    {"store": "huron", "product": "eggs-large-12", "channel": "IN_STORE", "price": 3.49, "availability": "IN_STOCK"},
+    {"store": "huron", "product": "rice-jasmine-5lb", "channel": "IN_STORE", "price": 8.99, "availability": "IN_STOCK"},
+    {"store": "huron", "product": "detergent-92oz", "channel": "IN_STORE", "price": 12.99, "availability": "LOW"},
+    {"store": "huron", "product": "paper-towels-6", "channel": "IN_STORE", "price": 9.49, "availability": "UNKNOWN"},
+    {"store": "huron", "product": "yogurt-plain-32oz", "channel": "IN_STORE", "price": 4.99, "availability": "IN_STOCK"},
+    {"store": "huron", "product": "tofu-firm-14oz", "channel": "IN_STORE", "price": 2.49, "availability": "IN_STOCK"},
+    {"store": "huron", "product": "soy-sauce-16oz", "channel": "IN_STORE", "price": 3.79, "availability": "IN_STOCK"},
+    {"store": "huron", "product": "milk-whole-1gal", "channel": "PICKUP", "price": 4.29, "availability": "IN_STOCK"},
+    {"store": "huron", "product": "eggs-large-12", "channel": "PICKUP", "price": 3.49, "availability": "IN_STOCK"},
+
+    {"store": "corner", "product": "milk-whole-1gal", "channel": "IN_STORE", "price": 4.79, "availability": "IN_STOCK"},
+    {"store": "corner", "product": "eggs-large-12", "channel": "IN_STORE", "price": 3.99, "availability": "IN_STOCK"},
+    {"store": "corner", "product": "detergent-92oz", "channel": "IN_STORE", "price": 13.99, "availability": "OUT"},
+    {"store": "corner", "product": "dish-soap-19oz", "channel": "IN_STORE", "price": 3.29, "availability": "IN_STOCK"},
+    {"store": "corner", "product": "yogurt-honey-32oz", "channel": "IN_STORE", "price": 5.29, "availability": "IN_STOCK"},
+    {"store": "corner", "product": "coffee-ground-12oz", "channel": "IN_STORE", "price": 13.49, "availability": "IN_STOCK"},
+
+    {"store": "bulk", "product": "rice-jasmine-20lb", "channel": "IN_STORE", "price": 24.99, "member_price": 21.99, "member_program": "ARBOR_CLUB", "availability": "IN_STOCK"},
+    {"store": "bulk", "product": "detergent-92oz", "channel": "IN_STORE", "price": 10.99, "member_price": 9.49, "member_program": "ARBOR_CLUB", "availability": "IN_STOCK"},
+    {"store": "bulk", "product": "paper-towels-6", "channel": "IN_STORE", "price": 7.99, "availability": "IN_STOCK"},
+    {"store": "bulk", "product": "coffee-ground-12oz", "channel": "IN_STORE", "price": 10.99, "member_price": 9.99, "member_program": "ARBOR_CLUB", "availability": "IN_STOCK"},
+    {"store": "bulk", "product": "rice-jasmine-20lb", "channel": "DELIVERY", "price": 26.49, "availability": "IN_STOCK"},
+    {"store": "bulk", "product": "detergent-92oz", "channel": "DELIVERY", "price": 11.99, "availability": "IN_STOCK"},
+    {"store": "bulk", "product": "paper-towels-6", "channel": "DELIVERY", "price": 8.99, "availability": "IN_STOCK"},
+
+    {"store": "quick", "product": "milk-whole-1gal", "channel": "DELIVERY", "price": 4.99, "availability": "IN_STOCK"},
+    {"store": "quick", "product": "eggs-large-12", "channel": "DELIVERY", "price": 4.29, "availability": "IN_STOCK"},
+    {"store": "quick", "product": "rice-jasmine-5lb", "channel": "DELIVERY", "price": null, "availability": "IN_STOCK"},
+    {"store": "quick", "product": "detergent-92oz", "channel": "DELIVERY", "price": 13.49, "availability": "IN_STOCK"},
+    {"store": "quick", "product": "paper-towels-6", "channel": "DELIVERY", "price": 9.99, "availability": "LOW"},
+    {"store": "quick", "product": "yogurt-plain-32oz", "channel": "DELIVERY", "price": 5.49, "availability": "IN_STOCK"},
+    {"store": "quick", "product": "dish-soap-19oz", "channel": "DELIVERY", "price": 3.79, "availability": "UNKNOWN"}
+  ]
+}
