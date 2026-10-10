@@ -15,7 +15,7 @@ impl ChatApp.send(e: FormEvent) -> None {
         result = root spawn SendMessage(history=prior, text=text);
         reported = result.reports;
         if reported and len(reported) > 0 {
-            answer = reported[0];
+            answer = str(reported[0]);
         }
     } except Exception as err {
         answer = "The chat request failed. " + str(err);

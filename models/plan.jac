@@ -1,4 +1,7 @@
-"""ShoppingPlan and PlanItem, with the plan state machine."""
+"""ShoppingPlan, FulfillmentLeg, and PlanItem, with the plan state machine.
+
+    ShoppingPlan -[Contains]-> FulfillmentLeg -[Contains]-> PlanItem
+"""
 
 enum PlanStatus { DRAFT, PROPOSED, ACCEPTED, IN_PROGRESS, COMPLETED, CANCELLED, NEEDS_REVIEW }
 
@@ -36,9 +39,24 @@ node ShoppingPlan {
     }
 }
 
+"""One store trip or one delivery order. Fees, timing, and carried weight are per leg."""
+node FulfillmentLeg {
+    has channel: str = "IN_STORE",         # IN_STORE / PICKUP / DELIVERY
+        window: str = "",                  # departure or delivery window, e.g. "SAT 14:00-15:30"
+        travel_min: int = 0,               # round trip
+        shop_min: int = 0,
+        transport_cost: float = 0.0,
+        fees: dict = {},                   # delivery, service, tip
+        lead_time_h: int = 0;              # delivery wait; not active time
+
+    """Items from in-store and pickup legs are carried home by the user."""
+    def carried() -> bool {
+        return self.channel != "DELIVERY";
+    }
+}
+
 node PlanItem {
     has name: str,
         qty: int = 1,
-        channel: str = "IN_STORE",         # IN_STORE / PICKUP / DELIVERY
         outcome: ItemOutcome = ItemOutcome.PENDING;
 }

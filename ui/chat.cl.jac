@@ -3,16 +3,25 @@
 sv import from ..server.chat { SendMessage }
 
 def:pub ChatApp -> JsxElement {
-    has messages: list = [],
+    has messages: list[dict] = [],
         draft: str = "",
         pending: bool = False;
 
     async def send(e: FormEvent) -> None;
 
+    # Keep the newest message in view.
+    can with (messages, pending) entry {
+        el: any = document.querySelector(".chat-log");
+        if el {
+            el.scrollTop = el.scrollHeight;
+        }
+    }
+
     return
         <div
             style={{
-                "minHeight": "100vh",
+                "position": "fixed",
+                "inset": "0",
                 "background": "#f3efe6",
                 "color": "#1c1917",
                 "fontFamily": "Georgia, 'Iowan Old Style', serif"
@@ -22,7 +31,8 @@ def:pub ChatApp -> JsxElement {
                 style={{
                     "maxWidth": "760px",
                     "margin": "0 auto",
-                    "minHeight": "100vh",
+                    "height": "100%",
+                    "boxSizing": "border-box",
                     "display": "flex",
                     "flexDirection": "column",
                     "padding": "28px 20px 20px"
@@ -40,8 +50,10 @@ def:pub ChatApp -> JsxElement {
                     </p>
                 </header>
                 <div
+                    className="chat-log"
                     style={{
                         "flex": "1",
+                        "minHeight": "0",
                         "overflowY": "auto",
                         "display": "flex",
                         "flexDirection": "column",

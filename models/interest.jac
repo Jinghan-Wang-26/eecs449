@@ -1,4 +1,7 @@
-"""InterestPool and InterestItem. Items describe needs only; prices live in Offer."""
+"""InterestPool and InterestItem. Items describe needs only; prices live in Offer.
+
+Matched products hang off Wants edges; feedback history is the FeedbackEvents pointing here through About.
+"""
 
 enum InterestKind { NEED, REPLENISH, WATCH, DISCOVER }
 
@@ -18,7 +21,6 @@ node InterestItem {
         replenishment_days: int = 0,
         source: str = "USER",              # USER / HISTORY / INFERRED
         confidence: float = 1.0,
-        feedback_history: list[dict] = [], # [{"event_id": ..., "reason": ..., "at": ...}]
         locked: bool = False,
         snoozed_until: str = "";
 

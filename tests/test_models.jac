@@ -1,7 +1,7 @@
 import from models.profile { UserProfile, TripConstraints, effective_constraints }
 import from models.interest { InterestItem, InterestKind }
 import from models.plan { ShoppingPlan, PlanStatus, ItemOutcome }
-import from models.graph { Owns, profile_of, items_of, plans_of, trip_of, add_need, add_plan_item, need_of }
+import from models.graph { Owns, profile_of, items_of, plans_of, trip_of, add_need, add_leg, add_plan_item, need_of, leg_of }
 
 test "profile, pool, and plan connect" {
     p = profile_of(root);
@@ -10,9 +10,10 @@ test "profile, pool, and plan connect" {
     assert len(items_of(p)) >= 1 and milk.plannable();
     plan = ShoppingPlan();
     p +>:Owns:+> plan;
-    pi = add_plan_item(plan, milk, "IN_STORE");
+    leg = add_leg(plan, None, "IN_STORE");
+    pi = add_plan_item(leg, milk);
     pi.outcome = ItemOutcome.PURCHASED;
-    assert need_of(pi) == milk and len(plans_of(p)) >= 1;
+    assert need_of(pi) == milk and leg_of(pi) == leg and len(plans_of(p)) >= 1;
 }
 
 test "trip constraints override without touching the profile" {
