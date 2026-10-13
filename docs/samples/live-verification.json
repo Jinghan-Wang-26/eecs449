@@ -1,0 +1,357 @@
+{
+  "kind": "actual provider verification",
+  "retrieved_at": "2026-10-12T18:09:32+00:00",
+  "public_demo_address": "150 E McKinley Avenue, Sunnyvale, CA 94086",
+  "steps": {
+    "openprices_nearby": {
+      "status": "ok",
+      "stores": [
+        {
+          "id": "openprices:4117",
+          "external_id": "4117",
+          "name": "Whole Foods Market",
+          "address": "Whole Foods Market, 150, East McKinley Avenue, Sunnyvale, Santa Clara County, California, 94086, United States",
+          "lat": 37.3739192,
+          "lon": -122.0312241,
+          "source": "openprices",
+          "data_kind": "historical",
+          "product_access": true,
+          "price_count": 3316,
+          "distance_m": 0,
+          "osm_id": 9231196949,
+          "osm_type": "NODE",
+          "source_url": "https://prices.openfoodfacts.org/locations/4117",
+          "hours": {},
+          "observed_at": "2026-10-12T18:09:32+00:00"
+        },
+        {
+          "id": "openprices:4031",
+          "external_id": "4031",
+          "name": "Target",
+          "address": "Target, 298, West McKinley Avenue, Sunnyvale, Santa Clara County, California, 94086, United States",
+          "lat": 37.3737055,
+          "lon": -122.0323814,
+          "source": "openprices",
+          "data_kind": "historical",
+          "product_access": true,
+          "price_count": 286,
+          "distance_m": 105,
+          "osm_id": 44558078,
+          "osm_type": "WAY",
+          "source_url": "https://prices.openfoodfacts.org/locations/4031",
+          "hours": {},
+          "observed_at": "2026-10-12T18:09:32+00:00"
+        },
+        {
+          "id": "openprices:4393",
+          "external_id": "4393",
+          "name": "Sprouts Farmers Market",
+          "address": "Sprouts Farmers Market, 111, East El Camino Real, Sunnyvale, Santa Clara County, California, 94087, United States of America",
+          "lat": 37.3675387,
+          "lon": -122.0302442,
+          "source": "openprices",
+          "data_kind": "historical",
+          "product_access": true,
+          "price_count": 869,
+          "distance_m": 715,
+          "osm_id": 343600298,
+          "osm_type": "NODE",
+          "source_url": "https://prices.openfoodfacts.org/locations/4393",
+          "hours": {},
+          "observed_at": "2026-10-12T18:09:32+00:00"
+        },
+        {
+          "id": "openprices:5442",
+          "external_id": "5442",
+          "name": "Trader Joe's",
+          "address": "Trader Joe's, 316, West El Camino Real, Sunnyvale, Santa Clara County, California, 94087, United States",
+          "lat": 37.3679656,
+          "lon": -122.0358812,
+          "source": "openprices",
+          "data_kind": "historical",
+          "product_access": true,
+          "price_count": 41,
+          "distance_m": 780,
+          "osm_id": 2125918594,
+          "osm_type": "NODE",
+          "source_url": "https://prices.openfoodfacts.org/locations/5442",
+          "hours": {},
+          "observed_at": "2026-10-12T18:09:32+00:00"
+        }
+      ]
+    },
+    "openprices_products": {
+      "status": "ok",
+      "total": 3301,
+      "records": [
+        {
+          "key": "openprices:price:344714",
+          "record_id": 344714,
+          "name": "TRADITIONAL MEDICINALS Organic Ginger Aid Tea 16 CT",
+          "barcode": "0032917001023",
+          "brand": "Traditional Medicinals",
+          "size_label": "32 g",
+          "weight_kg": 0.032,
+          "price": 5.58,
+          "regular_price": 7.99,
+          "discounted": true,
+          "discount_type": "LOYALTY_PROGRAM",
+          "price_per": "not specified",
+          "currency": "USD",
+          "recorded_on": "2026-10-11",
+          "retrieved_at": "2026-10-12T18:09:33+00:00",
+          "location_id": "4117",
+          "proof_id": 138702,
+          "source": "openprices",
+          "data_kind": "historical",
+          "availability": "UNKNOWN",
+          "current_price": null,
+          "source_url": "https://prices.openfoodfacts.org/prices/344714",
+          "proof_url": "https://prices.openfoodfacts.org/proofs/138702",
+          "labels": [
+            "en:organic",
+            "en:no-gmos",
+            "en:usda-organic",
+            "en:non-gmo-project"
+          ]
+        },
+        {
+          "key": "openprices:price:344713",
+          "record_id": 344713,
+          "name": "TRADITIONAL MEDICINALS Organic Nighty Night Extra Lemon Balm & Valerian Tea 16 CT",
+          "barcode": "0032917002198",
+          "brand": "Traditional Medicinals",
+          "size_label": "",
+          "weight_kg": null,
+          "price": 5.59,
+          "regular_price": 7.99,
+          "discounted": true,
+          "discount_type": "LOYALTY_PROGRAM",
+          "price_per": "not specified",
+          "currency": "USD",
+          "recorded_on": "2026-10-11",
+          "retrieved_at": "2026-10-12T18:09:33+00:00",
+          "location_id": "4117",
+          "proof_id": 138702,
+          "source": "openprices",
+          "data_kind": "historical",
+          "availability": "UNKNOWN",
+          "current_price": null,
+          "source_url": "https://prices.openfoodfacts.org/prices/344713",
+          "proof_url": "https://prices.openfoodfacts.org/proofs/138702",
+          "labels": [
+            "en:organic",
+            "en:no-gmos",
+            "en:usda-organic",
+            "en:non-gmo-project"
+          ]
+        },
+        {
+          "key": "openprices:price:344712",
+          "record_id": 344712,
+          "name": "TRADITIONAL MEDICINALS Organic Raspberry Leaf Tea",
+          "barcode": "0032917000675",
+          "brand": "Traditional Medicinals",
+          "size_label": "",
+          "weight_kg": null,
+          "price": 5.59,
+          "regular_price": 7.99,
+          "discounted": true,
+          "discount_type": "LOYALTY_PROGRAM",
+          "price_per": "not specified",
+          "currency": "USD",
+          "recorded_on": "2026-10-11",
+          "retrieved_at": "2026-10-12T18:09:33+00:00",
+          "location_id": "4117",
+          "proof_id": 138702,
+          "source": "openprices",
+          "data_kind": "historical",
+          "availability": "UNKNOWN",
+          "current_price": null,
+          "source_url": "https://prices.openfoodfacts.org/prices/344712",
+          "proof_url": "https://prices.openfoodfacts.org/proofs/138702",
+          "labels": [
+            "en:organic",
+            "en:no-gmos",
+            "en:non-gmo-project"
+          ]
+        }
+      ]
+    },
+    "geocoding": {
+      "status": "ok",
+      "candidates": [
+        {
+          "id": "514b0ff91df9815ec05979b70dfed9af4240f00102f901426fad0300000000c00203",
+          "address": "150 East McKinley Avenue, Sunnyvale, CA 94086, United States of America",
+          "lat": 37.3738401,
+          "lon": -122.0308299,
+          "precision": "building",
+          "confidence": 1,
+          "source": "geoapify"
+        },
+        {
+          "id": "51bc3d0801f9815ec05990b1248adaaf4240f00103f901e1e976f201000000c00201920318414d432044494e452d494e2053756e6e7976616c65203132",
+          "address": "AMC DINE-IN Sunnyvale 12, 150 East McKinley Avenue, Sunnyvale, CA 94086, United States of America",
+          "lat": 37.3738568,
+          "lon": -122.030823,
+          "precision": "amenity",
+          "confidence": 1,
+          "source": "geoapify"
+        },
+        {
+          "id": "5136165e93ff815ec0595aac9795dcaf4240f00103f90115e3382602000000c0020192031257686f6c6520466f6f6473204d61726b6574",
+          "address": "Whole Foods Market, 150 East McKinley Avenue, Sunnyvale, CA 94086, United States of America",
+          "lat": 37.3739192,
+          "lon": -122.0312241,
+          "precision": "amenity",
+          "confidence": 1,
+          "source": "geoapify"
+        }
+      ]
+    },
+    "geoapify_places": {
+      "status": "ok",
+      "stores": [
+        {
+          "id": "geoapify:5136165e93ff815ec0595aac9795dcaf4240f00103f90115e338260200000092031257686f6c6520466f6f6473204d61726b6574",
+          "name": "Whole Foods Market",
+          "address": "Whole Foods Market, 150 East McKinley Avenue, Sunnyvale, CA 94086, United States of America",
+          "lat": 37.3739192,
+          "lon": -122.0312241,
+          "source": "geoapify",
+          "product_access": false,
+          "osm_id": 9231196949,
+          "osm_type": "n"
+        },
+        {
+          "id": "geoapify:51fcfb315214825ec0592daf01b628af4240f00103f901c98152880000000092030d426172616b61204d61726b6574",
+          "name": "Baraka Market",
+          "address": "Baraka Market, 101 East El Camino Real, Sunnyvale, CA 94087, United States of America",
+          "lat": 37.3684299,
+          "lon": -122.0324903,
+          "source": "geoapify",
+          "product_access": false,
+          "osm_id": 2287108553,
+          "osm_type": "n"
+        },
+        {
+          "id": "geoapify:5132795e85ef815ec059d64114820baf4240f00103f901aaec7a14000000009203165370726f757473204661726d657273204d61726b6574",
+          "name": "Sprouts Farmers Market",
+          "address": "Sprouts Farmers Market, 111 East El Camino Real, Sunnyvale, CA 94087, United States of America",
+          "lat": 37.3675387,
+          "lon": -122.0302442,
+          "source": "geoapify",
+          "product_access": false,
+          "osm_id": 343600298,
+          "osm_type": "n"
+        },
+        {
+          "id": "geoapify:51a422a9e04b825ec059c9062d7f19af4240f00103f90182f1b67e0000000092030c547261646572204a6f652773",
+          "name": "Trader Joe's",
+          "address": "Trader Joe's, 316 West El Camino Real, Sunnyvale, CA 94087, United States of America",
+          "lat": 37.3679656,
+          "lon": -122.0358812,
+          "source": "geoapify",
+          "product_access": false,
+          "osm_id": 2125918594,
+          "osm_type": "n"
+        }
+      ]
+    },
+    "address_to_openprices": {
+      "status": "ok",
+      "stores": [
+        {
+          "id": "openprices:4117",
+          "external_id": "4117",
+          "name": "Whole Foods Market",
+          "address": "Whole Foods Market, 150, East McKinley Avenue, Sunnyvale, Santa Clara County, California, 94086, United States",
+          "lat": 37.3739192,
+          "lon": -122.0312241,
+          "source": "openprices",
+          "data_kind": "historical",
+          "product_access": true,
+          "price_count": 3316,
+          "distance_m": 36,
+          "osm_id": 9231196949,
+          "osm_type": "NODE",
+          "source_url": "https://prices.openfoodfacts.org/locations/4117",
+          "hours": {},
+          "observed_at": "2026-10-12T18:09:36+00:00"
+        },
+        {
+          "id": "openprices:4031",
+          "external_id": "4031",
+          "name": "Target",
+          "address": "Target, 298, West McKinley Avenue, Sunnyvale, Santa Clara County, California, 94086, United States",
+          "lat": 37.3737055,
+          "lon": -122.0323814,
+          "source": "openprices",
+          "data_kind": "historical",
+          "product_access": true,
+          "price_count": 286,
+          "distance_m": 138,
+          "osm_id": 44558078,
+          "osm_type": "WAY",
+          "source_url": "https://prices.openfoodfacts.org/locations/4031",
+          "hours": {},
+          "observed_at": "2026-10-12T18:09:36+00:00"
+        },
+        {
+          "id": "openprices:4393",
+          "external_id": "4393",
+          "name": "Sprouts Farmers Market",
+          "address": "Sprouts Farmers Market, 111, East El Camino Real, Sunnyvale, Santa Clara County, California, 94087, United States of America",
+          "lat": 37.3675387,
+          "lon": -122.0302442,
+          "source": "openprices",
+          "data_kind": "historical",
+          "product_access": true,
+          "price_count": 869,
+          "distance_m": 703,
+          "osm_id": 343600298,
+          "osm_type": "NODE",
+          "source_url": "https://prices.openfoodfacts.org/locations/4393",
+          "hours": {},
+          "observed_at": "2026-10-12T18:09:36+00:00"
+        },
+        {
+          "id": "openprices:5442",
+          "external_id": "5442",
+          "name": "Trader Joe's",
+          "address": "Trader Joe's, 316, West El Camino Real, Sunnyvale, Santa Clara County, California, 94087, United States",
+          "lat": 37.3679656,
+          "lon": -122.0358812,
+          "source": "openprices",
+          "data_kind": "historical",
+          "product_access": true,
+          "price_count": 41,
+          "distance_m": 791,
+          "osm_id": 2125918594,
+          "osm_type": "NODE",
+          "source_url": "https://prices.openfoodfacts.org/locations/5442",
+          "hours": {},
+          "observed_at": "2026-10-12T18:09:36+00:00"
+        }
+      ]
+    },
+    "routing": {
+      "status": "ok",
+      "destination": "Target",
+      "route": {
+        "min": 5,
+        "walk_min": 3,
+        "distance_m": 304,
+        "cost": 0,
+        "transfers": 0,
+        "source": "geoapify",
+        "observed_at": "2026-10-12T18:09:37+00:00",
+        "valid_until": "2026-10-12T19:09:37+00:00"
+      }
+    }
+  },
+  "limitations": [
+    "Open Prices records are historical; current price and inventory unknown."
+  ]
+}

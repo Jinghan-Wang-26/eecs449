@@ -1,0 +1,53 @@
+{
+  "kind": "actual HTTP response excerpt, not synthetic",
+  "retrieved_at": "2026-10-12T18:06:12.292116+00:00",
+  "center": [
+    37.3739192,
+    -122.0312241
+  ],
+  "radius_km": 1,
+  "http_status": 200,
+  "total": 4,
+  "items": [
+    {
+      "id": 4117,
+      "osm_name": "Whole Foods Market",
+      "osm_display_name": "Whole Foods Market, 150, East McKinley Avenue, Sunnyvale, Santa Clara County, California, 94086, United States",
+      "osm_tag_value": "supermarket",
+      "osm_lat": 37.3739192,
+      "osm_lon": -122.0312241,
+      "price_count": 3316,
+      "distance_km": 0.0
+    },
+    {
+      "id": 4031,
+      "osm_name": "Target",
+      "osm_display_name": "Target, 298, West McKinley Avenue, Sunnyvale, Santa Clara County, California, 94086, United States",
+      "osm_tag_value": "department_store",
+      "osm_lat": 37.3737055,
+      "osm_lon": -122.0323814,
+      "price_count": 286,
+      "distance_km": 0.10499002722616865
+    },
+    {
+      "id": 4393,
+      "osm_name": "Sprouts Farmers Market",
+      "osm_display_name": "Sprouts Farmers Market, 111, East El Camino Real, Sunnyvale, Santa Clara County, California, 94087, United States of America",
+      "osm_tag_value": "supermarket",
+      "osm_lat": 37.3675387,
+      "osm_lon": -122.0302442,
+      "price_count": 869,
+      "distance_km": 0.7147441087801889
+    },
+    {
+      "id": 5442,
+      "osm_name": "Trader Joe's",
+      "osm_display_name": "Trader Joe's, 316, West El Camino Real, Sunnyvale, Santa Clara County, California, 94087, United States",
+      "osm_tag_value": "supermarket",
+      "osm_lat": 37.3679656,
+      "osm_lon": -122.0358812,
+      "price_count": 41,
+      "distance_km": 0.779503493897465
+    }
+  ]
+}

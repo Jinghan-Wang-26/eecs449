@@ -35,5 +35,25 @@ node Reminder {
         fire_at: str = "",
         created_at: str = "",
         status: ReminderStatus = ReminderStatus.PENDING,
-        ignored_count: int = 0;
+        ignored_count: int = 0,
+        last_sent_at: str = "";
+}
+
+"""Per-user refresh observations and replay receipts, persisted with the graph."""
+node SyncState {
+    has receipts: dict = {},
+        observations: dict = {},
+        syncing: bool = False,
+        replan_count: int = 0,
+        discovery_counts: dict = {};
+}
+
+node ShoppingWorkspace {
+    has historical_prices: dict = {};
+    has address_candidates: list = [],
+        nearby_stores: list = [],
+        product_results: list = [],
+        pending_intent: dict = {},
+        pending_id: str = "",
+        notices: list = [];
 }

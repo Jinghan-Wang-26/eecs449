@@ -25,4 +25,7 @@ impl ChatApp.send(e: FormEvent) -> None {
         {"role": "assistant", "content": answer}
     ];
     pending = False;
+    event = document.createEvent("Event");
+    event.initEvent("shopping-chat-updated", False, False);
+    window.dispatchEvent(event);
 }

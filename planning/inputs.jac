@@ -3,6 +3,8 @@
 Planning itself only sees Need, Channel, and Quote, so it can be tested without a catalog.
 """
 
+import from app_settings { due }
+import from ai.matching { satisfies_requested_spec }
 import from models.profile { UserProfile }
 import from models.interest { InterestItem }
 import from models.catalog { Catalog, Store, Product, Offer, Availability }
@@ -16,10 +18,10 @@ def need_key(item: InterestItem) -> str {
     return item.product_spec.get("type", "");
 }
 
-def needs_from_pool(p: UserProfile) -> list {
+def needs_from_pool(p: UserProfile, now: str = "") -> list {
     out = [];
     for item in items_of(p) {
-        if item.plannable() {
+        if item.plannable() and (item.snoozed_until == "" or (now != "" and due(item.snoozed_until, now))) {
             out.append(Need(key=need_key(item), qty=item.product_spec.get("qty", 1), priority=item.priority));
         }
     }
@@ -84,11 +86,14 @@ def channels_for(cat: Catalog, ctx: dict) -> list {
                 continue;
             }
             r = route[1];
+            if s.mode == "live" and (not r.get("valid_until") or not due(ctx.get("now", ""), r["valid_until"])) { continue; }
+            if s.mode == "live" and (ctx.get("tax_rate", -1) < 0 or r.get("cost") is None) { continue; }
             out.append(Channel(
                 id=cid, store=s.name, store_key=s.key, kind=kind, mode=route[0],
                 travel_min=r.get("min", 0), shop_min=SHOP_MIN.get(kind, 20),
                 walk_min=r.get("walk_min", 0), transfers=r.get("transfers", 0),
-                transport_cost=r.get("cost", 0.0), windows=hours_windows(s.hours)
+                transport_cost=r.get("cost", 0.0), windows=hours_windows(s.hours),
+                tax_rate=ctx["tax_rate"] if s.mode == "live" else 0.06
             ));
         }
     }
@@ -98,10 +103,12 @@ def channels_for(cat: Catalog, ctx: dict) -> list {
 """Products for a need: its confirmed, non-disliked matches. A need with no match yet
 falls back to catalog products of the same category; this does not change the graph."""
 def products_for(item: InterestItem, cat: Catalog) -> list {
-    if [item ->:Wants:->] {
-        return usable_products(item);
+    relevant = [prod for prod in [item ->:Wants:->][?:Product] if prod in [cat ->:Has:->][?:Product]];
+    if relevant {
+        return [prod for prod in usable_products(item) if prod in relevant];
     }
-    return [prod for prod in [cat ->:Has:->][?:Product] if prod.category == need_key(item)];
+    if cat.mode == "live" { return []; }
+    return [prod for prod in [cat ->:Has:->][?:Product] if prod.category == need_key(item) and satisfies_requested_spec(item.product_spec, prod.brand, prod.size_label or (str(prod.size) + " " + prod.unit))];
 }
 
 """Quotes for every plannable need. Expired offers are dropped. Offers without a price are
@@ -114,6 +121,14 @@ def quotes_for(p: UserProfile, cat: Catalog, now: str = "") -> dict {
             continue;
         }
         for prod in products_for(item, cat) {
+            if any([tag not in prod.tags for tag in p.dietary]) {
+                notes.append(prod.name + ": dietary requirements have not been verified");
+                continue;
+            }
+            if cat.mode == "live" and not prod.weight_known {
+                notes.append(prod.name + ": confirm package weight before carrying checks");
+                continue;
+            }
             for o in offers_of(prod) {
                 if now != "" and not o.is_fresh(now) {
                     continue;

@@ -5,18 +5,20 @@ assign each need to one quote inside that subset. Hard constraints are checked b
 """
 
 import from itertools { combinations }
+import from app_settings { get_settings }
 import from planning.types { Candidate, CostBreakdown }
 import from planning.cost { basket_cost }
 import from planning.constraints { check_constraints }
 
-glob MAX_CHANNELS: int = 2,
-     MAX_OPTIONS: int = 3,
-     ORDER_MIN: int = 10,                  # active time to place a delivery order
+glob ORDER_MIN: int = 10,                  # active time to place a delivery order
      REF_COST: float = 100.0;              # used when the user has no budget
 
 """All combinations picking one element from each list."""
 def cartesian(options: list) -> list {
     out = [[]];
+    count = 1;
+    for choices in options { count *= len(choices); }
+    if count > 20000 { raise ValueError("Too many product combinations. Narrow product matches or reduce the shopping list."); }
     for choices in options {
         grown = [];
         for prefix in out {
@@ -29,11 +31,11 @@ def cartesian(options: list) -> list {
     return out;
 }
 
-def build_candidates(needs: list, channels: dict, quotes: list) -> list {
+def build_candidates(needs: list, channels: dict, quotes: list, settings: dict = {}) -> list {
     usable = [q for q in quotes if q.stock != "NO" and q.channel in channels];
     ids = sorted(channels.keys());
     out = [];
-    for k in range(1, MAX_CHANNELS + 1) {
+    for k in range(1, get_settings(settings)["max_fulfillment_channels"] + 1) {
         for subset in combinations(ids, k) {
             covered = [];
             options = [];
@@ -51,6 +53,7 @@ def build_candidates(needs: list, channels: dict, quotes: list) -> list {
                 continue;
             }
             for picks in cartesian(options) {
+                if len(out) >= 20000 { raise ValueError("Too many product combinations. Narrow product matches or reduce the shopping list."); }
                 used = sorted(set([q.channel for q in picks]));
                 # an assignment that uses fewer channels was already built from a smaller subset
                 if len(used) < k {
@@ -130,7 +133,7 @@ def worth_the_time(plans: list) -> list {
 
 """Up to three distinct feasible plans. One plan can win several labels;
 no option is invented to fill a slot."""
-def select_options(cands: list) -> list {
+def select_options(cands: list, settings: dict = {}) -> list {
     all_feasible = [c for c in cands if c.feasible()];
     if not all_feasible {
         return [];
@@ -158,7 +161,7 @@ def select_options(cands: list) -> list {
         worth = cheapest.time_cost - cost_pick.time_cost;
         cost_pick.skipped = f"a plan ${saved:.2f} cheaper takes {extra} more min (~${worth:.2f} of your time), so it is not recommended";
     }
-    return picks[:MAX_OPTIONS];
+    return picks[:get_settings(settings)["max_plan_options"]];
 }
 
 def describe(c: Candidate, channels: dict) -> str {

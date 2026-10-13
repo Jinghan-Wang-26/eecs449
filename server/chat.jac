@@ -1,5 +1,7 @@
 """Chat session and the walker the page calls."""
 
+import from harness.agent { handle_request }
+import from models.graph { profile_of }
 import from config { SYSTEM_PROMPT }
 import from server.llm { chat_complete }
 import from harness.pipeline { before_model, after_model }
@@ -20,10 +22,7 @@ walker:pub SendMessage {
         text: str = "";
 
     can reply with Root entry {
-        messages = new_session();
-        for turn in self.history {
-            messages.append({"role": turn["role"], "content": turn["content"]});
-        }
-        report take_turn(messages, self.text);
+        try { report handle_request(profile_of(here), self.text, self.history); }
+        except ValueError as err { report str(err); }
     }
 }
