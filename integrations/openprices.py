@@ -57,12 +57,14 @@ def normalize_records(data, location_id):
             'barcode':row.get('product_code') or '', 'brand':product.get('brands') or '',
             'size_label':size,'weight_kg':weight_from_size(size),'price':value,
             'regular_price':row.get('price_without_discount'), 'discounted':bool(row.get('price_is_discounted')),
-            'discount_type':row.get('discount_type') or '', 'price_per':row.get('price_per') or 'not specified',
+            'discount_type':row.get('discount_type') or '', 'price_per':row.get('price_per') or ('UNIT' if row.get('type') == 'PRODUCT' and row.get('product_code') else 'not specified'),
+            'raw_price_per':row.get('price_per'), 'record_type':row.get('type') or '',
             'currency':row.get('currency') or 'Unknown', 'recorded_on':row.get('date') or 'Unknown',
             'retrieved_at':now_iso(), 'location_id':str(location_id), 'proof_id':proof,
             'source':'openprices', 'data_kind':'historical', 'availability':'UNKNOWN',
             'current_price':None, 'source_url':f'https://prices.openfoodfacts.org/prices/{ident}',
             'proof_url':f'https://prices.openfoodfacts.org/proofs/{proof}',
+            'categories':product.get('categories_tags') or [],
             'labels':product.get('labels_tags') or []})
     return records
 
@@ -78,7 +80,7 @@ def price_records(location_id, page=1):
                 'pages':data.get('pages',1),'total':data.get('total',0),'location_id':location_id}
     return cached('openprices:prices',[location_id,page],fetch,300)
 
-def nearby_with_history(lat, lon, radius_m=5000):
+def nearby_with_history(lat, lon, radius_m=5000, include_kroger=True):
     from .providers import nearby_places, nearby_kroger, credential_status
     notices=[]; maps=[]; stores=[]
     try:
@@ -102,8 +104,32 @@ def nearby_with_history(lat, lon, radius_m=5000):
     known={osm_identity(s) for s in stores if s.get('osm_id') is not None}
     maps=[s for s in maps if osm_identity(s) not in known]
     flags=credential_status()
-    if flags['KROGER_CLIENT_ID'] and flags['KROGER_CLIENT_SECRET']:
+    if include_kroger and flags['KROGER_CLIENT_ID'] and flags['KROGER_CLIENT_SECRET']:
         try:stores+=nearby_kroger(lat,lon,radius_m)
         except ProviderError as error:notices.append('Kroger: '+str(error))
     notices.append('Open Prices contains historical contributed prices with incomplete coverage. Current prices and inventory remain unknown.')
     return {'stores':sorted(stores+maps,key=lambda s:distance_m((lat,lon),(s['lat'],s['lon']))),'notices':notices}
+
+
+CATEGORY_TAGS = {"milk": "en:milks", "eggs": "en:eggs", "rice": "en:rices", "yogurt": "en:yogurts", "coffee": "en:coffees", "tofu": "en:tofu"}
+
+def recommendation_records(location_id, terms):
+    if not isinstance(location_id, str) or not re.fullmatch(r'\d{1,20}', location_id):
+        raise ProviderError('Invalid Open Prices location.')
+    tags = sorted({CATEGORY_TAGS[t] for t in terms if t in CATEGORY_TAGS})[:6]
+    def fetch():
+        rows, notices, partial = {}, [], False
+        # Latest 40 records plus up to 20 category-filtered records per known need.
+        queries = [{'page': 1}, {'page': 2}] + [{'product__categories_tags__contains': tag} for tag in tags]
+        for query in queries:
+            try:
+                data = request_json(BASE+'/prices', params={'location_id': location_id, 'size': 20,
+                    'order_by': '-date,-id', 'duplicate_of__isnull': 'true', **query})
+                for row in normalize_records(data, location_id): rows[row['record_id']] = row
+                partial = partial or data.get('pages', 1) > query.get('page', 1)
+            except ProviderError:
+                partial = True
+                notices.append('Some historical record queries failed; available evidence is shown.')
+        return {'records': list(rows.values()), 'checked': len(rows), 'partial': partial,
+                'notice': ' '.join(sorted(set(notices)))}
+    return cached('openprices:recommendations', [location_id, tags], fetch, 300)

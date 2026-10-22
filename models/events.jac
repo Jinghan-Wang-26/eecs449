@@ -49,7 +49,10 @@ node SyncState {
 }
 
 node ShoppingWorkspace {
+    has chat_planning: bool = False, chat_address_pending: bool = False,
+        chat_question: str = "", chat_language: str = "en";
     has historical_prices: dict = {};
+    has visit_plans: list = [], visit_search: dict = {}, search_radius_m: int = 5000;
     has address_candidates: list = [],
         nearby_stores: list = [],
         product_results: list = [],

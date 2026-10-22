@@ -136,7 +136,7 @@ test "expired proposals cannot be accepted" {
     assert failed and plan.status == PlanStatus.PROPOSED;
 }
 
-test "validated model output stays pending until explicit confirmation" {
+test "validated chat needs save automatically and ask for missing time" {
     import from unittest.mock { patch }
     import from harness.agent { handle_request }
     p = UserProfile(); p +>:Owns:+> InterestPool();
@@ -144,10 +144,9 @@ test "validated model output stays pending until explicit confirmation" {
     with patch("harness.agent.parse_request", return_value=proposal) {
         message = handle_request(p, "I need two packages of milk", []);
     }
-    assert "confirm" in message;
-    assert not [n for n in items_of(p) if n.plannable()];
-    state = owned(p, ShoppingWorkspace);
-    assert state.pending_id != "";
-    shopping_operation(p, "confirm_chat", {"id": state.pending_id}, NOW);
+    assert "time range" in message;
     assert len([n for n in items_of(p) if n.plannable()]) == 1;
+    assert items_of(p)[0].product_spec["qty"] == 2;
+    state = owned(p, ShoppingWorkspace);
+    assert state.pending_id == "" and state.chat_planning;
 }

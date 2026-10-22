@@ -1,11 +1,13 @@
 """Address, profile, live catalog, and plan operations on the user's graph."""
 
 import uuid;
+import from server.visits { recommend_visits, visit_action, visit_view, invalidate_visits }
+import from pricing { price_details }
 import from ai.matching { rank_products }
 import json;
 import hashlib;
 import from app_settings { get_settings, stamp, due }
-import from integrations.providers { geocode, nearby, products, route, credential_status }
+import from integrations.providers { geocode, nearby, products, route, credential_status, credentials, reverse_geocode }
 import from integrations.openprices { nearby_with_history, price_records }
 import from integrations.validation { profile_patch, need_spec, number }
 import from models.profile { UserProfile }
@@ -13,7 +15,7 @@ import from models.catalog { Product, Store, Offer, Availability }
 import from models.interest { InterestKind, InterestStatus }
 import from models.plan { PlanStatus }
 import from models.events { ShoppingWorkspace }
-import from models.graph { Has, Wants, owned, catalog_of, items_of, add_need, plans_of, plan_items_of, upsert_store, upsert_product, upsert_offer, find_in, want, offer_of, plan_changes }
+import from models.graph { Has, Wants, UsesOffer, product_of, store_of, owned, catalog_of, items_of, add_need, plans_of, plan_items_of, upsert_store, upsert_product, upsert_offer, find_in, want, offer_of, plan_changes }
 import from planning.lifecycle { plan_shopping, accept }
 import from sync.engine { sync_events }
 
@@ -23,6 +25,7 @@ def mode_of(p: UserProfile) -> str {
 }
 
 def invalidate_plans(p: UserProfile, message: str) -> None {
+    invalidate_visits(p, message);
     for plan in plans_of(p) {
         if plan.status in [PlanStatus.DRAFT, PlanStatus.PROPOSED] {
             plan.move_to(PlanStatus.CANCELLED);
@@ -65,6 +68,7 @@ def select_location(p: UserProfile, candidate_id: str) -> None {
     p.location = dict(chosen);
     p.home_address = chosen["address"];
     state.address_candidates = [];
+    state.chat_address_pending = False;
 }
 
 def import_results(p: UserProfile, store: dict, need: any, rows: list) -> list {
@@ -188,12 +192,19 @@ def workflow(p: UserProfile, action: str, data: dict, now: str) -> str {
         if mode_of(p) != "live" { raise ValueError("Switch to live mode to resolve a real address."); }
         state.address_candidates = geocode(data.get("address", ""));
         return "Choose the intended address." if state.address_candidates else "No address match found. Add a city or ZIP code.";
+    } elif action == "device_location" {
+        if mode_of(p) != "live" { raise ValueError("Choose Real stores to use your location."); }
+        state.address_candidates = reverse_geocode(number(data.get("lat"), -90, 90, "latitude"), number(data.get("lon"), -180, 180, "longitude"), number(data.get("accuracy_m", 0), 0, 100000, "location accuracy"));
+        return "Review and confirm the address for your device location.";
     } elif action == "confirm_address" {
         select_location(p, data.get("id", ""));
         return "Address confirmed. You can now search nearby stores.";
     } elif action == "nearby" {
         if mode_of(p) != "live" or not p.location { raise ValueError("Confirm an address in live mode first."); }
-        result = nearby_with_history(p.location["lat"], p.location["lon"], int(number(data.get("radius_m", 5000), 500, 20000, "radius")));
+        radius = int(number(data.get("radius_m", state.search_radius_m), 500, 20000, "radius"));
+        if radius != state.search_radius_m { invalidate_visits(p, "Search radius changed."); }
+        state.search_radius_m = radius;
+        result = nearby_with_history(p.location["lat"], p.location["lon"], radius, include_kroger=False);
         state.nearby_stores = result["stores"];
         state.notices = result["notices"];
         return f"Found {len(state.nearby_stores)} nearby stores. Product access is shown per store.";
@@ -229,7 +240,16 @@ def workflow(p: UserProfile, action: str, data: dict, now: str) -> str {
         }
         invalidate_plans(p, "Product match changed.");
         return "Product match confirmed.";
-    } elif action == "plan" {
+    } elif action == "recommend_visits" {
+        radius = int(number(data.get("radius_m", state.search_radius_m), 500, 20000, "radius"));
+        if radius != state.search_radius_m { invalidate_visits(p, "Search radius changed."); }
+        state.search_radius_m = radius;
+        return recommend_visits(p, now);
+    } elif action == "visit_action" {
+        return visit_action(p, data, now);
+    } elif action == "plan" and mode_of(p) == "live" {
+        return recommend_visits(p, now);
+    } elif action in ["plan", "current_price_plan"] {
         if mode_of(p) == "live" {
             state.notices = prepare_routes(p, now);
             if p.tax_rate < 0 { raise ValueError("Enter a tax-rate estimate in your profile before live cost planning."); }
@@ -244,7 +264,20 @@ def workflow(p: UserProfile, action: str, data: dict, now: str) -> str {
 }
 
 
-def workspace_view(p: UserProfile) -> dict {
+def plan_item_view(pi: any) -> dict {
+    out = {"name": pi.name, "qty": pi.qty, "outcome": pi.outcome.name};
+    o = offer_of(pi);
+    if o is None { return out | price_details(None); }
+    prod = product_of(o);
+    snapshots = [edge pi ->:UsesOffer:-> o];
+    price = snapshots[0].price_at_plan if snapshots else None;
+    out.update(price_details(price, prod.size, prod.unit, prod.size_label));
+    out["product"] = prod.name;
+    out["store"] = store_of(o).name;
+    return out;
+}
+
+def workspace_view(p: UserProfile, now: str = "") -> dict {
     state = owned(p, ShoppingWorkspace);
     plans = [];
     for plan in plans_of(p) {
@@ -252,13 +285,29 @@ def workspace_view(p: UserProfile) -> dict {
         plans.append({"key": plan.key, "status": plan.status.name, "strategy": plan.strategy.name,
             "total": plan.total, "cost": plan.cost, "minutes": plan.active_min, "weight": plan.carried_kg,
             "explanation": plan.explanation,
-            "items": [{"name": pi.name, "qty": pi.qty, "outcome": pi.outcome.name} for pi in plan_items_of(plan)]});
+            "items": [plan_item_view(pi) for pi in plan_items_of(plan)]});
     }
-    return {"profile": {"address": p.home_address, "transport": p.transport, "budget": p.weekly_budget,
-            "carry_limit_kg": p.carry_limit_kg, "free_windows": p.free_windows, "tax_rate": p.tax_rate,
+    catalog_prices = [];
+    cat = catalog_of(p);
+    if cat.mode == "mock" {
+        for o in [cat ->:Has:->][?:Offer] {
+            prod = product_of(o);
+            row = {"key": o.key, "category": prod.category, "name": prod.name,
+                   "store": store_of(o).name, "channel": o.channel,
+                   "observed_at": o.observed_at, "valid_until": o.valid_until,
+                   "availability": o.availability.name,
+                   "member_price_applied": o.member_program in p.memberships and o.member_price is not None};
+            row.update(price_details(o.price_for(p.memberships), prod.size, prod.unit, prod.size_label));
+            catalog_prices.append(row);
+        }
+    }
+    products_view = [row | price_details(row.get("price"), label=row.get("size_label", "")) for row in state.product_results];
+    return {"llm_backend": credentials().get("LLM_BACKEND", "api"), "catalog_prices": catalog_prices, "profile": {"address": p.home_address, "transport": p.transport, "budget": p.weekly_budget,
+            "max_walk_min": p.max_walk_min, "carry_limit_kg": p.carry_limit_kg, "free_windows": p.free_windows, "tax_rate": p.tax_rate,
             "transport_cost": p.transport_cost, "dietary": p.dietary, "memberships": p.memberships},
         "address_candidates": state.address_candidates, "stores": state.nearby_stores,
-        "products": state.product_results, "plans": plans[-10:], "notices": state.notices,
+        "products": products_view, "plans": plans[-10:], "notices": state.notices,
+        "visit_plans": visit_view(p, stamp(now)), "visit_search": state.visit_search, "search_radius_m": state.search_radius_m,
         "historical_prices": state.historical_prices,
         "pending_intent": state.pending_intent, "pending_id": state.pending_id,
         "credentials": credential_status()};
