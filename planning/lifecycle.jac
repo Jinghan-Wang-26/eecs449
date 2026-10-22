@@ -4,6 +4,8 @@
     any open state -> CANCELLED;  ACCEPTED / IN_PROGRESS -> NEEDS_REVIEW on a material change
 """
 
+import uuid;
+import from app_settings { get_settings }
 import from models.profile { UserProfile, effective_constraints }
 import from models.plan { ShoppingPlan, PlanStatus, PlanStrategy, ItemOutcome }
 import from models.catalog { Store }
@@ -18,9 +20,13 @@ import from planning.candidates { build_candidates, evaluate, select_options, de
 
 """Needs in the pool + the user's catalog -> up to three PROPOSED plans.
 Older DRAFT / PROPOSED plans are replaced; accepted plans are left alone."""
-def plan_shopping(p: UserProfile, now: str = "") -> dict {
+def plan_shopping(p: UserProfile, now: str = "", settings: dict = {}) -> dict {
     ctx = effective_constraints(p, trip_of(p));
-    needs = needs_from_pool(p);
+    ctx["now"] = now;
+    for old in plans_of(p) {
+        if old.status in [PlanStatus.DRAFT, PlanStatus.PROPOSED] { old.move_to(PlanStatus.CANCELLED); }
+    }
+    needs = needs_from_pool(p, now);
     if not needs {
         return {"plans": [], "message": "Your shopping list is empty."};
     }
@@ -35,11 +41,11 @@ def plan_shopping(p: UserProfile, now: str = "") -> dict {
     for ch in channels {
         by_id[ch.id] = ch;
     }
-    cands = build_candidates(needs, by_id, found["quotes"]);
+    cands = build_candidates(needs, by_id, found["quotes"], settings);
     for c in cands {
         evaluate(c, by_key, by_id, ctx, p.memberships);
     }
-    options = select_options(cands);
+    options = select_options(cands, settings);
     if not options {
         msg = explain_infeasible(cands);
         if found["notes"] {
@@ -73,6 +79,8 @@ def save_plan(p: UserProfile, c: any, channels: dict, items: dict, now: str) -> 
     cost["time_cost"] = c.time_cost;
     cost["effective_total"] = c.effective_cost();
     plan = ShoppingPlan(
+        key=str(uuid.uuid4()),
+        mode=p.data_mode if p.data_mode != "" else get_settings()["data_mode"],
         strategy=PlanStrategy[c.labels[0]],
         cost=cost,
         total=c.cost.total(),

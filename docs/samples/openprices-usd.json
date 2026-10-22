@@ -1,0 +1,47 @@
+{
+  "kind": "actual HTTP response excerpt, not synthetic",
+  "retrieved_at": "2026-10-12T18:06:12.291783+00:00",
+  "request": "https://prices.openfoodfacts.org/api/v1/prices?currency=USD&size=2&order_by=-date",
+  "http_status": 200,
+  "total": 41722,
+  "items": [
+    {
+      "id": 344584,
+      "product_code": "0818072020532",
+      "product_name": "Saint Oak Wood Cold Smoked Salmon 4 OZ",
+      "price": 10.39,
+      "price_is_discounted": true,
+      "price_without_discount": 12.99,
+      "discount_type": "LOYALTY_PROGRAM",
+      "currency": "USD",
+      "date": "2026-10-11",
+      "location_id": 4117,
+      "location_osm_id": 9231196949,
+      "location_osm_type": "NODE",
+      "proof_id": 138687
+    },
+    {
+      "id": 344582,
+      "product_code": "0842234001664",
+      "product_name": "GARDEIN Golden Fishless Fillets 10.1 OZ",
+      "price": 6.99,
+      "price_is_discounted": false,
+      "price_without_discount": null,
+      "discount_type": null,
+      "currency": "USD",
+      "date": "2026-10-11",
+      "location_id": 4117,
+      "location_osm_id": 9231196949,
+      "location_osm_type": "NODE",
+      "proof_id": 138694
+    }
+  ],
+  "location": {
+    "id": 4117,
+    "osm_name": "Whole Foods Market",
+    "osm_display_name": "Whole Foods Market, 150, East McKinley Avenue, Sunnyvale, Santa Clara County, California, 94086, United States",
+    "osm_lat": 37.3739192,
+    "osm_lon": -122.0312241
+  },
+  "license": "Open Prices / Open Food Facts, ODbL; https://openfoodfacts.github.io/open-prices/guides/data/"
+}

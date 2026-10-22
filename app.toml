@@ -1,0 +1,13 @@
+# Settings used by planning, discovery, reminders, and synchronization.
+data_mode = "mock"
+timezone = "America/New_York"
+max_fulfillment_channels = 2
+max_plan_options = 3
+max_discovery_items_per_week = 3
+reminder_cooldown_hours = 24
+quiet_hours_start = 22
+quiet_hours_end = 8
+allow_substitutions = "ask"
+auto_purchase = false
+# Ignore price noise below this amount when reviewing existing plans.
+material_price_change = 0.50

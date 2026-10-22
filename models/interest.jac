@@ -22,7 +22,9 @@ node InterestItem {
         source: str = "USER",              # USER / HISTORY / INFERRED
         confidence: float = 1.0,
         locked: bool = False,
-        snoozed_until: str = "";
+        snoozed_until: str = "",
+        discovered_at: str = "",
+        discovery_reason: str = "";
 
     """NEED and REPLENISH items enter planning. DISCOVER needs confirmation first."""
     def plannable() -> bool {

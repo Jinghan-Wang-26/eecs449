@@ -1,6 +1,7 @@
 """Chat page. The planning panels will sit beside this later."""
 
 sv import from ..server.chat { SendMessage }
+import from .shopping { ShoppingPanel }
 
 def:pub ChatApp -> JsxElement {
     has messages: list[dict] = [],
@@ -29,7 +30,7 @@ def:pub ChatApp -> JsxElement {
         >
             <div
                 style={{
-                    "maxWidth": "760px",
+                    "maxWidth": "1100px",
                     "margin": "0 auto",
                     "height": "100%",
                     "boxSizing": "border-box",
@@ -46,14 +47,15 @@ def:pub ChatApp -> JsxElement {
                         What do you need to buy?
                     </h1>
                     <p style={{"margin": "8px 0 0", "color": "#57534e", "fontFamily": "system-ui, sans-serif", "fontSize": "15px"}}>
-                        Planning, prices, and routes are not connected yet.
+                        Describe your needs in chat, confirm the proposed changes, then compare shopping plans.
                     </p>
                 </header>
+                <ShoppingPanel />
                 <div
                     className="chat-log"
                     style={{
                         "flex": "1",
-                        "minHeight": "0",
+                        "minHeight": "80px",
                         "overflowY": "auto",
                         "display": "flex",
                         "flexDirection": "column",
@@ -102,6 +104,7 @@ def:pub ChatApp -> JsxElement {
                         placeholder="Tell me what you need"
                         style={{
                             "flex": "1",
+                            "minWidth": "0",
                             "padding": "14px 16px",
                             "border": "1px solid #d6d3d1",
                             "borderRadius": "999px",

@@ -1,11 +1,11 @@
-"""Runtime settings. The shopping harness does not read these yet."""
+"""LLM settings; application settings are validated in app_settings.py."""
 
 import os;
 import pathlib;
 
 glob LLM_BASE_URL: str = "https://api.openai.com/v1";
 glob LLM_MODEL: str = "gpt-4o-mini";
-glob SYSTEM_PROMPT: str = "You are CartCompass, a shopping assistant for everyday errands in the U.S. The planning harness is not connected yet, so you cannot look up prices, stock, routes, or delivery fees. Talk with the user about what they need, where they live, how they travel, and what constraints matter. Do not invent prices, availability, or routes. If they ask for a concrete shopping plan, say that part is still being built.";
+glob SYSTEM_PROMPT: str = "You are CartCompass. Shopping facts come only from verified tools; never invent prices, inventory, or routes. The shopping panel confirms profile changes, addresses, products, and plans.";
 
 def load_env_file() -> None {
     if os.getenv("CARTCOMPASS_ENV_LOADED") == "1" {

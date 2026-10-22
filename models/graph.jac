@@ -11,7 +11,7 @@
                         -[Owns]-> Inbox    -[Has]-> Reminder      -[About]-> InterestItem / ShoppingPlan / Offer
 """
 
-import from datetime { datetime }
+import from app_settings { elapsed_hours, due, get_settings }
 import from models.profile { UserProfile, TripConstraints }
 import from models.interest { InterestPool, InterestItem }
 import from models.plan { ShoppingPlan, FulfillmentLeg, PlanItem }
@@ -69,7 +69,13 @@ def pool_of(p: UserProfile) -> InterestPool {
 }
 
 def catalog_of(p: UserProfile) -> Catalog {
-    return owned(p, Catalog);
+    mode = p.data_mode if p.data_mode != "" else get_settings()["data_mode"];
+    for cat in [p ->:Owns:->][?:Catalog] {
+        if cat.mode == mode { return cat; }
+    }
+    cat = Catalog(mode=mode);
+    p +>:Owns:+> cat;
+    return cat;
 }
 
 def event_log_of(p: UserProfile) -> EventLog {
@@ -335,7 +341,7 @@ def hours_between(a: str, b: str) -> float {
     if a == "" or b == "" {
         return 1e9;
     }
-    return (datetime.fromisoformat(b) - datetime.fromisoformat(a)).total_seconds() / 3600;
+    return elapsed_hours(a, b);
 }
 
 """Create a reminder unless one with the same key is still open, was dismissed, or fired within the cooldown."""
@@ -347,7 +353,7 @@ def add_reminder(p: UserProfile, dedup_key: str, kind: str, message: str, fire_a
         if r.status == ReminderStatus.PENDING or r.status == ReminderStatus.SNOOZED or r.status == ReminderStatus.DISMISSED {
             return None;
         }
-        if hours_between(r.created_at, now) < cooldown_h {
+        if hours_between(r.last_sent_at if r.last_sent_at != "" else r.created_at, now) < cooldown_h * (1 + min(r.ignored_count, 3)) {
             return None;
         }
     }
@@ -362,5 +368,5 @@ def add_reminder(p: UserProfile, dedup_key: str, kind: str, message: str, fire_a
 """Pending or snoozed reminders whose time has come."""
 def due_reminders(p: UserProfile, now: str) -> list {
     return [r for r in reminders_of(p)
-        if (r.status == ReminderStatus.PENDING or r.status == ReminderStatus.SNOOZED) and r.fire_at <= now];
+        if (r.status == ReminderStatus.PENDING or r.status == ReminderStatus.SNOOZED) and due(r.fire_at, now)];
 }

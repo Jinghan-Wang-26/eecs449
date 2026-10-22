@@ -1,5 +1,6 @@
 """Apply feedback along About edges, so a local issue updates only the item, offer, or match it concerns."""
 
+import from app_settings { later }
 import from models.profile { UserProfile }
 import from models.interest { InterestItem, InterestKind, InterestStatus }
 import from models.plan { PlanItem, ItemOutcome }
@@ -46,6 +47,8 @@ def apply_to(ev: FeedbackEvent, n: any) -> None {
             need.last_purchased_at = ev.at;
             if need.kind == InterestKind.NEED {
                 need.status = InterestStatus.ARCHIVED;
+            } elif need.kind == InterestKind.REPLENISH and need.replenishment_days > 0 and ev.at != "" {
+                need.snoozed_until = later(ev.at, need.replenishment_days * 24);
             }
         }
     } elif r == FeedbackReason.OUT_OF_STOCK {
@@ -55,7 +58,7 @@ def apply_to(ev: FeedbackEvent, n: any) -> None {
             o.observed_at = ev.at;
             o.source = "user";
         }
-    } elif r == FeedbackReason.HAVE_AT_HOME {
+    } elif r == FeedbackReason.HAVE_AT_HOME or r == FeedbackReason.BUSY {
         if need is not None and ev.until != "" {
             need.snoozed_until = ev.until;
         }

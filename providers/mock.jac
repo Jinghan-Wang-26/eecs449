@@ -2,6 +2,7 @@
 
 import json;
 import pathlib;
+import hashlib;
 import from models.catalog { Catalog, Store, Product, Availability, Storage }
 import from models.graph { upsert_store, upsert_product, upsert_offer, find_in }
 
@@ -34,4 +35,22 @@ def load_mock(cat: Catalog, name: str = "catalog.json") -> int {
         upsert_offer(cat, find_in(cat, Store, o["store"]), find_in(cat, Product, o["product"]), o["channel"], fields);
     }
     return len(data["offers"]);
+}
+
+"""Refresh existing offers without overwriting newer user observations.
+Stable event IDs let the sync layer recognize an unchanged fixture on replay.
+"""
+def mock_updates(name: str = "catalog.json") -> list {
+    data = json.loads((MOCK_DIR / name).read_text(encoding="utf-8"));
+    events = [];
+    for o in data["offers"] {
+        key = o["store"] + ":" + o["product"] + ":" + o["channel"];
+        fields = {"price": o.get("price"), "member_price": o.get("member_price"),
+                  "availability": o.get("availability", "UNKNOWN"),
+                  "observed_at": o.get("observed_at", data["observed_at"]),
+                  "valid_until": o.get("valid_until", data["valid_until"])};
+        signature = hashlib.sha256(json.dumps({"key": key, "fields": fields}, sort_keys=True).encode()).hexdigest();
+        events.append({"id": "mock:" + signature, "type": "offer", "key": key, "fields": fields});
+    }
+    return events;
 }

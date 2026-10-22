@@ -20,7 +20,9 @@ glob TRANSITIONS: dict = {
 };
 
 node ShoppingPlan {
-    has strategy: PlanStrategy = PlanStrategy.BALANCED,
+    has key: str = "",
+        mode: str = "mock",
+        strategy: PlanStrategy = PlanStrategy.BALANCED,
         status: PlanStatus = PlanStatus.DRAFT,
         cost: dict = {},                   # merchandise, discounts, tax, delivery, tip, transport
         total: float = 0.0,

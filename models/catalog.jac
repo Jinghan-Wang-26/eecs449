@@ -1,28 +1,39 @@
 """Catalog: Product, Store, and Offer. An Offer is one store selling one product through one channel."""
 
+import from app_settings { due }
+
 enum Availability { IN_STOCK, LOW, OUT, UNKNOWN }
 
 enum Storage { AMBIENT, CHILLED, FROZEN }
 
 """Per-user cache of catalog data loaded by providers."""
-node Catalog {}
+node Catalog { has mode: str = "mock"; }
 
 node Product {
     has key: str,
+        external_id: str = "",
         name: str = "",
         category: str = "",                # matches InterestItem.product_spec["type"]
         brand: str = "",
         size: float = 0.0,                 # package size in `unit`, for unit prices
         unit: str = "",                    # "gal", "lb", "oz", "ct", "fl oz"
         weight_kg: float = 0.0,
+        weight_known: bool = True,
+        size_label: str = "",
         storage: Storage = Storage.AMBIENT,
         tags: list[str] = [];              # dietary and flavor tags
 }
 
 node Store {
     has key: str,
+        external_id: str = "",
         name: str = "",
         area: str = "",
+        address: str = "",
+        latitude: float = 0.0,
+        longitude: float = 0.0,
+        mode: str = "mock",
+        origin_key: str = "",
         hours: dict = {},                  # {"SAT": "08:00-22:00"}
         channels: list[str] = ["IN_STORE"],
         routes: dict = {},                 # MVP fixed routes from home: {"BUS": {"min": 25, "cost": 1.5, "transfers": 0, "walk_min": 8}}
@@ -43,7 +54,7 @@ node Offer {
 
     """Expired offers need a refresh before planning trusts them."""
     def is_fresh(now: str) -> bool {
-        return self.valid_until == "" or now <= self.valid_until;
+        return self.valid_until != "" and due(now, self.valid_until) and (self.observed_at == "" or due(self.observed_at, now));
     }
 
     """Lowest price this user can actually pay; member prices need the membership."""

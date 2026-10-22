@@ -3,8 +3,12 @@
 enum Transport { WALK, BUS, CAR, BIKE, RIDESHARE }
 
 node UserProfile {
-    has home_area: str = "",
-        home_address: str = "",            # asked for only when exact delivery coverage matters
+    has data_mode: str = "",
+        location: dict = {},
+        transport_cost: float = -1.0,
+        tax_rate: float = -1.0,
+        home_area: str = "",
+        home_address: str = "",            # confirmed address for nearby-store and route queries
         transport: list[str] = ["WALK"],   # Transport names
         max_walk_min: int = 15,
         max_transfers: int = 1,
@@ -42,6 +46,9 @@ node TripConstraints {
 def effective_constraints(p: UserProfile, t: TripConstraints | None) -> dict {
     c = {
         "transport": p.transport,
+        "transport_cost": p.transport_cost,
+        "tax_rate": p.tax_rate,
+        "data_mode": p.data_mode,
         "max_walk_min": p.max_walk_min,
         "max_transfers": p.max_transfers,
         "carry_limit_kg": p.carry_limit_kg,

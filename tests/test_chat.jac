@@ -1,4 +1,4 @@
-"""The chat reaches the model only through an empty harness."""
+"""Legacy chat compatibility checks; active intent tests are in test_live_workflow and test_providers."""
 
 import os;
 

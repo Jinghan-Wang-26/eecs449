@@ -1,0 +1,2 @@
+jaclang==0.16.7
+jac-client==0.3.25

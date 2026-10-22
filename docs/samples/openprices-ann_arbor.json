@@ -1,0 +1,12 @@
+{
+  "kind": "actual HTTP response excerpt, not synthetic",
+  "retrieved_at": "2026-10-12T18:06:12.291984+00:00",
+  "center": [
+    42.2808,
+    -83.743
+  ],
+  "radius_km": 5,
+  "http_status": 200,
+  "total": 0,
+  "items": []
+}
