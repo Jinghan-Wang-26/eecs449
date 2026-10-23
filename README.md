@@ -475,7 +475,7 @@ The course project prioritizes Phase 1, with selected Phase 2 features as time p
 
 ## Getting Started
 
-The app includes a persistent shopping workspace and chat. `main.jac` mounts `ui/chat.cl.jac`. `harness/agent.jac` routes chat through the validated intent parser in `ai/intents.py`; proposed changes require confirmation in the workspace. Structured controls work without an LLM. `server/workflows.jac` implements profile, address, store, product and plan operations, and `server/walkers.jac` exposes the eleven named API walkers.
+The app includes a persistent shopping workspace and chat. `main.jac` mounts `ui/chat.cl.jac`. `harness/agent.jac` routes chat through the validated intent parser in `ai/intents.py`; chat saves explicitly requested needs/profile fields, asks for missing planning information, and generates proposals automatically. Feedback and plan acceptance still require confirmation. Structured controls work without an LLM. `server/workflows.jac` implements profile, address, store, product and plan operations, and `server/walkers.jac` exposes the eleven named API walkers.
 
 Real locations use Geoapify. The default product source is **Open Prices historical store price records**, with dates, currency and proof links. Coverage is incomplete and current price/stock remain unknown. Optional Kroger integration code is present but authenticated access is unverified because developer registration was blocked. See [live setup](docs/SETUP_LIVE.md), [API research and real samples](docs/ISSUE6_API_RESEARCH.md), and [issue #8 implementation status](docs/ISSUE8_STATUS.md).
 
@@ -532,3 +532,25 @@ Open http://localhost:8000. Put your key in `.env`. The checked-in example point
 Course repository: [marsninja/CSE449-F26](https://github.com/marsninja/CSE449-F26).
 
 This document is a project proposal. Final scope and technology choices remain subject to the course requirements and team implementation decisions.
+
+### Follow-up demo and chat checks
+
+The demo now renews expired fictional quotes and shows package/unit prices. For local ChatGPT-authenticated Codex chat, set `LLM_BACKEND=codex` in the ignored `.env`; no model API key is needed for that mode. Requests consume the CLI account's quota. API mode remains available. See [local setup, demo and verification](docs/SETUP_LIVE.md#use-the-existing-local-codex-login-no-new-model-api-key) and the [updated task evidence](docs/ISSUE8_STATUS.md).
+
+```bash
+python scripts/check_credentials.py
+python -m unittest discover -s tests -p 'test_*.py' -v
+jac test
+jac build main.jac
+# Optional real model calls, outside CI:
+python scripts/verify_llm.py --limit 2
+jac run scripts/verify_chat.jac
+```
+
+### Real-address shopping visits
+
+Choose **Real stores**, confirm a typed address or browser location, save your needs and travel/free-time constraints, then select **Recommend stores for my list**. Review up to three nearby store visits with Open Prices historical evidence, routes and per-item purchase feedback. Geoapify is required; Kroger and an LLM are not required for these controls. Current prices, stock and opening hours remain unknown. Follow the [real-store walkthrough](docs/REAL_STORE_VISITS.md).
+
+### Conversational setup and planning
+
+In **Real stores**, tell chat what you want to buy and ask for a plan. It saves your stated needs/profile values, asks for missing address/transport/free-time information, and updates the shopping panel after each answer. Reply with an address result's number when asked. Once required information is available, the plan appears both in chat and in the panel; no **Confirm changes** step is needed for routine setup. Purchase feedback and accepting a visit still require confirmation. See [the conversational walkthrough](docs/REAL_STORE_VISITS.md#conversational-setup).

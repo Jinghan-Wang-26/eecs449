@@ -1,0 +1,50 @@
+{
+  "checked_at": "2026-10-21T20:49:44-04:00",
+  "backend": "codex",
+  "cases": [
+    {
+      "id": "zh_needs",
+      "passed": true,
+      "failed_fields": [],
+      "usage": {
+        "input_tokens": 10942,
+        "cached_input_tokens": 0,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 74,
+        "reasoning_output_tokens": 0
+      }
+    },
+    {
+      "id": "en_plan",
+      "passed": true,
+      "failed_fields": [],
+      "usage": {
+        "input_tokens": 9681,
+        "cached_input_tokens": 0,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 65,
+        "reasoning_output_tokens": 0
+      }
+    }
+  ],
+  "passed": true,
+  "scope": "Two fixed synthetic bilingual prompts; actual authenticated Codex responses. No API keys or user addresses included.",
+  "graph_flow": {
+    "command": "LLM_BACKEND=codex jac run scripts/verify_chat.jac",
+    "passed": true,
+    "model_calls": 3,
+    "checks": [
+      "pending proposal does not mutate needs",
+      "confirmation generates proposed plan",
+      "grounded explanation selects computed facts"
+    ],
+    "test_user": "detached synthetic profile; walking limit explicitly 30 minutes"
+  },
+  "browser_check": {
+    "isolated_demo_graph": true,
+    "unit_price_visible": true,
+    "plans_generated": 1,
+    "purchase_completed": true,
+    "page_errors": []
+  }
+}

@@ -9,7 +9,7 @@ import from server.workflows { workflow, workspace_view, mode_of, save_need, inv
 import from app_settings { get_settings, stamp, instant, quiet }
 import from models.profile { UserProfile }
 import from models.interest { InterestKind, InterestStatus }
-import from models.catalog { Product }
+import from models.catalog { Product, Offer }
 import from models.graph { Has, profile_of, catalog_of, items_of, add_need, find_in }
 import from providers.mock { load_mock, mock_updates }
 import from interests.discovery { discover_products, discovery_action }
@@ -21,7 +21,20 @@ def shopping_operation(p: UserProfile, action: str, data: dict, now: str) -> dic
     cfg["data_mode"] = mode_of(p);
     now = stamp(now, cfg);
     cat = catalog_of(p);
-    if cat.mode == "mock" and not [cat ->:Has:->][?:Product] { load_mock(cat); }
+    if cat.mode == "mock" and not [cat ->:Has:->][?:Product] { load_mock(cat, now=now); }
+    # Upgrade persisted expired demo fixtures before comparing plans. Real quotes and
+    # user observations are never rebased. Ordinary reads do not reset fresh data.
+    if cat.mode == "mock" and action in ["view", "plan", "confirm_chat"] {
+        renewals = [];
+        for event in mock_updates(now=now) {
+            o = find_in(cat, Offer, event["key"]);
+            if o is not None and o.source == "mock" and not o.is_fresh(now) {
+                renewals.append(event);
+            }
+        }
+        if renewals { sync_events(p, renewals, now, cfg); }
+    }
+    refresh_requested = action == "refresh";
     message = "";
     if action == "save_interest" {
         category = data.get("category", "");
@@ -95,7 +108,7 @@ def shopping_operation(p: UserProfile, action: str, data: dict, now: str) -> dic
         elif proposal["intent"] == "plan" { message = workflow(p, "plan", {}, now); }
         elif proposal["intent"] == "search" and cfg["data_mode"] == "live" { message = workflow(p, "nearby", {}, now); }
         elif proposal["intent"] == "products" { message = workflow(p, "historical_prices", {"store": proposal.get("store_id", "")}, now); }
-        elif proposal["intent"] == "refresh" and cfg["data_mode"] == "live" { refresh_live(p); }
+        elif proposal["intent"] == "refresh" { refresh_requested = True; }
     } elif action == "discard_chat" {
         state = owned(p, ShoppingWorkspace);
         state.pending_intent = {}; state.pending_id = "";
@@ -104,11 +117,18 @@ def shopping_operation(p: UserProfile, action: str, data: dict, now: str) -> dic
         message = workflow(p, action, data, now);
         cfg["data_mode"] = mode_of(p);
         cat = catalog_of(p);
-        if cat.mode == "mock" and not [cat ->:Has:->][?:Product] { load_mock(cat); }
+        if cat.mode == "mock" and not [cat ->:Has:->][?:Product] { load_mock(cat, now=now); }
     }
     if action != "view" {
-        if action == "refresh" and cfg["data_mode"] == "live" { refresh_live(p); }
-        sync_events(p, mock_updates() if action == "refresh" and cfg["data_mode"] == "mock" else [], now, cfg);
+        if refresh_requested and cfg["data_mode"] == "live" { refresh_live(p); }
+        updates = [];
+        if refresh_requested and cfg["data_mode"] == "mock" {
+            for event in mock_updates(now=now) {
+                o = find_in(cat, Offer, event["key"]);
+                if o is not None and o.source != "user" { updates.append(event); }
+            }
+        }
+        sync_events(p, updates, now, cfg);
         discover_products(p, now, cfg);
     }
     discoveries = [];
@@ -123,7 +143,7 @@ def shopping_operation(p: UserProfile, action: str, data: dict, now: str) -> dic
              for n in items_of(p) if n.kind != InterestKind.DISCOVER and n.status != InterestStatus.ARCHIVED];
     return {"message": message, "discoveries": discoveries, "reminders": inbox(p, now, cfg),
             "interests": needs, "categories": sorted(set([prod.category for prod in [cat ->:Has:->][?:Product]])),
-            "quiet": quiet(now, cfg), "data_mode": cfg["data_mode"], "checked_at": now, "workspace": workspace_view(p)};
+            "quiet": quiet(now, cfg), "data_mode": cfg["data_mode"], "checked_at": now, "workspace": workspace_view(p, now)};
 }
 
 walker:pub ShoppingAction {

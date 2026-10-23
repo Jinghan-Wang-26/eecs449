@@ -3,14 +3,15 @@
 import json;
 import pathlib;
 import hashlib;
+import from providers.demo_clock { rebase_fixture }
 import from models.catalog { Catalog, Store, Product, Availability, Storage }
 import from models.graph { upsert_store, upsert_product, upsert_offer, find_in }
 
 glob MOCK_DIR: any = pathlib.Path(__file__).resolve().parent.parent / "data" / "mock";
 
 """Upsert everything in the file. Loading twice updates in place. Returns the number of offers."""
-def load_mock(cat: Catalog, name: str = "catalog.json") -> int {
-    data = json.loads((MOCK_DIR / name).read_text(encoding="utf-8"));
+def load_mock(cat: Catalog, name: str = "catalog.json", now: str = "") -> int {
+    data = rebase_fixture(json.loads((MOCK_DIR / name).read_text(encoding="utf-8")), now);
     for s in data["stores"] {
         upsert_store(cat, s["key"], {k: s[k] for k in s if k != "key"});
     }
@@ -40,8 +41,8 @@ def load_mock(cat: Catalog, name: str = "catalog.json") -> int {
 """Refresh existing offers without overwriting newer user observations.
 Stable event IDs let the sync layer recognize an unchanged fixture on replay.
 """
-def mock_updates(name: str = "catalog.json") -> list {
-    data = json.loads((MOCK_DIR / name).read_text(encoding="utf-8"));
+def mock_updates(name: str = "catalog.json", now: str = "") -> list {
+    data = rebase_fixture(json.loads((MOCK_DIR / name).read_text(encoding="utf-8")), now);
     events = [];
     for o in data["offers"] {
         key = o["store"] + ":" + o["product"] + ":" + o["channel"];

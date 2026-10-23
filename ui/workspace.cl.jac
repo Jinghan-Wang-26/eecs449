@@ -1,9 +1,12 @@
 """Profile, location, live catalog and comparable plan controls."""
 
 import from .history { HistoricalPrices }
+import from .visits { VisitPlans }
 
 def:pub WorkspacePanel(workspace: dict, mode: str, busy: bool, operate: any, category: str) -> JsxElement {
     has address: str = "",
+        locating: bool = False, location_notice: str = "",
+        max_walk: str = str(workspace["profile"]["max_walk_min"]),
         budget: str = str(workspace["profile"]["budget"]),
         carry: str = str(workspace["profile"]["carry_limit_kg"]),
         transport: str = workspace["profile"]["transport"].join(","),
@@ -20,9 +23,23 @@ def:pub WorkspacePanel(workspace: dict, mode: str, busy: bool, operate: any, cat
         if el { el.scrollIntoView({"block": "start", "behavior": "smooth"}); }
     }
 
+    def locate() -> None {
+        if not navigator.geolocation { location_notice = "Location is unavailable. Type your address instead."; return; }
+        locating = True;
+        location_notice = "Waiting for location permission...";
+        navigator.geolocation.getCurrentPosition(
+            lambda position: any {
+                locating = False; location_notice = "Review and confirm the detected address.";
+                operate("device_location", {"lat": position.coords.latitude, "lon": position.coords.longitude, "accuracy_m": position.coords.accuracy});
+            },
+            lambda error: any { locating = False; location_notice = "Location permission was denied or the request timed out. You can type your address instead."; },
+            {"enableHighAccuracy": False, "timeout": 15000, "maximumAge": 60000}
+        );
+    }
+
     async def save_profile(e: FormEvent) -> None {
         e.preventDefault();
-        values = {"weekly_budget": budget, "carry_limit_kg": carry,
+        values = {"weekly_budget": budget, "carry_limit_kg": carry, "max_walk_min": max_walk,
             "transport": [v.strip().upper() for v in transport.split(",") if v.strip()],
             "free_windows": [v.strip() for v in windows.split(";") if v.strip()],
             "dietary": [v.strip() for v in dietary.split(",") if v.strip()],
@@ -38,9 +55,13 @@ def:pub WorkspacePanel(workspace: dict, mode: str, busy: bool, operate: any, cat
             <button disabled={busy or mode == "mock"} onClick={lambda e: MouseEvent { operate("set_mode", {"mode": "mock"}); }}>Demo data</button>
             <button disabled={busy or mode == "live"} onClick={lambda e: MouseEvent { operate("set_mode", {"mode": "live"}); }}>Real stores</button>
         </div>
+        {if mode == "mock" {
+            <p>Fictional stores, prices and stock. Demo observations use the current local day and expire after seven days. Expired simulated quotes renew when you reopen or compare plans.</p>
+        }}
         {if mode == "live" {
             <p>Geoapify finds nearby stores. Open Prices supplies historical price records where contributors have coverage. Current price and stock may be unknown; Kroger access is optional.</p>
         }}
+        <p>{"Chat uses your local Codex login and account quota." if workspace["llm_backend"] == "codex" else "Chat uses the configured model API; structured controls work without it."}</p>
         {if workspace["pending_id"] != "" {
             <div className="pending-request">
                 <h3>Confirm chat request</h3>
@@ -54,6 +75,7 @@ def:pub WorkspacePanel(workspace: dict, mode: str, busy: bool, operate: any, cat
             <form onSubmit={save_profile} className="profile-grid">
                 <label>Budget ($)<input aria-label="Budget" type="number" min="0" value={budget} onChange={lambda e: ChangeEvent { budget = e.target.value; }} /></label>
                 <label>Carrying limit (kg)<input aria-label="Carrying limit" type="number" min="0.1" step="0.1" value={carry} onChange={lambda e: ChangeEvent { carry = e.target.value; }} /></label>
+                <label>Maximum walking segment (minutes)<input aria-label="Maximum walking minutes" type="number" min="0" max="240" value={max_walk} onChange={lambda e: ChangeEvent { max_walk = e.target.value; }} /></label>
                 <label>Transport (comma separated)<input aria-label="Transport" value={transport} placeholder="WALK,BUS" onChange={lambda e: ChangeEvent { transport = e.target.value; }} /></label>
                 <label>Free time (semicolon separated)<input aria-label="Free time" value={windows} placeholder="SAT 14:00-17:00;SUN 10:00-12:00" onChange={lambda e: ChangeEvent { windows = e.target.value; }} /></label>
                 <label>Estimated tax rate (e.g. 0.06)<input aria-label="Tax rate" type="number" min="0" max="0.3" step="0.001" value={tax} onChange={lambda e: ChangeEvent { tax = e.target.value; }} /></label>
@@ -66,10 +88,12 @@ def:pub WorkspacePanel(workspace: dict, mode: str, busy: bool, operate: any, cat
         {if mode == "live" {
             <section>
                 <h3>Address & nearby supermarkets</h3>
+                <button disabled={busy or locating} onClick={lambda e: MouseEvent { locate(); }}>Use my current location</button>
+                <p role="status">{location_notice}</p>
                 <label>Address<input aria-label="Shopping address" value={address} placeholder="Address, city, ZIP code" onChange={lambda e: ChangeEvent { address = e.target.value; }} /></label>
                 <button disabled={busy} onClick={lambda e: MouseEvent { operate("geocode", {"address": address}); }}>Look up address</button>
-                {[<div key={a["id"]} className="result-card"><span>{a["address"] + " · " + a["precision"]}</span><button disabled={busy} onClick={lambda e: MouseEvent { operate("confirm_address", {"id": a["id"]}); }}>Use this address</button></div> for a in workspace["address_candidates"]]}
-                <button disabled={busy} onClick={lambda e: MouseEvent { operate("nearby", {}); }}>Find supermarkets within 5 km</button>
+                {[<div key={a["id"]} className="result-card"><span>{a["address"] + " · " + a["precision"] + (" · accuracy about " + str(a["accuracy_m"]) + " m" if a.get("accuracy_m") else "")}</span><button disabled={busy} onClick={lambda e: MouseEvent { operate("confirm_address", {"id": a["id"]}); }}>Use this address</button></div> for a in workspace["address_candidates"]]}
+                <button disabled={busy} onClick={lambda e: MouseEvent { operate("nearby", {}); }}>Find nearby supermarkets</button>
                 {[<div key={s["id"]} className="result-card"><strong>{s["name"]}</strong><div>{s["address"]}</div><span>{"Historical price records" if s.get("source") == "openprices" else ("Current product query supported" if s["product_access"] else "Location only — product data unavailable")}</span>
                     {if s.get("source") == "openprices" { <button disabled={busy} onClick={lambda e: MouseEvent { operate("historical_prices", {"store": s["id"]}); }}>View historical products</button> }}
                     <button disabled={busy} onClick={lambda e: MouseEvent { operate("store_route", {"store": s["id"], "transport": "WALK"}); }}>Estimate walk</button>
@@ -79,7 +103,7 @@ def:pub WorkspacePanel(workspace: dict, mode: str, busy: bool, operate: any, cat
                 <button disabled={busy} onClick={lambda e: MouseEvent { operate("search_products", {"store": store, "category": category}); }}>{"Search saved need: " + category}</button>
                 {[<div key={prod["result_id"]} className="result-card">
                     <strong>{prod["name"] + " · " + prod["size_label"]}</strong>
-                    <p>{("Price unknown" if prod["price"] is None else "$" + str(prod["price"])) + " · Inventory: " + prod["availability"]}</p>
+                    <p>{(prod["price_label"] + " · " + prod["unit_price_label"]) + " · Inventory: " + prod["availability"]}</p>
                     <small>{"Source: Kroger · Observed: " + prod["observed_at"]}</small><p>{prod.get("match_reason", "Confirm this product before planning.")}</p>
                     <label>Estimated package weight (kg)<input type="number" min="0.001" step="0.001" value={weights.get(prod["result_id"], "")} placeholder={"Enter weight" if prod["weight_kg"] is None else str(prod["weight_kg"])} onChange={lambda e: ChangeEvent { updated = dict(weights); updated[prod["result_id"]] = e.target.value; weights = updated; }} /></label>
                     <button disabled={busy} onClick={lambda e: MouseEvent { operate("confirm_product", {"id": prod["result_id"], "weight_kg": weights.get(prod["result_id"], "")}); }}>Confirm product match</button>
@@ -88,16 +112,29 @@ def:pub WorkspacePanel(workspace: dict, mode: str, busy: bool, operate: any, cat
             </section>
         }}
         {[<p role="status" key={str(i)}>{note}</p> for (i, note) in enumerate(workspace["notices"])]}
-        <h3>Shopping plans</h3>
-        <button disabled={busy} onClick={lambda e: MouseEvent { operate("plan", {}); }}>Compare plans</button>
-        {if len(workspace["plans"]) == 0 { <p>Save your needs, transport and free time, then compare plans.</p> }}
+        {if mode == "mock" {
+            <details><summary>{"Compare package and unit prices: " + category}</summary>
+                <p>USD; US gallons and fluid ounces. Compare compatible units and product types. Taxes, fees and travel are included separately in plan totals.</p>
+                {[<div className="result-card" key={quote["key"]}>
+                    <strong>{quote["name"] + " · " + quote["store"]}</strong>
+                    <p>{quote["price_label"] + " · " + quote["unit_price_label"]}</p>
+                    <p>{quote["channel"] + " · Simulated stock: " + quote["availability"]}</p>
+                    {if quote["member_price_applied"] { <p>Eligible membership price applied.</p> }}
+                    <small>{"Simulated observation: " + quote["observed_at"] + " · Valid until: " + quote["valid_until"]}</small>
+                </div> for quote in workspace["catalog_prices"] if quote["category"] == category]}
+            </details>
+        }}
+        {if mode == "live" { <VisitPlans workspace={workspace} busy={busy} operate={operate} /> }}
+        <h3>{"Demo shopping plans" if mode == "mock" else "Optional verified current-price plans"}</h3>
+        {if mode == "mock" { <button disabled={busy} onClick={lambda e: MouseEvent { operate("plan", {}); }}>Compare plans</button> }}
+        {if len(workspace["plans"]) == 0 and mode == "mock" { <p>Save your needs, transport and free time, then compare plans.</p> }}
         {[<article className="result-card" key={plan["key"]}>
             <h4>{plan["strategy"] + " · " + plan["status"]}</h4>
             <p>{"Estimated $" + str(plan["total"]) + " · " + str(plan["minutes"]) + " active minutes · " + str(plan["weight"]) + " kg"}</p>
             <p style={{"whiteSpace": "pre-wrap"}}>{plan["explanation"]}</p>
             {if plan["status"] == "PROPOSED" { <button disabled={busy} onClick={lambda e: MouseEvent { operate("plan_action", {"key": plan["key"], "action": "accept"}); }}>Accept plan</button> }}
             {if plan["status"] not in ["COMPLETED", "CANCELLED"] { <button disabled={busy} onClick={lambda e: MouseEvent { operate("plan_action", {"key": plan["key"], "action": "cancel"}); }}>Cancel plan</button> }}
-            {[<div key={item["name"]}><span>{str(item["qty"]) + " × " + item["name"] + " · " + item["outcome"]}</span>
+            {[<div key={item["name"]}><span>{str(item["qty"]) + " × " + item["name"] + " · " + item["outcome"]}</span><p>{item["price_label"] + " · " + item["unit_price_label"] + " (at planning time)"}</p>
                 {if plan["status"] in ["ACCEPTED", "IN_PROGRESS"] and item["outcome"] == "PENDING" {
                     <span><button disabled={busy} onClick={lambda e: MouseEvent { operate("feedback", {"id": crypto.randomUUID(), "type": "feedback", "target": item["name"], "reason": "PURCHASED"}); }}>Bought item</button><button disabled={busy} onClick={lambda e: MouseEvent { operate("feedback", {"id": crypto.randomUUID(), "type": "feedback", "target": item["name"], "reason": "OUT_OF_STOCK"}); }}>Out of stock</button></span>
                 }}

@@ -38,7 +38,7 @@ def credentials():
             key, value = line.removeprefix('export ').split('=', 1)
             values[key.strip()] = value.strip().strip('\"\'')
     for key in ('KROGER_CLIENT_ID', 'KROGER_CLIENT_SECRET', 'GEOAPIFY_API_KEY',
-                'LLM_API_KEY', 'LLM_BASE_URL', 'LLM_MODEL'):
+                'LLM_API_KEY', 'LLM_BASE_URL', 'LLM_MODEL', 'LLM_BACKEND'):
         if key in os.environ:
             values[key] = os.environ[key]
     return values
@@ -290,3 +290,21 @@ def route(origin, destination, mode):
                 'distance_m': sum(x['distance'] for x in legs), 'cost': 0 if mode in ('WALK', 'BIKE') else None,
                 'transfers': 0, 'source': 'geoapify', 'observed_at': now_iso(), 'valid_until': expiry(60)}
     return cached('route', [a, b, mode, key], fetch, 900)
+
+
+def reverse_geocode(lat, lon, accuracy_m=0):
+    lat, lon = coords(lat, lon)
+    accuracy_m = float(accuracy_m)
+    if not math.isfinite(accuracy_m) or not 0 <= accuracy_m <= 100000:
+        raise ProviderError('Invalid location accuracy.')
+    key = required('GEOAPIFY_API_KEY')
+    data = cached('reverse', [lat, lon, key], lambda: request_json(
+        'https://api.geoapify.com/v1/geocode/reverse', params={'lat':lat, 'lon':lon, 'format':'json', 'limit':1, 'apiKey':key}), 900)
+    rows = data.get('results', [])
+    if not rows:
+        raise ProviderError('No address found for this location. Please type an address instead.')
+    row = rows[0]
+    # Keep actual device coordinates, not a possibly distant reverse-geocoded centroid.
+    return [{'id': f'gps:{lat:.6f}:{lon:.6f}', 'lat':lat, 'lon':lon,
+             'address':row.get('formatted') or f'{lat:.5f}, {lon:.5f}', 'precision':'device location',
+             'accuracy_m':accuracy_m, 'source':'geoapify'}]

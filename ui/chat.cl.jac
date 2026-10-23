@@ -47,7 +47,7 @@ def:pub ChatApp -> JsxElement {
                         What do you need to buy?
                     </h1>
                     <p style={{"margin": "8px 0 0", "color": "#57534e", "fontFamily": "system-ui, sans-serif", "fontSize": "15px"}}>
-                        Describe your needs in chat, confirm the proposed changes, then compare shopping plans.
+                        Tell me your needs. I will ask for missing details, update your shopping information, and generate a plan.
                     </p>
                 </header>
                 <ShoppingPanel />
@@ -65,7 +65,7 @@ def:pub ChatApp -> JsxElement {
                 >
                     {if len(messages) == 0 {
                         <p style={{"color": "#a8a29e", "fontFamily": "system-ui, sans-serif"}}>
-                            Try: I need milk, eggs, and rice, and I take the bus.
+                            Try: Plan a shopping trip for milk and rice. Ask me for any missing details.
                         </p>
                     }}
                     {[
