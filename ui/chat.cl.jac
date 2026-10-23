@@ -1,18 +1,28 @@
 """Chat page. The planning panels will sit beside this later."""
 
 sv import from ..server.chat { SendMessage }
+import from .shopping { ShoppingPanel }
 
 def:pub ChatApp -> JsxElement {
-    has messages: list = [],
+    has messages: list[dict] = [],
         draft: str = "",
         pending: bool = False;
 
     async def send(e: FormEvent) -> None;
 
+    # Keep the newest message in view.
+    can with (messages, pending) entry {
+        el: any = document.querySelector(".chat-log");
+        if el {
+            el.scrollTop = el.scrollHeight;
+        }
+    }
+
     return
         <div
             style={{
-                "minHeight": "100vh",
+                "position": "fixed",
+                "inset": "0",
                 "background": "#f3efe6",
                 "color": "#1c1917",
                 "fontFamily": "Georgia, 'Iowan Old Style', serif"
@@ -20,9 +30,10 @@ def:pub ChatApp -> JsxElement {
         >
             <div
                 style={{
-                    "maxWidth": "760px",
+                    "maxWidth": "1100px",
                     "margin": "0 auto",
-                    "minHeight": "100vh",
+                    "height": "100%",
+                    "boxSizing": "border-box",
                     "display": "flex",
                     "flexDirection": "column",
                     "padding": "28px 20px 20px"
@@ -36,12 +47,15 @@ def:pub ChatApp -> JsxElement {
                         What do you need to buy?
                     </h1>
                     <p style={{"margin": "8px 0 0", "color": "#57534e", "fontFamily": "system-ui, sans-serif", "fontSize": "15px"}}>
-                        Planning, prices, and routes are not connected yet.
+                        Tell me your needs. I will ask for missing details, update your shopping information, and generate a plan.
                     </p>
                 </header>
+                <ShoppingPanel />
                 <div
+                    className="chat-log"
                     style={{
                         "flex": "1",
+                        "minHeight": "80px",
                         "overflowY": "auto",
                         "display": "flex",
                         "flexDirection": "column",
@@ -51,7 +65,7 @@ def:pub ChatApp -> JsxElement {
                 >
                     {if len(messages) == 0 {
                         <p style={{"color": "#a8a29e", "fontFamily": "system-ui, sans-serif"}}>
-                            Try: I need milk, eggs, and rice, and I take the bus.
+                            Try: Plan a shopping trip for milk and rice. Ask me for any missing details.
                         </p>
                     }}
                     {[
@@ -90,6 +104,7 @@ def:pub ChatApp -> JsxElement {
                         placeholder="Tell me what you need"
                         style={{
                             "flex": "1",
+                            "minWidth": "0",
                             "padding": "14px 16px",
                             "border": "1px solid #d6d3d1",
                             "borderRadius": "999px",

@@ -34,9 +34,8 @@ def chat_complete(messages: list) -> str {
         payload = json.loads(response.read().decode("utf-8"));
         return payload["choices"][0]["message"]["content"];
     } except urllib.error.HTTPError as err {
-        detail = err.read().decode("utf-8");
-        return "The model request failed (" + str(err.code) + "). " + detail;
+        return "The model request failed (HTTP " + str(err.code) + "). Check the local model configuration.";
     } except urllib.error.URLError as err {
-        return "Could not reach the model API. " + str(err.reason);
+        return "Could not reach the model API. Please retry later.";
     }
 }

@@ -401,7 +401,7 @@ record_feedback(event):
 
 ## Configuration
 
-These are proposed application settings, not an official Jac configuration schema. The file format will be selected during implementation.
+Application settings live in `app.toml` and are validated by `app_settings.py`. They are separate from Jac framework settings in `jac.toml` and model credentials in `.env`. Planning, discovery, reminders, and synchronization read these settings when called. Unsupported live mode and automatic purchases are rejected explicitly.
 
 | Setting | Initial Default | Purpose |
 |---|---|---|
@@ -448,20 +448,20 @@ Key acceptance scenarios include known budget overruns, excessive carrying weigh
 
 ### Phase 1: Core Feedback Loop — MVP
 
-- [ ] Persist user profiles, interests, and plan states.
-- [ ] Convert natural-language requests into structured shopping needs.
-- [ ] Implement mock product, store, route, and delivery adapters.
-- [ ] Compare costs and constraints for in-store, delivery, and mixed plans.
-- [ ] Explain recommendations and record individual purchase outcomes.
-- [ ] Support manual refresh and in-app price-drop and replenishment reminders.
-- [ ] Build basic profile, interest pool, and plan comparison interfaces.
+- [x] Persist user profiles, interests, and plan states.
+- [x] Convert natural-language requests into structured shopping needs.
+- [x] Implement mock product, store, route, and delivery adapters.
+- [x] Compare costs and constraints for in-store, delivery, and mixed plans.
+- [x] Explain recommendations and record individual purchase outcomes.
+- [x] Support manual refresh and in-app price-drop and replenishment reminders.
+- [x] Build basic profile, interest pool, and plan comparison interfaces.
 
 ### Phase 2: Dynamic Updates and Live Data
 
-- [ ] Integrate one verified live source with explicitly documented coverage.
-- [ ] Handle stale data, query failures, and plan change comparisons.
+- [x] Integrate one verified source with documented coverage: Geoapify + Open Prices historical store records (not real-time inventory).
+- [x] Handle stale data, query failures, and plan change comparisons.
 - [ ] Add scheduled refresh, notification deduplication, and quiet hours.
-- [ ] Add catalog-based discovery and preference updates from feedback.
+- [x] Add catalog-based discovery and explicit preference feedback.
 - [ ] Run fixed scenario replays and baseline comparisons.
 
 ### Phase 3: Future Extensions
@@ -475,18 +475,43 @@ The course project prioritizes Phase 1, with selected Phase 2 features as time p
 
 ## Getting Started
 
-The running app is a chat page. `main.jac` mounts `ui/chat.cl.jac`. Each message goes through `harness/pipeline.jac`, which currently returns the conversation unchanged, and `server/llm.jac` makes one OpenAI-compatible chat-completions call. `server/chat.jac` is the walker the page calls. `config.jac` holds the model settings.
+The app includes a persistent shopping workspace and chat. `main.jac` mounts `ui/chat.cl.jac`. `harness/agent.jac` routes chat through the validated intent parser in `ai/intents.py`; chat saves explicitly requested needs/profile fields, asks for missing planning information, and generates proposals automatically. Feedback and plan acceptance still require confirmation. Structured controls work without an LLM. `server/workflows.jac` implements profile, address, store, product and plan operations, and `server/walkers.jac` exposes the eleven named API walkers.
 
-These folders are reserved for the later shopping logic and are empty for now: `models/`, `profile/`, `interests/`, `planning/`, `providers/`, `feedback/`, `sync/`, `notify/`, and `data/mock/`.
+Real locations use Geoapify. The default product source is **Open Prices historical store price records**, with dates, currency and proof links. Coverage is incomplete and current price/stock remain unknown. Optional Kroger integration code is present but authenticated access is unverified because developer registration was blocked. See [live setup](docs/SETUP_LIVE.md), [API research and real samples](docs/ISSUE6_API_RESEARCH.md), and [issue #8 implementation status](docs/ISSUE8_STATUS.md).
+
+`models/` holds the graph model: profile, interests, catalog (`Product`, `Store`, `Offer`), plans (`ShoppingPlan`, `FulfillmentLeg`, `PlanItem`), and events (`FeedbackEvent`, `Reminder`), with edges and helpers in `models/graph.jac`. `providers/mock.jac` loads the fictional dataset in `data/mock/catalog.json`, and `feedback/apply.jac` applies feedback reasons idempotently. `planning/` turns the catalog and the user's needs into up to three ranked plans (cost-first, convenience-first, balanced), checks hard constraints, prices active time at the user's `time_value_per_hour` (default $25/h), and runs the plan lifecycle; its entry point is `plan_shopping` in `planning/lifecycle.jac`. `interests/discovery.jac` provides catalog recommendations, `notify/reminders.jac` checks replenishment/target-price/restock conditions, and `sync/engine.jac` batches offer and feedback events with persistent replay receipts. `server/shopping.jac` exposes the structured panel operations. `integrations/` contains Geoapify/Kroger adapters and a separate Open Prices historical-record adapter. Historical observations never receive a new offer-expiry timestamp or enter current-price planning.
 
 ```bash
 python3 -m venv .venv
 source .venv/bin/activate
-pip install jaclang jac-client
-cp .env.example .env
+pip install -r requirements.txt
+test -f .env || cp .env.example .env
 jac start
 jac test
 ```
+
+Use Python 3.13 and the project virtual environment. `requirements.txt` pins the verified combination `jaclang==0.16.7` and `jac-client==0.3.25`; do not use a globally installed Jac 0.37 CLI for this project. With the pinned runtime, bare `jac test` honors the configured test directory. `jac build` checks the client bundle (the first build downloads Bun and npm dependencies).
+
+The shopping panel works without an LLM key:
+
+1. Open **Shopping workspace**, choose **Demo data**, and save your profile (transport, budget and available time).
+2. Save a need, a price watch with a target, or a replenishment interest with the last purchase date and interval.
+3. Accept or dismiss discoveries. Accepting an alternative merges it into an existing need for that category; recommendations never become shopping needs without confirmation.
+4. Refresh to check reminders. Add a reminded item to shopping needs, snooze it, dismiss it, or choose **Show less often**. Paused interests, snoozed items, stale offers, and quiet hours suppress reminders.
+5. Click **Compare plans**, accept one, then record individual purchases. One-time needs are archived; replenishment interests retain their history and are deferred until their next cycle.
+
+The fixture is fictional and its prices expire on October 17, 2026. Refresh reloads its offer observations through the event pipeline but never pretends that an expired fixture is current. For a later demo, update the fixture observation/expiry timestamps intentionally. Catalog membership, routes, and delivery rules are loaded initially; refresh currently updates existing offers only.
+
+### Tasks #10–13 implementation and validation
+
+- **#10 Feedback/sync:** validate a complete batch before applying it; reject conflicting event IDs; ignore older provider observations; apply feedback once; coalesce proposal updates into one replan; mark accepted/in-progress plans `NEEDS_REVIEW` on material changes. Explicit trip overrides do not alter long-term preferences. Output plans and reminders are not re-enqueued as input events.
+- **#11 Reminders:** replenishment, target-price, and fresh OUT→IN_STOCK/LOW transitions; event deduplication, timezone/quiet hours, snoozing, and increasing delay after ignored notifications. Available in the panel on manual refresh; no background scheduler.
+- **#12 Discovery:** deterministic catalog/category and brand matching, exclusion of disliked/previously matched products, dietary evidence checks, weekly limits, reasons, and confirmation/dismissal. A missing dietary tag is not treated as verified compatibility. Discovery does not claim products are newly released.
+- **#13 Configuration:** `app.toml` controls mode, timezone, channel/plan limits, weekly discovery limits, reminder cooldown/quiet hours, and material price-change threshold. The bounded search currently supports 1–2 channels and 1–3 options. Substitutions remain confirmation-only; auto-purchase is unsupported.
+
+`tests/test_tasks.jac` covers these behaviors and the structured panel service. Existing model, catalog, planning, feedback, and chat tests remain in place. Natural-language intent proposals, the profile editor and plan comparison are now connected. Real LLM-provider execution still requires a configured key; offline parser and confirmation tests do not claim an authenticated LLM request.
+
+For integrations, `ShoppingAction(action="sync", data={"events": [...]})` accepts offer or feedback events in demo mode; live mode rejects externally supplied offer updates and only provider fetches can update current offers. Each event requires a stable, nonempty `id`. Reusing an ID with different content is an error. An offer event supplies `key` and `fields` (`price`, `member_price`, `availability`, plus required `observed_at`/`valid_until`). A feedback event supplies `target` (interest category), `reason`, and an explicit future `until` for `BUSY`/`HAVE_AT_HOME`; optional `trip` supports a nonnegative budget and allowed transport modes. Stockout/dislike feedback requires an accepted plan item to identify the affected offer/product. The per-user graph stores receipts, reminder history, and discovery counts. This MVP uses the local Jac server; distributed worker coordination is not implemented.
 
 Open http://localhost:8000. Put your key in `.env`. The checked-in example points at DeepSeek (`https://api.deepseek.com`, model `deepseek-chat`). `jac start` reads `.env` from the project directory; restart it after changing the file. Without `LLM_API_KEY`, the page still opens and the reply tells you the key is missing.
 
@@ -507,3 +532,25 @@ Open http://localhost:8000. Put your key in `.env`. The checked-in example point
 Course repository: [marsninja/CSE449-F26](https://github.com/marsninja/CSE449-F26).
 
 This document is a project proposal. Final scope and technology choices remain subject to the course requirements and team implementation decisions.
+
+### Follow-up demo and chat checks
+
+The demo now renews expired fictional quotes and shows package/unit prices. For local ChatGPT-authenticated Codex chat, set `LLM_BACKEND=codex` in the ignored `.env`; no model API key is needed for that mode. Requests consume the CLI account's quota. API mode remains available. See [local setup, demo and verification](docs/SETUP_LIVE.md#use-the-existing-local-codex-login-no-new-model-api-key) and the [updated task evidence](docs/ISSUE8_STATUS.md).
+
+```bash
+python scripts/check_credentials.py
+python -m unittest discover -s tests -p 'test_*.py' -v
+jac test
+jac build main.jac
+# Optional real model calls, outside CI:
+python scripts/verify_llm.py --limit 2
+jac run scripts/verify_chat.jac
+```
+
+### Real-address shopping visits
+
+Choose **Real stores**, confirm a typed address or browser location, save your needs and travel/free-time constraints, then select **Recommend stores for my list**. Review up to three nearby store visits with Open Prices historical evidence, routes and per-item purchase feedback. Geoapify is required; Kroger and an LLM are not required for these controls. Current prices, stock and opening hours remain unknown. Follow the [real-store walkthrough](docs/REAL_STORE_VISITS.md).
+
+### Conversational setup and planning
+
+In **Real stores**, tell chat what you want to buy and ask for a plan. It saves your stated needs/profile values, asks for missing address/transport/free-time information, and updates the shopping panel after each answer. Reply with an address result's number when asked. Once required information is available, the plan appears both in chat and in the panel; no **Confirm changes** step is needed for routine setup. Purchase feedback and accepting a visit still require confirmation. See [the conversational walkthrough](docs/REAL_STORE_VISITS.md#conversational-setup).
