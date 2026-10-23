@@ -554,3 +554,7 @@ Choose **Real stores**, confirm a typed address or browser location, save your n
 ### Conversational setup and planning
 
 In **Real stores**, tell chat what you want to buy and ask for a plan. It saves your stated needs/profile values, asks for missing address/transport/free-time information, and updates the shopping panel after each answer. Reply with an address result's number when asked. Once required information is available, the plan appears both in chat and in the panel; no **Confirm changes** step is needed for routine setup. Purchase feedback and accepting a visit still require confirmation. See [the conversational walkthrough](docs/REAL_STORE_VISITS.md#conversational-setup).
+
+### Jac business-rule migration
+
+Missing-information questions and plan summaries (`ai/conversation.jac`), profile/need validation (`integrations/validation.jac`), and package/unit pricing (`pricing.jac`) are implemented directly in Jac. Their previous Python implementations have been removed. External integrations and the real-store ranking module remain Python for now. See the [migration evidence](docs/ISSUE8_STATUS.md#initial-jac-migration-2026-10-23) for test coverage and remaining scope.

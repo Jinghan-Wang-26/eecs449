@@ -1,6 +1,7 @@
 """Offline contract tests: all response objects here are SYNTHETIC, not live evidence."""
 import io
 import json
+import jaclang  # Enable direct imports of the migrated .jac modules.
 import unittest
 from unittest.mock import patch
 from urllib.error import HTTPError, URLError
