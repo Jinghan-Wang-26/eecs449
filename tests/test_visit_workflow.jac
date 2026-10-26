@@ -94,3 +94,54 @@ test "live plan action invokes real visit recommender without requiring Kroger o
     }
     assert state.notices == ["No local historical coverage"];
 }
+
+test "partial purchase preserves remainder and specifications and duplicate reporting is idempotent" {
+    p = visit_user(); n = items_of(p)[0];
+    n.product_spec["brand"] = "Test"; n.product_spec["size"] = "1 kg";
+    state = owned(p, ShoppingWorkspace); plan = state.visit_plans[0];
+    import from planning.visits { signature }
+    plan["input_signature"] = signature(visit_context(p, WHEN));
+    visit_action(p, {"key":plan["key"], "action":"accept", "acknowledge_unknowns":True}, WHEN);
+    outcome = {"key":plan["key"], "action":"outcome", "category":"rice", "outcome":"PARTIAL", "bought_qty":1, "actual_paid":"3.25"};
+    visit_action(p, outcome, WHEN);
+    assert plan["status"] == "COMPLETED" and n.plannable();
+    assert n.product_spec["qty"] == 1 and n.product_spec["brand"] == "Test" and n.product_spec["size"] == "1 kg";
+    visible = shopping_operation(p, "view", {}, WHEN)["interests"][0];
+    assert visible["qty"] == 1 and visible["brand"] == "Test" and visible["size"] == "1 kg";
+    assert plan["items"][0]["remaining_qty"] == 1 and plan["reported_paid_usd"] == 3.25;
+    assert plan["reference_subtotal"] == 6 and plan["items"][0]["evidence"]["price"] == 3;
+    assert visit_action(p, outcome, WHEN) == "Outcome already recorded.";
+    assert n.product_spec["qty"] == 1;
+    changed = dict(outcome); changed["actual_paid"] = "9"; failed = False;
+    try { visit_action(p, changed, WHEN); } except ValueError { failed = True; }
+    assert failed and plan["reported_paid_usd"] == 3.25;
+    with patch("planning.visits.route", return_value=TRAVEL) {
+        replacement = candidate(STORE, evidence(), visit_context(p, WHEN), WHEN);
+    }
+    assert replacement["items"][0]["qty"] == 1;
+    with patch("server.visits.recommend", return_value={"plans":[replacement], "stores":[STORE], "notices":[], "generated_at":WHEN,"checked_stores":1,"nearby_count":1}) {
+        recommend_visits(p, WHEN);
+    }
+    visit_action(p, {"key":replacement["key"], "action":"accept", "acknowledge_unknowns":True}, WHEN);
+    visit_action(p, {"key":replacement["key"], "action":"outcome", "category":"rice", "outcome":"PURCHASED"}, WHEN);
+    assert not n.plannable() and replacement["status"] == "COMPLETED";
+}
+
+test "invalid partial outcomes never change graph or historical prices" {
+    for data in [{"bought_qty":0}, {"bought_qty":2}, {"bought_qty":1.5}, {"bought_qty":True}, {"bought_qty":1,"actual_paid":"nan"}, {"bought_qty":1,"actual_paid":-2}] {
+        p = visit_user(); plan = owned(p, ShoppingWorkspace).visit_plans[0];
+        visit_action(p, {"key":plan["key"], "action":"accept", "acknowledge_unknowns":True}, WHEN);
+        value = {"key":plan["key"], "action":"outcome", "category":"rice", "outcome":"PARTIAL"}; value.update(data); failed = False;
+        try { visit_action(p, value, WHEN); } except ValueError { failed = True; }
+        assert failed and items_of(p)[0].product_spec["qty"] == 2 and plan["items"][0]["outcome"] == "PENDING";
+    }
+}
+
+test "passed departure prevents acceptance even if route quote remains fresh" {
+    p = visit_user(); plan = owned(p, ShoppingWorkspace).visit_plans[0];
+    plan["route"]["departure_at"] = "2030-01-01T10:05:00-05:00";
+    failed = False;
+    try { visit_action(p, {"key":plan["key"], "action":"accept", "acknowledge_unknowns":True}, "2030-01-01T10:06:00-05:00"); }
+    except ValueError { failed = True; }
+    assert failed and plan["status"] == "NEEDS_REVIEW";
+}

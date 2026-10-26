@@ -2,7 +2,7 @@
 import from server.shopping { shopping_operation }
 import from models.graph { profile_of }
 import from app_settings { stamp }
-import from harness.agent { handle_request }
+import from server.chat { send_message }
 
 walker:pub update_profile {
     has data: dict = {};
@@ -87,7 +87,7 @@ walker:pub sync {
 walker:pub chat {
     has text: str = "", history: list = [];
     can run with Root entry {
-        try { report handle_request(profile_of(here), self.text, self.history); }
+        try { report send_message(profile_of(here), self.text); }
         except ValueError as err { report {"error": str(err)}; }
     }
 }

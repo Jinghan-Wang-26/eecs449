@@ -79,6 +79,7 @@ def shopping_operation(p: UserProfile, action: str, data: dict, now: str) -> dic
         for item in items_of(p) {
             if item.product_spec.get("type") == data.get("category") and item.kind != InterestKind.DISCOVER {
                 item.status = InterestStatus[status];
+                if status == "ACTIVE" { item.in_current_list = True; }
             }
         }
     } elif action == "confirm_chat" {
@@ -139,7 +140,9 @@ def shopping_operation(p: UserProfile, action: str, data: dict, now: str) -> dic
             discoveries.append({"key": prod.key, "name": prod.name, "reason": item.discovery_reason});
         }
     }
-    needs = [{"category": n.product_spec.get("type", ""), "kind": n.kind.name, "status": n.status.name}
+    needs = [{"category": n.product_spec.get("type", ""), "kind": n.kind.name, "status": n.status.name,
+              "qty": n.product_spec.get("qty", 1), "brand": n.product_spec.get("brand", ""), "size": n.product_spec.get("size", ""),
+              "in_current_list": getattr(n, "in_current_list", True)}
              for n in items_of(p) if n.kind != InterestKind.DISCOVER and n.status != InterestStatus.ARCHIVED];
     return {"message": message, "discoveries": discoveries, "reminders": inbox(p, now, cfg),
             "interests": needs, "categories": sorted(set([prod.category for prod in [cat ->:Has:->][?:Product]])),

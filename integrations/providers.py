@@ -121,7 +121,8 @@ def geocode(address):
             lat, lon = coords(p['lat'], p['lon'])
             out.append({'id': p.get('place_id') or f'{lat},{lon}', 'address': p.get('formatted', address),
                         'lat': lat, 'lon': lon, 'precision': p.get('result_type', 'unknown'),
-                        'confidence': p.get('rank', {}).get('confidence'), 'source': 'geoapify'})
+                        'confidence': p.get('rank', {}).get('confidence'), 'source': 'geoapify',
+                        'timezone': (p.get('timezone') or {}).get('name', '')})
         return out
     return cached('geocode', [address, key], fetch, 86400)
 
@@ -138,10 +139,42 @@ def nearby_places(lat, lon, radius_m=5000):
                  'address': f['properties'].get('formatted', ''),
                  'lat': f['properties']['lat'], 'lon': f['properties']['lon'],
                  'source': 'geoapify', 'product_access': False,
+                 **place_metadata(f['properties']),
                  'osm_id': f['properties'].get('datasource', {}).get('raw', {}).get('osm_id'),
                  'osm_type': f['properties'].get('datasource', {}).get('raw', {}).get('osm_type')}
                 for f in data.get('features', [])]
     return cached('places', [lat, lon, radius_m, key], fetch, 900)
+
+def place_metadata(properties):
+    raw = (properties.get('datasource') or {}).get('raw') or {}
+    return {'place_id': properties.get('place_id', ''),
+            'opening_hours': properties.get('opening_hours') or raw.get('opening_hours', ''),
+            'timezone': (properties.get('timezone') or {}).get('name', ''),
+            'hours_source': 'geoapify/openstreetmap', 'hours_retrieved_at': now_iso()}
+
+def store_details(store):
+    """Enrich selected POIs only; never borrow hours from a nearby/name-only match."""
+    place_id = store.get('place_id')
+    if not place_id or (store.get('opening_hours') and store.get('timezone')):
+        return dict(store)
+    key = required('GEOAPIFY_API_KEY')
+    def fetch():
+        data = request_json('https://api.geoapify.com/v2/place-details', params={
+            'id': place_id, 'features': 'details', 'apiKey': key})
+        for feature in data.get('features', []):
+            properties = feature.get('properties', {})
+            raw = (properties.get('datasource') or {}).get('raw') or {}
+            kinds = {'N': 'NODE', 'W': 'WAY', 'R': 'RELATION'}
+            kind = lambda value: kinds.get(str(value).upper(), str(value).upper())
+            same_osm = (store.get('osm_id') is not None and raw.get('osm_id') is not None
+                        and str(store['osm_id']) == str(raw['osm_id'])
+                        and kind(store.get('osm_type')) in ('NODE', 'WAY', 'RELATION')
+                        and kind(store.get('osm_type')) == kind(raw.get('osm_type')))
+            if properties.get('place_id') == place_id or same_osm:
+                return place_metadata(properties)
+        raise ProviderError('Store details did not identify the selected place. Opening hours remain unverified.')
+    metadata = cached('place-details', [place_id, key], fetch, 3600)
+    return {**store, **{k: v for k, v in metadata.items() if v}}
 
 def kroger_token():
     client, secret = required('KROGER_CLIENT_ID'), required('KROGER_CLIENT_SECRET')
@@ -285,8 +318,11 @@ def route(origin, destination, mode):
             if not data.get('features'):
                 raise ProviderError('No route found for this transport mode.')
             legs.append(data['features'][0]['properties'])
-        minutes = math.ceil(sum(x['time'] for x in legs) / 60)
+        outbound = math.ceil(legs[0]['time'] / 60)
+        returning = math.ceil(legs[1]['time'] / 60)
+        minutes = outbound + returning
         return {'min': minutes, 'walk_min': math.ceil(max(x['time'] for x in legs) / 60) if mode == 'WALK' else 0,
+                'outbound_min': outbound, 'return_min': returning,
                 'distance_m': sum(x['distance'] for x in legs), 'cost': 0 if mode in ('WALK', 'BIKE') else None,
                 'transfers': 0, 'source': 'geoapify', 'observed_at': now_iso(), 'valid_until': expiry(60)}
     return cached('route', [a, b, mode, key], fetch, 900)
@@ -307,4 +343,4 @@ def reverse_geocode(lat, lon, accuracy_m=0):
     # Keep actual device coordinates, not a possibly distant reverse-geocoded centroid.
     return [{'id': f'gps:{lat:.6f}:{lon:.6f}', 'lat':lat, 'lon':lon,
              'address':row.get('formatted') or f'{lat:.5f}, {lon:.5f}', 'precision':'device location',
-             'accuracy_m':accuracy_m, 'source':'geoapify'}]
+             'accuracy_m':accuracy_m, 'source':'geoapify', 'timezone': (row.get('timezone') or {}).get('name', '')}]

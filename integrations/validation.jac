@@ -120,6 +120,11 @@ def need_spec(data: any) -> dict {
     if (qty != int(qty)) {
         raise ValueError('Quantity must be a whole number of packages.');
     }
+    for field in ['brand', 'size'] {
+        if field in data and (not isinstance(data[field], str) or len(data[field]) > 100) {
+            raise ValueError(f'{field} must be text of at most 100 characters.');
+        }
+    }
     return {
         'type': category,
         'qty': int(qty),
@@ -127,4 +132,35 @@ def need_spec(data: any) -> dict {
         'size': str(data.get('size', ''))[:100],
         'substitutes': 'ask'
     };
+}
+
+def need_patch(data: any) -> dict {
+    if not isinstance(data, `dict) or (`set(data) - {'type', 'category', 'qty', 'brand', 'size'}) {
+        raise ValueError('Unsupported shopping need fields.');
+    }
+    validated = need_spec(data);
+    out = {'type': validated['type']};
+    for field in ['qty', 'brand', 'size'] {
+        if field in data { out[field] = validated[field]; }
+    }
+    return out;
+}
+
+def purchase_result(data: dict, item: dict) -> dict {
+    outcome = data.get('outcome');
+    if outcome not in ['PURCHASED', 'PARTIAL', 'NOT_FOUND', 'SKIPPED'] {
+        raise ValueError('Choose bought, partially bought, not found or skipped.');
+    }
+    default_qty = item['qty'] if outcome == 'PURCHASED' else 0;
+    qty = number(data.get('bought_qty', default_qty), 0, item['qty'], 'bought quantity');
+    if qty != int(qty) { raise ValueError('Bought quantity must be a whole number of packages.'); }
+    if (outcome == 'PURCHASED' and qty != item['qty']) or (outcome == 'PARTIAL' and not (0 < qty < item['qty'])) or (outcome in ['NOT_FOUND', 'SKIPPED'] and qty != 0) {
+        raise ValueError('Bought quantity does not match this outcome.');
+    }
+    paid = None;
+    if data.get('actual_paid') is not None and data.get('actual_paid') != '' {
+        if qty == 0 { raise ValueError('Only purchased items can have an actual amount paid.'); }
+        paid = round(number(data['actual_paid'], 0, 100000, 'actual amount paid'), 2);
+    }
+    return {'outcome': outcome, 'bought_qty': int(qty), 'remaining_qty': item['qty'] - int(qty), 'actual_paid': paid};
 }

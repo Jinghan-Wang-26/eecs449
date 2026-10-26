@@ -3,7 +3,7 @@ import from ai.conversation { saved_message, plan_summary }
 import from integrations.validation { number, strings, profile_patch, need_spec }
 import from pricing { price_details }
 
-test "bilingual save confirmations include both fields and shopping needs" {
+test "English save confirmations retain fields and needs for legacy language preferences" {
     proposal = {"profile":{"weekly_budget":50},"needs":[{"type":"rice","qty":2}]};
     for lang in ["zh", "en"] {
         reply = saved_message(proposal, lang);
@@ -13,7 +13,7 @@ test "bilingual save confirmations include both fields and shopping needs" {
     assert saved_message({"profile":{},"needs":[]}, "zh") == "";
 }
 
-test "empty plan results preserve provider notices in both languages" {
+test "empty plan results preserve provider notices for legacy language preferences" {
     for lang in ["zh", "en"] {
         assert plan_summary({"visit_plans":[],"notices":["Synthetic provider outage"]}, lang) == "Synthetic provider outage";
     }

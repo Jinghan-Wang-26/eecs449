@@ -1,6 +1,6 @@
 """Explicit, bounded live acceptance. Fixed synthetic prompts; never prints credentials.
 
-Default: two calls. --limit 10 runs the bilingual acceptance set. Not run in CI.
+Default: two calls. --limit 10 runs the English acceptance set. Not run in CI.
 """
 import argparse
 import json
@@ -13,17 +13,17 @@ from integrations.providers import ProviderError, credentials
 from app_settings import stamp
 
 CASES = [
-    {"id": "zh_needs", "text": "我需要两包牛奶和一包米，预算50美元，周六14:00-17:00有空，可以步行。",
+    {"id": "en_needs", "text": "I need two packages of milk and one rice, with a $50 budget. I can walk and am free Saturday 14:00-17:00.",
      "expected": {"needs": {"milk": 2, "rice": 1}, "profile": {"weekly_budget": 50, "transport": ["WALK"], "free_windows": ["SAT 14:00-17:00"]}}},
     {"id": "en_plan", "text": "Compare shopping plans for one package of rice. Budget is 40 dollars. I can walk on Saturday 14:00-17:00.",
      "expected": {"intent": "plan", "needs": {"rice": 1}, "profile": {"weekly_budget": 40, "transport": ["WALK"]}}},
-    {"id": "zh_budget", "text": "把我的每周预算改成80美元，其他不变。", "expected": {"intent": "update", "needs": {}, "profile": {"weekly_budget": 80}}},
+    {"id": "en_budget", "text": "Change my weekly budget to $80 and keep everything else.", "expected": {"intent": "update", "needs": {}, "profile": {"weekly_budget": 80}}},
     {"id": "en_brand", "text": "I need two packages of rice, brand TestBrand, size 5 lb.", "expected": {"needs": {"rice": 2}, "brand": "TestBrand", "size": "5 lb"}},
-    {"id": "zh_search", "text": "请查找我已经确认的地址附近的超市。", "expected": {"intent": "search", "needs": {}, "address": ""}},
+    {"id": "en_search", "text": "Find supermarkets near my confirmed address.", "expected": {"intent": "search", "needs": {}, "address": ""}},
     {"id": "en_products", "text": "Show historical products from Demo Market in my saved nearby stores.", "expected": {"intent": "products", "store_id": "openprices:123", "needs": {}}},
-    {"id": "zh_feedback", "text": "我已经在别处买到米了，请记录。", "expected": {"intent": "feedback", "reason": "BOUGHT_ELSEWHERE", "target": "rice"}},
+    {"id": "en_feedback", "text": "I bought rice elsewhere; please record it.", "expected": {"intent": "feedback", "reason": "BOUGHT_ELSEWHERE", "target": "rice"}},
     {"id": "en_explain", "text": "Why does this plan cost more than the other option?", "expected": {"intent": "explain", "needs": {}, "profile": {}}},
-    {"id": "zh_followup", "text": "改成三包，其他不变。", "history": [{"role": "user", "content": "我需要两包米。"}, {"role": "assistant", "content": "Please confirm 2 packages of rice."}], "expected": {"needs": {"rice": 3}}},
+    {"id": "en_followup", "text": "Make that three packages; keep everything else.", "history": [{"role": "user", "content": "I need two packages of rice."}, {"role": "assistant", "content": "Please confirm 2 packages of rice."}], "expected": {"needs": {"rice": 3}}},
     {"id": "en_refresh", "text": "Refresh shopping data without changing my saved needs or profile.", "expected": {"intent": "refresh", "needs": {}, "profile": {}}},
 ]
 CONTEXT = {"data_mode": "mock", "has_confirmed_address": True, "needs": [{"type": "rice", "qty": 2}],

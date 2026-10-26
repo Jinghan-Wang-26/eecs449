@@ -97,7 +97,7 @@ To demo without external services: select **Demo data**, save budget `80`, carry
 These commands invoke real models and consume quota; they are **not** part of automatic tests:
 
 ```bash
-# Two fixed Chinese/English extraction cases (stops on the first failure):
+# Two fixed English extraction cases (stops on the first failure):
 python scripts/verify_llm.py --limit 2
 # Detached synthetic user: real chat -> automatic save/plan -> grounded explanation.
 # Three model calls; does not change your saved shopping profile:
