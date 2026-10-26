@@ -1,4 +1,5 @@
 """LLM only proposes structured intents; it cannot call tools or invent quotes."""
+import jaclang  # Enable direct imports of the migrated .jac modules.
 import json
 from integrations.providers import credentials, request_json, ProviderError
 from integrations.validation import profile_patch, need_spec

@@ -1,3 +1,4 @@
+import jaclang  # Enable direct imports of the migrated .jac modules.
 import unittest
 from ai.conversation import missing_fields, question, language, plan_summary
 from ai.intents import validate_intent
