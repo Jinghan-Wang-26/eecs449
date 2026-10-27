@@ -10,7 +10,7 @@ class ConversationTests(unittest.TestCase):
     def test_only_required_fields_block_real_visit(self):
         c=self.context(); self.assertEqual(missing_fields(c),[])
         c.update(transport=["BUS"], free_windows=[])
-        self.assertEqual(missing_fields(c),["transport","free_windows"])
+        self.assertEqual(missing_fields(c),["free_windows"])
         self.assertIn("bus",question(c,"transport","en"))
         self.assertEqual(c["transport"],["BUS"])
 

@@ -64,12 +64,20 @@ details { margin:12px 0; } summary { cursor:pointer; font-weight:600; padding:12
 .sync-status { display:flex; align-items:center; justify-content:space-between; gap:15px; border-top:1px solid var(--line); padding:12px 24px; background:#fafbf7; }
 .sync-status p { margin:0; font-size:11px; color:var(--muted); } .sync-status button { font-size:11px; padding:6px 8px; flex-shrink:0; }
 .workspace-panel label { margin:12px 0; } .profile-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:4px 16px; align-items:end; }
+.delivery-quotes .profile-grid > p, .delivery-quotes .profile-grid > fieldset { grid-column:1 / -1; min-width:0; }
+.delivery-quotes fieldset { border:1px solid var(--line); border-radius:8px; padding:12px; }
 .profile-grid button { margin:12px 0; justify-self:start; }
 .result-card,.pending-request { border:1px solid var(--line); padding:18px; border-radius:12px; margin:14px 0; background:white; }
 .result-card .result-card { background:#f8faf5; border-color:#e8ede4; padding:13px; }
 .plan-title { display:flex; justify-content:space-between; align-items:start; gap:10px; } .plan-title h4 { margin:4px 0 14px; }
 .plan-metrics { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); background:#f0f4eb; border-radius:9px; padding:12px; gap:10px; margin:5px 0 15px; }
 .plan-metrics small { display:block; font-size:10px; } .plan-metrics strong { display:block; font-size:17px; margin-top:3px; }
+.transit-itinerary { border-top:1px solid var(--line); padding-top:16px; margin-top:16px; }
+.transit-itinerary .source-note { margin:0 0 14px; }
+.transit-legs { list-style:none; padding:0; margin:0; }
+.transit-legs li { display:grid; grid-template-columns:44px minmax(0,1fr); gap:12px; padding:14px 0; border-bottom:1px solid var(--line); }
+.transit-kind { font-size:9px; font-weight:700; color:var(--green); background:var(--tint); border-radius:6px; padding:5px; align-self:start; text-align:center; }
+.transit-legs strong { font-size:13px; } .transit-legs p { margin:5px 0; font-size:12px; } .transit-legs small { font-size:10px; }
 .result-card p { font-size:13px; } .workspace-panel button { margin:4px 6px 4px 0; }
 .pending-request { background:#fcf7e9; } .pending-request pre { white-space:pre-wrap; overflow-wrap:anywhere; }
 [role=alert] { color:#9c472c; background:#fff3e9; border-radius:7px; padding:9px 12px; }

@@ -1,0 +1,94 @@
+{
+  "kind": "Actual authenticated production API verification at a public example address",
+  "checked_at": "2026-10-27T16:02:22-04:00",
+  "public_address": "Michigan Union, 530 South State Street, Ann Arbor, MI 48109",
+  "passed": true,
+  "proposed": {
+    "store": {
+      "id": "kroger:01800365",
+      "name": "Kroger - Washtenaw",
+      "address": "3615 Washtenaw Ave, Ann Arbor, MI, 48104"
+    },
+    "checked_at": "2026-10-27T16:02:44-04:00",
+    "accept_allowed": true,
+    "current_available": 1,
+    "item_subtotal_usd": 1.49,
+    "estimated_trip_total_usd": null,
+    "items": [
+      {
+        "category": "rice",
+        "quantity": 1,
+        "quote": {
+          "source": "kroger",
+          "store_id": "01800365",
+          "external_id": "0001111001950",
+          "item_id": "0001111001950",
+          "name": "Kroger\u00ae 90 Second Jasmine Rice Pouch",
+          "size_label": "8.8 oz",
+          "sold_by": "unit",
+          "price": 1.49,
+          "currency": "USD",
+          "availability": "IN_STOCK",
+          "in_store": true,
+          "observed_at": "2026-10-27T20:02:43+00:00",
+          "valid_until": "2026-10-27T20:32:43+00:00"
+        }
+      }
+    ],
+    "route": {
+      "mode": "BUS",
+      "source": "theride_gtfs",
+      "scheduled_only": true,
+      "departure_at": "2026-10-27T16:14:29-04:00",
+      "return_at": "2026-10-27T18:03:00-04:00",
+      "total_min": 109,
+      "cost": null,
+      "valid_until": "2026-10-27T16:17:24-04:00"
+    }
+  },
+  "rechecked": {
+    "store": {
+      "id": "kroger:01800365",
+      "name": "Kroger - Washtenaw",
+      "address": "3615 Washtenaw Ave, Ann Arbor, MI, 48104"
+    },
+    "checked_at": "2026-10-27T16:02:56-04:00",
+    "accept_allowed": true,
+    "current_available": 1,
+    "item_subtotal_usd": 1.49,
+    "estimated_trip_total_usd": null,
+    "items": [
+      {
+        "category": "rice",
+        "quantity": 1,
+        "quote": {
+          "source": "kroger",
+          "store_id": "01800365",
+          "external_id": "0001111001950",
+          "item_id": "0001111001950",
+          "name": "Kroger\u00ae 90 Second Jasmine Rice Pouch",
+          "size_label": "8.8 oz",
+          "sold_by": "unit",
+          "price": 1.49,
+          "currency": "USD",
+          "availability": "IN_STOCK",
+          "in_store": true,
+          "observed_at": "2026-10-27T20:02:55+00:00",
+          "valid_until": "2026-10-27T20:32:55+00:00"
+        }
+      }
+    ],
+    "route": {
+      "mode": "BUS",
+      "source": "theride_gtfs",
+      "scheduled_only": true,
+      "departure_at": "2026-10-27T16:14:29-04:00",
+      "return_at": "2026-10-27T18:03:00-04:00",
+      "total_min": 109,
+      "cost": null,
+      "valid_until": "2026-10-27T16:17:24-04:00"
+    }
+  },
+  "quote_changes": [],
+  "scope": "OAuth, nearby retailer locations, product prices/stock, scheduled bus visit and uncached product recheck. No purchase, reservation or change to the personal shopping graph. Timetable and inventory snapshots are not guarantees."
+}

@@ -1,7 +1,6 @@
-"""Real-address store visits supported by historical evidence, never current offers.
+"""Real-address visits with separately labeled retailer snapshots and historical evidence.
 
-One store per option; evidence coverage first, travel time second. No claim of an
-optimal/current-price basket, actual opening, public transit or inventory.
+HTTP orchestration only; quote policy/ranking and scheduling are implemented in Jac.
 """
 import jaclang
 import hashlib
@@ -15,12 +14,18 @@ from datetime import date, timedelta
 from urllib.parse import urlencode
 from app_settings import instant, stamp
 from integrations.providers import route, ProviderError, distance_m, store_details
+from integrations.retail import quotes_for
+from planning.comparisons import extend_plans, refresh_comparison
+from planning.multistore import comparison_kind
+from planning.retail import apply_quotes, visit_rank, quote_changes
+import copy
 from planning.schedule import schedule_visit
+from planning.transit import bus_visit
 from integrations.openprices import nearby_with_history, recommendation_records, CATEGORY_TAGS
 from ai.matching import satisfies_requested_spec
 
 ALIASES = {"yoghurt": "yogurt", "egg": "eggs"}
-SUPPORTED = {"WALK", "BIKE", "CAR"}
+SUPPORTED = {"WALK", "BIKE", "CAR", "BUS"}
 DISCLAIMER = "Historical observations only. Today's prices, stock and opening hours are unverified. Confirm package size, diet requirements and prices before buying."
 
 
@@ -70,6 +75,9 @@ def route_for(origin, store, profile, now):
             errors.append(mode + ": no verified public-transit/rideshare estimate available.")
             continue
         try:
+            if mode == "BUS":
+                candidates.append(bus_visit(origin, store, profile, now))
+                continue
             travel = route([origin["lat"], origin["lon"]], [store["lat"], store["lon"]], mode)
             if not travel.get("valid_until") or instant(travel["valid_until"]) < instant(now):
                 raise ProviderError("Route estimate expired; retry the search.")
@@ -126,7 +134,7 @@ def candidate(store, evidence, context, now):
             warnings.append("The suggested visit fits recorded regular opening hours. Holiday exceptions and unexpected closures still need checking.")
         else:
             warnings.append("Opening hours are missing, unsupported or do not fit your available time. Check the store before travelling.")
-        warnings.append("Future travel uses a current route estimate, not a traffic forecast. Refresh before departure.")
+        warnings.append(travel["notice"] if travel["mode"] == "BUS" else "Future travel uses a current route estimate, not a traffic forecast. Refresh before departure.")
     if matched < len(needs): warnings.append(f"{len(needs)-matched} shopping need(s) have no matching evidence in the checked records.")
     if evidence.get("partial"): warnings.append("Historical search coverage is partial; unmatched does not mean unavailable.")
     if priced < len(needs): warnings.append("Reference subtotal excludes missing, discounted, non-USD and non-package prices.")
@@ -139,7 +147,7 @@ def candidate(store, evidence, context, now):
     if travel and travel["mode"] == "CAR" and profile["transport_cost"] < 0:
         warnings.append("Driving cost is unknown; enter an estimate in your profile.")
     if evidence.get("notice"): warnings.append(evidence["notice"])
-    nav_mode = {"WALK":"walking", "BIKE":"bicycling", "CAR":"driving"}.get(travel["mode"] if travel else "", "walking")
+    nav_mode = {"WALK":"walking", "BIKE":"bicycling", "CAR":"driving", "BUS":"transit"}.get(travel["mode"] if travel else "", "walking")
     navigation = "https://www.google.com/maps/dir/?" + urlencode({"api":1, "origin":f'{context["origin"]["lat"]},{context["origin"]["lon"]}', "destination":f'{store["lat"]},{store["lon"]}', "travelmode":nav_mode})
     reason = f'{store["name"]}: {matched}/{len(needs)} needs have matching historical evidence.'
     if travel: reason += f' Estimated {travel["min"]} minutes round trip by {travel["mode"]}, plus 20 minutes shopping.'
@@ -159,13 +167,15 @@ def recommend(context, now):
         raise ValueError("Confirm your shopping address first.")
     if not context.get("needs"):
         raise ValueError("Save at least one active shopping need before recommending stores.")
-    found = nearby_with_history(context["origin"]["lat"], context["origin"]["lon"], context["radius_m"], include_kroger=False)
+    found = nearby_with_history(context["origin"]["lat"], context["origin"]["lon"], context["radius_m"], include_kroger=True)
     nearby = found["stores"]
     # Bound API work while retaining both history-backed and location-only options.
-    history = [s for s in nearby if s.get("source") == "openprices"][:4]
-    chosen = list(history)
+    retailer = [s for s in nearby if s.get("source") == "kroger" and s.get("product_access")][:3]
+    history = [s for s in nearby if s.get("source") == "openprices"][:max(0, 4-len(retailer))]
+    chosen = retailer + history
     for store in nearby:
         if len(chosen) >= 6: break
+        if store.get("source") == "kroger" and store.get("product_access") and store["id"] not in {s["id"] for s in retailer}: continue
         if store["id"] not in {s["id"] for s in chosen}: chosen.append(store)
     def build(store):
         try:
@@ -173,7 +183,12 @@ def recommend(context, now):
         except ProviderError as error:
             store = {**store, "details_notice": str(error)}
         evidence = evidence_for(store, context["needs"], context["profile"]["dietary"], now)
-        return candidate(store, evidence, context, now)
+        plan = candidate(store, evidence, context, now)
+        if store.get('source') == 'kroger' and store.get('product_access'):
+            lookup = quotes_for(store, context['needs'])
+            checked = (instant(now) + timedelta(seconds=math.ceil(time.monotonic()-started))).isoformat()
+            plan = apply_quotes(plan, lookup, context, checked)
+        return plan
     with ThreadPoolExecutor(max_workers=3) as pool:
         plans = list(pool.map(build, chosen))
     # Provider calls can take time. Schedule against completion, not the instant
@@ -182,6 +197,15 @@ def recommend(context, now):
     for plan in plans:
         travel = plan['route']
         if not travel: continue
+        if travel['mode'] == 'BUS':
+            # A timetable is fixed. Never slide a departure to a time when the
+            # scheduled bus does not run after slow provider requests.
+            if instant(travel['departure_at']) <= instant(ready) or instant(travel['valid_until']) <= instant(ready):
+                plan['blockers'].append('Scheduled departure passed or transit evidence expired during lookup. Refresh recommendations.')
+                travel['violations'] = list(plan['blockers'])
+            plan['accept_allowed'] = not plan['blockers']
+            plan['created_at'] = stamp(ready)
+            continue
         previous = travel.get('blocker', '')
         schedule = schedule_visit(context['profile']['free_windows'], travel, plan['store'], ready, context['origin'].get('timezone', ''))
         plan['blockers'] = [b for b in plan['blockers'] if not previous or b != previous]
@@ -194,7 +218,29 @@ def recommend(context, now):
             plan['blockers'].append('Route estimate expired during lookup. Refresh recommendations.')
         plan['accept_allowed'] = not plan['blockers']
         plan['created_at'] = stamp(ready)
-    plans.sort(key=lambda p: (not p["accept_allowed"], -p["matched"], p["route"]["total_min"] if p["route"] else float('inf'), distance_m((context["origin"]["lat"], context["origin"]["lon"]), (p["store"]["lat"], p["store"]["lon"]))))
-    notices = found["notices"] + [f"Checked {len(chosen)} of {len(nearby)} nearby stores; showing up to three single-store alternatives. This is a bounded search, not an exhaustive inventory comparison."]
+    plans.sort(key=visit_rank)
+    if len([p for p in plans if p['kind']=='CURRENT_STORE_VISIT']) >= 2 or context.get('delivery_quotes'):
+        plans, ready, compared = extend_plans(plans, context, ready)
+    else:
+        compared = len(plans)
+        plans = plans[:3]
+    notices = found["notices"] + [f"Checked {len(chosen)} of {len(nearby)} nearby stores; compared {compared} bounded single-store, two-store and entered-delivery options. This is a bounded search, not an exhaustive inventory comparison."]
     if not plans: notices.append("No nearby stores were returned. Try a larger radius or another confirmed address.")
-    return {"plans":plans[:3], "stores":nearby, "notices":notices, "checked_stores":len(chosen), "nearby_count":len(nearby), "generated_at":stamp(ready)}
+    return {"plans":plans, "stores":nearby, "notices":notices, "checked_stores":len(chosen), "nearby_count":len(nearby), "generated_at":stamp(ready)}
+
+
+def refresh_visit(plan, context, now):
+    """Uncached recheck at the same store. Return data, never accept a plan here."""
+    if comparison_kind(plan):
+        return refresh_comparison(plan, context, now)
+    started = time.monotonic()
+    previous = {item['category']: item.get('quote') for item in plan['items']}
+    lookup = quotes_for(plan['store'], context['needs'], previous=previous, refresh=True)
+    checked = (instant(now) + timedelta(seconds=math.ceil(time.monotonic()-started))).isoformat()
+    updated = apply_quotes(copy.deepcopy(plan), lookup, context, checked)
+    updated['quote_changes'] = quote_changes(plan, updated)
+    travel = updated['route']
+    if not travel or instant(travel['valid_until']) <= instant(checked) or (travel.get('departure_at') and instant(travel['departure_at']) <= instant(checked)):
+        updated['blockers'].append('Route expired or departure passed during price verification. Generate new recommendations.')
+    updated['accept_allowed'] = not updated['blockers']
+    return updated

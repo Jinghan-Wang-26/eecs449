@@ -1,0 +1,307 @@
+{
+  "kind": "Actual authenticated provider probe",
+  "checked_at": "2026-10-27T16:24:08-04:00",
+  "passed": true,
+  "public_address": "Michigan Union, 530 South State Street, Ann Arbor, MI 48109",
+  "scope": "Two Kroger branches and continuous road routes; no stock reservation or order. Delivery checkout amounts are not part of this live probe.",
+  "test_inputs": {
+    "tax_rate": 0.06,
+    "whole_trip_driving_cost": 5,
+    "time_value_per_hour": 10
+  },
+  "notices": [
+    "Open Prices has no contributed store records within this radius. This does not mean there are no supermarkets nearby. Try another area; no product data is fabricated.",
+    "Open Prices contains historical contributed prices with incomplete coverage. Those records do not verify current prices or inventory.",
+    "Checked 6 of 24 nearby stores; compared 18 bounded single-store, two-store and entered-delivery options. This is a bounded search, not an exhaustive inventory comparison."
+  ],
+  "option_kinds": [
+    "CURRENT_STORE_VISIT",
+    "CURRENT_MULTI_VISIT",
+    "HISTORICAL_STORE_VISIT"
+  ],
+  "review_required": false,
+  "rechecked": {
+    "kind": "CURRENT_MULTI_VISIT",
+    "stops": [
+      {
+        "id": "kroger:01800605",
+        "external_id": "01800605",
+        "name": "Kroger - Plymouth Nixon",
+        "address": "2641 Plymouth Rd, Ann Arbor, MI, 48105",
+        "lat": 42.304858,
+        "lon": -83.70905,
+        "hours": {
+          "MON": "06:00-22:00",
+          "TUE": "06:00-22:00",
+          "WED": "06:00-22:00",
+          "THU": "06:00-22:00",
+          "FRI": "06:00-22:00",
+          "SAT": "06:00-22:00",
+          "SUN": "06:00-22:00"
+        },
+        "source": "kroger",
+        "product_access": true,
+        "distance_m": 4246,
+        "observed_at": "2026-10-27T20:24:12+00:00"
+      },
+      {
+        "id": "kroger:01800365",
+        "external_id": "01800365",
+        "name": "Kroger - Washtenaw",
+        "address": "3615 Washtenaw Ave, Ann Arbor, MI, 48104",
+        "lat": 42.2582623,
+        "lon": -83.6888212,
+        "hours": {
+          "MON": "06:00-22:00",
+          "TUE": "06:00-22:00",
+          "WED": "06:00-22:00",
+          "THU": "06:00-22:00",
+          "FRI": "06:00-22:00",
+          "SAT": "06:00-22:00",
+          "SUN": "06:00-22:00"
+        },
+        "source": "kroger",
+        "product_access": true,
+        "distance_m": 4726,
+        "observed_at": "2026-10-27T20:24:12+00:00"
+      }
+    ],
+    "items": [
+      {
+        "category": "rice",
+        "qty": 1,
+        "outcome": "PENDING",
+        "evidence": null,
+        "reference_amount": null,
+        "quote": {
+          "key": "kroger:0001111001950:0001111001950",
+          "external_id": "0001111001950",
+          "item_id": "0001111001950",
+          "name": "Kroger\u00ae 90 Second Jasmine Rice Pouch",
+          "brand": "Kroger",
+          "upc": "0001111001950",
+          "size_label": "8.8 oz",
+          "weight_kg": 0.2495,
+          "store_id": "01800605",
+          "search_term": "rice",
+          "price": 1.49,
+          "reported_price": 1.49,
+          "sold_by": "unit",
+          "promotion": null,
+          "currency": "USD",
+          "availability": "IN_STOCK",
+          "in_store": true,
+          "source": "kroger",
+          "mode": "live",
+          "observed_at": "2026-10-27T20:24:31+00:00",
+          "valid_until": "2026-10-27T20:54:31+00:00"
+        },
+        "current_amount": 1.49,
+        "lookup_error": "",
+        "match_note": "Review the selected product and package size before accepting.",
+        "store": {
+          "id": "kroger:01800605",
+          "external_id": "01800605",
+          "name": "Kroger - Plymouth Nixon",
+          "address": "2641 Plymouth Rd, Ann Arbor, MI, 48105",
+          "lat": 42.304858,
+          "lon": -83.70905,
+          "hours": {
+            "MON": "06:00-22:00",
+            "TUE": "06:00-22:00",
+            "WED": "06:00-22:00",
+            "THU": "06:00-22:00",
+            "FRI": "06:00-22:00",
+            "SAT": "06:00-22:00",
+            "SUN": "06:00-22:00"
+          },
+          "source": "kroger",
+          "product_access": true,
+          "distance_m": 4246,
+          "observed_at": "2026-10-27T20:24:12+00:00"
+        },
+        "fulfillment": "IN_STORE"
+      },
+      {
+        "category": "milk",
+        "qty": 1,
+        "outcome": "PENDING",
+        "evidence": null,
+        "reference_amount": null,
+        "quote": {
+          "key": "kroger:0001111040601:0001111040601",
+          "external_id": "0001111040601",
+          "item_id": "0001111040601",
+          "name": "Kroger\u00ae Vitamin D Whole Milk Half Gallon",
+          "brand": "Kroger",
+          "upc": "0001111040601",
+          "size_label": "1/2 gal",
+          "weight_kg": null,
+          "store_id": "01800365",
+          "search_term": "milk",
+          "price": 2.29,
+          "reported_price": 2.29,
+          "sold_by": "unit",
+          "promotion": null,
+          "currency": "USD",
+          "availability": "IN_STOCK",
+          "in_store": true,
+          "source": "kroger",
+          "mode": "live",
+          "observed_at": "2026-10-27T20:24:32+00:00",
+          "valid_until": "2026-10-27T20:54:32+00:00"
+        },
+        "current_amount": 2.29,
+        "lookup_error": "",
+        "match_note": "Review the selected product and package size before accepting.",
+        "store": {
+          "id": "kroger:01800365",
+          "external_id": "01800365",
+          "name": "Kroger - Washtenaw",
+          "address": "3615 Washtenaw Ave, Ann Arbor, MI, 48104",
+          "lat": 42.2582623,
+          "lon": -83.6888212,
+          "hours": {
+            "MON": "06:00-22:00",
+            "TUE": "06:00-22:00",
+            "WED": "06:00-22:00",
+            "THU": "06:00-22:00",
+            "FRI": "06:00-22:00",
+            "SAT": "06:00-22:00",
+            "SUN": "06:00-22:00"
+          },
+          "source": "kroger",
+          "product_access": true,
+          "distance_m": 4726,
+          "observed_at": "2026-10-27T20:24:12+00:00"
+        },
+        "fulfillment": "IN_STORE"
+      }
+    ],
+    "route": {
+      "mode": "CAR",
+      "segments": [
+        {
+          "from": "Michigan Union, 530 South State Street, Ann Arbor, MI 48109, United States of America",
+          "to": "Kroger - Plymouth Nixon",
+          "departure_at": "2026-10-27T16:30:00-04:00",
+          "arrival_at": "2026-10-27T16:38:00-04:00",
+          "minutes": 8,
+          "transfers": 0,
+          "legs": [
+            {
+              "kind": "CAR",
+              "from": "Michigan Union, 530 South State Street, Ann Arbor, MI 48109, United States of America",
+              "to": "Kroger - Plymouth Nixon",
+              "departure_at": "2026-10-27T16:30:00-04:00",
+              "arrival_at": "2026-10-27T16:38:00-04:00",
+              "minutes": 8,
+              "source": "Geoapify directional route"
+            }
+          ]
+        },
+        {
+          "from": "Kroger - Plymouth Nixon",
+          "to": "Kroger - Washtenaw",
+          "departure_at": "2026-10-27T16:58:00-04:00",
+          "arrival_at": "2026-10-27T17:06:00-04:00",
+          "minutes": 8,
+          "transfers": 0,
+          "legs": [
+            {
+              "kind": "CAR",
+              "from": "Kroger - Plymouth Nixon",
+              "to": "Kroger - Washtenaw",
+              "departure_at": "2026-10-27T16:58:00-04:00",
+              "arrival_at": "2026-10-27T17:06:00-04:00",
+              "minutes": 8,
+              "source": "Geoapify directional route"
+            }
+          ]
+        },
+        {
+          "from": "Kroger - Washtenaw",
+          "to": "Michigan Union, 530 South State Street, Ann Arbor, MI 48109, United States of America",
+          "departure_at": "2026-10-27T17:26:00-04:00",
+          "arrival_at": "2026-10-27T17:34:00-04:00",
+          "minutes": 8,
+          "transfers": 0,
+          "legs": [
+            {
+              "kind": "CAR",
+              "from": "Kroger - Washtenaw",
+              "to": "Michigan Union, 530 South State Street, Ann Arbor, MI 48109, United States of America",
+              "departure_at": "2026-10-27T17:26:00-04:00",
+              "arrival_at": "2026-10-27T17:34:00-04:00",
+              "minutes": 8,
+              "source": "Geoapify directional route"
+            }
+          ]
+        }
+      ],
+      "stops": [
+        {
+          "store_id": "kroger:01800605",
+          "name": "Kroger - Plymouth Nixon",
+          "arrival_at": "2026-10-27T16:38:00-04:00",
+          "shopping_at": "2026-10-27T16:38:00-04:00",
+          "leave_at": "2026-10-27T16:58:00-04:00",
+          "wait_min": 0,
+          "hours_known": false
+        },
+        {
+          "store_id": "kroger:01800365",
+          "name": "Kroger - Washtenaw",
+          "arrival_at": "2026-10-27T17:06:00-04:00",
+          "shopping_at": "2026-10-27T17:06:00-04:00",
+          "leave_at": "2026-10-27T17:26:00-04:00",
+          "wait_min": 0,
+          "hours_known": false
+        }
+      ],
+      "min": 24,
+      "total_min": 64,
+      "shopping_min": 40,
+      "departure_at": "2026-10-27T16:30:00-04:00",
+      "return_at": "2026-10-27T17:34:00-04:00",
+      "arrival_at": "2026-10-27T16:38:00-04:00",
+      "leave_store_at": "2026-10-27T17:26:00-04:00",
+      "timezone": "America/Detroit",
+      "store_timezone": "America/Detroit",
+      "window": "2026-10-27T16:30:00-04:00 \u2192 2026-10-27T17:34:00-04:00",
+      "violations": [],
+      "blocker": "",
+      "timezone_notice": "",
+      "hours_status": "UNKNOWN",
+      "source": "geoapify",
+      "scheduled_only": false,
+      "observed_at": "2026-10-27T16:24:28-04:00",
+      "valid_until": "2026-10-27T17:24:13-04:00",
+      "cost": null,
+      "walk_min": 0,
+      "total_walk_min": 0,
+      "store_wait_min": 0,
+      "wait_min": 0,
+      "transfers": 0,
+      "notice": "Current directional route estimates, not a future traffic forecast."
+    },
+    "estimated_total": 9.01,
+    "retail_subtotal": 3.78,
+    "transport_estimate": 5,
+    "tax_rate": 0.06,
+    "current_complete": true,
+    "accept_allowed": true,
+    "quote_changes": [],
+    "quote_checked_at": "2026-10-27T16:24:33-04:00",
+    "warnings": [
+      "Driving cost is your saved whole-trip estimate; check it for this itinerary.",
+      "Current directional route estimates, not a future traffic forecast.",
+      "Full carried weight is Unknown; available weights exclude packaging. Delivery items are not counted as carried.",
+      "Stock levels do not guarantee requested quantities or future availability.",
+      "Selected products and package sizes may differ between options. Compare the item details; historical prices are never used in these totals.",
+      "Search is bounded to three retailer branches, at most two physical stops and one entered delivery quote.",
+      "Some store opening hours are Unknown. Check all stores before travelling."
+    ],
+    "blockers": []
+  }
+}

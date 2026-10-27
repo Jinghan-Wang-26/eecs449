@@ -114,7 +114,9 @@ def nearby_with_history(lat, lon, radius_m=5000, include_kroger=True):
     if include_kroger and flags['KROGER_CLIENT_ID'] and flags['KROGER_CLIENT_SECRET']:
         try:stores+=nearby_kroger(lat,lon,radius_m)
         except ProviderError as error:notices.append('Kroger: '+str(error))
-    notices.append('Open Prices contains historical contributed prices with incomplete coverage. Current prices and inventory remain unknown.')
+    if include_kroger and not (flags['KROGER_CLIENT_ID'] and flags['KROGER_CLIENT_SECRET']):
+        notices.append('Current retailer quotes unavailable: configure KROGER_CLIENT_ID and KROGER_CLIENT_SECRET. See docs/CURRENT_PRICES.md. Historical records remain available.')
+    notices.append('Open Prices contains historical contributed prices with incomplete coverage. Those records do not verify current prices or inventory.')
     return {'stores':sorted(stores+maps,key=lambda s:distance_m((lat,lon),(s['lat'],s['lon']))),'notices':notices}
 
 

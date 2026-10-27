@@ -10,8 +10,8 @@ from integrations.validation import profile_patch, need_spec
 from ai.intents import validate_intent, parse_request
 
 RAW = {'data':[{'productId':'111','description':'Test Rice','brand':'Test','items':[
-    {'itemId':'01','size':'2 lb','price':{'regular':3.5,'promo':2.5},'inventory':{'stockLevel':'LOW'},'fulfillment':{'inStore':True}},
-    {'itemId':'02','size':'1 gal','fulfillment':{'inStore':True}},
+    {'itemId':'01','size':'2 lb','price':{'regular':3.5,'promo':2.5},'inventory':{'stockLevel':'LOW'},'soldBy':'unit','fulfillment':{'instore':True}},
+    {'itemId':'02','size':'1 gal','soldBy':'unit','fulfillment':{'instore':True}},
 ]}]}
 
 class ProviderTests(unittest.TestCase):
@@ -29,6 +29,14 @@ class ProviderTests(unittest.TestCase):
         self.assertEqual(b['availability'],'UNKNOWN')
         self.assertEqual(a['valid_until'],'2026-10-12T10:30:00+00:00')
 
+    def test_actual_and_documented_fulfillment_casing(self):
+        # Actual production response uses inStore; the public schema says instore.
+        for fields, expected in (({'inStore': True}, True), ({'instore': True}, True),
+                                 ({'inStore': False, 'instore': True}, False), ({}, False)):
+            raw=json.loads(json.dumps(RAW))
+            raw['data'][0]['items'][0]['fulfillment']=fields
+            self.assertEqual(p.normalize_products(raw,'1','rice')[0]['in_store'],expected)
+
     def test_missing_or_invalid_price_never_zero(self):
         for bad in (float('nan'),-1,'3',True):
             data=json.loads(json.dumps(RAW));data['data'][0]['items'][0]['price']['regular']=bad
@@ -39,6 +47,7 @@ class ProviderTests(unittest.TestCase):
             with self.assertRaises(p.ProviderError):p.products('geoapify:store','rice')
             result=p.products('01400999','rice')
             self.assertEqual(get.call_args.args[1]['filter.locationId'],'01400999')
+            self.assertEqual(get.call_args.args[1]['filter.fulfillment'],'ais')
             result[0]['price']=999
             self.assertEqual(p.products('01400999','rice')[0]['price'],3.5)
             self.assertEqual(get.call_count,1)

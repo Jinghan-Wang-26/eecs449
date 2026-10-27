@@ -1,5 +1,17 @@
 # Real-address store visits
 
+## Current retailer workflow (2026-10-27)
+
+Kroger branch snapshots now connect address search, shopping-list matching, route and
+scheduled bus planning, and uncached quote rechecks before acceptance. Changed prices
+or selections require another explicit review; errors never reuse stale quotes.
+See [CURRENT_PRICES.md](CURRENT_PRICES.md) for credential setup, limitations and tests.
+Authenticated production queries and a scheduled-bus shopping visit with an
+uncached quote recheck passed on 2026-10-27; see
+[actual provider evidence](samples/current-prices-verification.json). Earlier
+Open Prices examples below remain historical.
+
+
 Real stores supports address confirmation, nearby-store discovery, shopping-list evidence matching, route/time checks, ranked single-store alternatives, acceptance/cancellation, and per-item purchase outcomes. Product evidence comes only from Open Prices. Geoapify supplies geocoding, places and routes. Structured controls do not invoke an LLM or require Kroger credentials.
 
 ## Local demonstration
@@ -24,7 +36,7 @@ Open http://localhost:8000. Restart an already-running server after updating cod
 
 The search checks at most six nearby stores, first considering up to four locations linked to Open Prices; it returns up to three alternatives. Each historical lookup checks two recent pages of 20 records, plus one page for each of up to six recognized food categories. This is bounded coverage, not a complete assortment search. Category, brand, size and available diet labels constrain matches; derivative/plant-milk false positives are excluded for plain milk. A suggested product still requires user suitability confirmation.
 
-Ranking prioritizes route/time/carry eligibility, then number of needs with historical matches, then travel duration and distance. Walking limits, saved free-time windows and known excessive carrying weight can prevent acceptance. Missing product weights remain unknown. Walking, cycling and driving are supported; transit and rideshare estimates remain unsupported. Geoapify route estimates expire and are not traffic or opening-hours guarantees.
+Ranking prioritizes route/time/carry eligibility, then number of needs with historical matches, then travel duration and distance. Walking limits, saved free-time windows and known excessive carrying weight can prevent acceptance. Missing product weights remain unknown. Walking, cycling, driving and scheduled TheRide buses in Ann Arbor/Ypsilanti are supported; live transit predictions and rideshare estimates remain unsupported. See [scheduled bus setup](TRANSIT.md) for stops, transfers, timetable coverage and return-trip checks. Geoapify route estimates expire and are not traffic or opening-hours guarantees.
 
 For barcode `PRODUCT` observations, Open Prices leaves `price_per` null; the recorded price is treated as a product-unit price, while the raw field is retained. See the [upstream data rules](https://github.com/openfoodfacts/open-prices/discussions/319). Unknown/non-package units, discounted records and non-USD prices are excluded from reference subtotals. USD references use the latest matching observation per need and exclude tax, fees and transport. They cannot prove today's budget feasibility and are not used as current `Offer` objects. Current inventory and prices remain unknown. Geoapify/OpenStreetMap regular opening hours are checked only when supported; this is not confirmation of holiday hours or unexpected closures.
 

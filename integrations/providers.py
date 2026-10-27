@@ -269,29 +269,37 @@ def normalize_products(data, store_id, term, observed=None):
     observed = observed or now_iso()
     expires = (datetime.fromisoformat(observed) + timedelta(minutes=30)).isoformat()
     out = []
+    if not isinstance(data, dict) or not isinstance(data.get('data', []), list):
+        raise ProviderError('Retailer returned an invalid product response.')
     for p in data.get('data', []):
+        if not isinstance(p, dict) or not isinstance(p.get('items', []), list):
+            raise ProviderError('Retailer returned invalid product variants.')
         for item in p.get('items', []):
+            if not isinstance(item, dict) or any(item.get(k) is not None and not isinstance(item[k], dict) for k in ('price','inventory','fulfillment')):
+                raise ProviderError('Retailer returned malformed price or inventory data.')
             price = item.get('price') or {}
             value = price.get('regular')
             if type(value) not in (int, float) or not math.isfinite(value) or value < 0:
                 value = None
             stock = (item.get('inventory') or {}).get('stockLevel', '')
             stock = {'HIGH': 'IN_STOCK', 'LOW': 'LOW', 'TEMPORARILY_OUT_OF_STOCK': 'OUT', 'OUT_OF_STOCK': 'OUT'}.get(stock, 'UNKNOWN')
-            size = item.get('size', '')
+            sold_by = str(item.get('soldBy', '')).lower()
+            size = str(item.get('size') or '')
             product_id = str(p.get('productId', ''))
             item_id = str(item.get('itemId', ''))
             if not product_id or not item_id:
                 continue
             out.append({'key': f'kroger:{product_id}:{item_id}', 'external_id': product_id, 'item_id': item_id,
-                        'name': p.get('description', ''), 'brand': p.get('brand', ''), 'upc': p.get('upc', ''),
+                        'name': str(p.get('description') or ''), 'brand': str(p.get('brand') or ''), 'upc': str(p.get('upc') or ''),
                         'size_label': size, 'weight_kg': weight_from_size(size),
-                        'store_id': store_id, 'search_term': term, 'price': value,
+                        'store_id': store_id, 'search_term': term,
+                        'price': value if sold_by == 'unit' else None, 'reported_price': value, 'sold_by': sold_by or 'unknown',
                         'promotion': price.get('promo'), 'currency': 'USD', 'availability': stock,
-                        'in_store': (item.get('fulfillment') or {}).get('inStore') is True,
+                        'in_store': (item.get('fulfillment') or {}).get('inStore', (item.get('fulfillment') or {}).get('instore')) is True,
                         'source': 'kroger', 'mode': 'live', 'observed_at': observed, 'valid_until': expires})
     return out
 
-def products(store_id, term):
+def products(store_id, term, refresh=False):
     if not isinstance(store_id, str) or not re.fullmatch(r'\d{1,20}', store_id):
         raise ProviderError('Select a supported Kroger location first.')
     if not isinstance(term, str) or not 2 <= len(term.strip()) <= 80:
@@ -299,9 +307,26 @@ def products(store_id, term):
     # Credential check precedes cache access, so removal of credentials takes effect.
     identity = required('KROGER_CLIENT_ID')
     required('KROGER_CLIENT_SECRET')
-    return cached('products', [store_id, term, identity], lambda: normalize_products(
+    fetch = lambda: normalize_products(
         kroger_get('products', {'filter.locationId': store_id, 'filter.term': term,
-                               'filter.fulfillment': 'inStore', 'filter.limit': 5}), store_id, term), 300)
+                               'filter.fulfillment': 'ais', 'filter.limit': 10}), store_id, term)
+    if refresh:
+        return fetch()
+    return cached('products', [store_id, term, identity], fetch, 300)
+
+def product_at(store_id, product_id, term):
+    """Uncached exact-product recheck at the same branch; never trust search order."""
+    if not re.fullmatch(r'\d{1,20}', str(store_id)) or not re.fullmatch(r'\d{1,20}', str(product_id)):
+        raise ProviderError('Invalid retailer location or product identifier.')
+    required('KROGER_CLIENT_ID'); required('KROGER_CLIENT_SECRET')
+    data = kroger_get('products/' + str(product_id), {'filter.locationId': store_id})
+    product = data.get('data')
+    if not isinstance(product, dict):
+        raise ProviderError('Retailer did not return the requested product.')
+    if str(product.get('productId')) != str(product_id):
+        raise ProviderError('Retailer returned a different product; quote was not accepted.')
+    return normalize_products({'data': [product]}, store_id, term)
+
 
 def route(origin, destination, mode):
     modes = {'WALK': 'walk', 'BIKE': 'bicycle', 'CAR': 'drive'}
