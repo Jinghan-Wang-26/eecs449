@@ -10,7 +10,7 @@ NOW = "2030-01-01T10:00:00-05:00"
 STORE = {"id":"openprices:10", "external_id":"10", "name":"Synthetic supermarket", "address":"Test street", "source":"openprices", "lat":42.001, "lon":-83, "distance_m":100}
 ROW = {"record_id":1, "name":"Brown rice", "brand":"Test", "size_label":"1 kg", "weight_kg":1,
        "recorded_on":"2029-12-01", "location_id":"10", "price":3, "price_per":"UNIT", "currency":"USD", "discounted":False, "labels":[], "categories":["en:rices"], "source_url":"https://prices.openfoodfacts.org/prices/1", "proof_url":"https://prices.openfoodfacts.org/proofs/2"}
-TRAVEL = {"min":10, "walk_min":5, "cost":0, "source":"geoapify", "valid_until":"2030-01-01T11:00:00-05:00"}
+TRAVEL = {"min":10, "outbound_min":5, "return_min":5, "walk_min":5, "cost":0, "source":"geoapify", "valid_until":"2030-01-01T11:00:00-05:00"}
 
 def context():
     return {"origin":{"id":"origin", "address":"Public example", "lat":42, "lon":-83}, "radius_m":5000,
@@ -28,7 +28,8 @@ class VisitRecommendationTests(unittest.TestCase):
         plan = self.candidate()
         self.assertEqual(plan["reference_subtotal"], 6)
         self.assertEqual(plan["matched"], 1)
-        self.assertEqual(plan["route"]["window"], "SAT 14:00-14:30")
+        self.assertEqual(plan["route"]["departure_at"], "2030-01-05T14:00-05:00")
+        self.assertEqual(plan["route"]["return_at"], "2030-01-05T14:30-05:00")
         self.assertEqual(plan["known_net_weight_kg"], 2)
         self.assertTrue(plan["accept_allowed"])
         self.assertNotIn("current_price", plan)
@@ -46,7 +47,7 @@ class VisitRecommendationTests(unittest.TestCase):
         c = context(); c["profile"]["dietary"] = ["vegan"]
         self.assertEqual(self.candidate(c)["matched"], 0)
         self.assertEqual(self.candidate(c, [dict(ROW, labels=["en:vegan"])])["matched"], 1)
-        c = context(); c["needs"][0]["type"] = "大米"
+        c = context(); c["needs"][0]["type"] = "Rice"
         self.assertEqual(self.candidate(c)["matched"], 1)
 
     def test_discount_other_currency_and_per_kg_never_multiply_package_count(self):
@@ -142,3 +143,11 @@ class LiveDataRegressionTests(unittest.TestCase):
         self.assertEqual((result["lat"],result["lon"]),(42,-83))
         self.assertEqual(result["accuracy_m"],25)
         with self.assertRaises(ProviderError): providers.reverse_geocode(91,-83,25)
+
+class SlowLookupTests(unittest.TestCase):
+    def test_departure_is_scheduled_after_slow_provider_completion(self):
+        ctx=context(); ctx['profile']['free_windows']=['TUE 10:00-12:00']
+        with patch.object(v,'nearby_with_history',return_value={'stores':[STORE],'notices':[]}), patch.object(v,'recommendation_records',return_value=evidence()), patch.object(v,'route',return_value=TRAVEL), patch.object(v.time,'monotonic',side_effect=[0,600]):
+            result=v.recommend(ctx,NOW)
+        self.assertEqual(result['plans'][0]['route']['departure_at'],'2030-01-01T10:15-05:00')
+        self.assertEqual(result['generated_at'],'2030-01-01T10:10:00-05:00')

@@ -43,10 +43,61 @@ def save_need(p: UserProfile, data: dict) -> any {
         raise ValueError("Use at most six active shopping needs in this prototype.");
     }
     item = found[0] if found else add_need(p, spec);
-    if found { item.product_spec = spec; }
+    if found {
+        fresh_list = not getattr(item, "in_current_list", True);
+        merged = dict(spec) if fresh_list else dict(item.product_spec);
+        for field in ["qty", "brand", "size"] {
+            if field in data { merged[field] = spec[field]; }
+        }
+        if fresh_list or any([merged.get(field, "") != item.product_spec.get(field, "") for field in ["brand", "size"]]) {
+            for link in [edge item ->:Wants:->] { link.confirmed = False; }
+        }
+        item.product_spec = merged;
+        if fresh_list {
+            item.snoozed_until = ""; item.needed_by = ""; item.priority = 2;
+        }
+    }
+    item.in_current_list = True;
     item.status = InterestStatus.ACTIVE;
     item.source = "USER";
     return item;
+}
+
+def start_new_plan(p: UserProfile, request_id: str, now: str) -> str {
+    try { uuid.UUID(request_id); }
+    except (ValueError, TypeError, AttributeError) { raise ValueError("A new plan needs a valid request ID."); }
+    state = owned(p, ShoppingWorkspace);
+    requests = list(getattr(state, "new_plan_request_ids", []));
+    if request_id in requests { return "This new shopping plan was already started."; }
+    history = list(getattr(state, "visit_history", []));
+    keys = {v["key"] for v in history};
+    for plan in state.visit_plans {
+        if plan["status"] not in ["COMPLETED", "CANCELLED"] {
+            plan["status"] = "CANCELLED"; plan["closed_at"] = now;
+            plan["review_reason"] = "A new shopping plan was explicitly started.";
+        }
+        if plan.get("accepted_at") and plan["key"] not in keys {
+            history.append(plan); keys.add(plan["key"]);
+        }
+    }
+    state.visit_history = history; state.visit_plans = []; state.visit_search = {};
+    for plan in plans_of(p) {
+        if plan.status not in [PlanStatus.COMPLETED, PlanStatus.CANCELLED] { plan.move_to(PlanStatus.CANCELLED); }
+    }
+    for item in items_of(p) {
+        if item.kind in [InterestKind.NEED, InterestKind.REPLENISH] {
+            item.in_current_list = False;
+            if item.status == InterestStatus.ACTIVE { item.status = InterestStatus.PAUSED; }
+        }
+    }
+    state.chat_planning = True; state.chat_address_pending = False;
+    state.pending_intent = {}; state.pending_id = ""; state.address_candidates = [];
+    state.product_results = []; state.historical_prices = {}; state.notices = [];
+    state.chat_question = "What would you like to buy for this new trip, and how many packages of each?";
+    reply = ("Started a new shopping plan with an empty list. Your address and preferences are saved; previous needs are paused.\n") + state.chat_question;
+    state.chat_messages = [{"role":"assistant", "content":reply}];
+    state.new_plan_request_ids = (requests + [request_id])[-100:];
+    return reply;
 }
 
 def select_location(p: UserProfile, candidate_id: str) -> None {
@@ -171,7 +222,9 @@ def plan_action(p: UserProfile, key: str, action: str, now: str = "") -> None {
 
 def workflow(p: UserProfile, action: str, data: dict, now: str) -> str {
     state = owned(p, ShoppingWorkspace);
-    if action == "set_mode" {
+    if action == "new_plan" {
+        return start_new_plan(p, data.get("request_id"), now);
+    } elif action == "set_mode" {
         mode = data.get("mode");
         if mode not in ["mock", "live"] { raise ValueError("Choose mock or live mode."); }
         if mode != mode_of(p) {
@@ -308,6 +361,7 @@ def workspace_view(p: UserProfile, now: str = "") -> dict {
         "address_candidates": state.address_candidates, "stores": state.nearby_stores,
         "products": products_view, "plans": plans[-10:], "notices": state.notices,
         "visit_plans": visit_view(p, stamp(now)), "visit_search": state.visit_search, "search_radius_m": state.search_radius_m,
+        "visit_history": list(getattr(state, "visit_history", [])) if mode_of(p) == "live" else [],
         "historical_prices": state.historical_prices,
         "pending_intent": state.pending_intent, "pending_id": state.pending_id,
         "credentials": credential_status()};

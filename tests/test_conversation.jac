@@ -136,3 +136,29 @@ test "context carries the last question and saved fields for short replies" {
     assert ctx["free_windows"] == [] and ctx["transport"] == ["BUS"];
     assert ctx["timezone"] == "America/New_York";
 }
+
+test "partial chat updates preserve unspecified product constraints and allow explicit clearing" {
+    p = chat_user();
+    turn(p, "Two Test milk, 1 L", {"intent":"update", "needs":[{"category":"milk","qty":2,"brand":"Test","size":"1 L"}]});
+    turn(p, "Change milk quantity to three", {"intent":"update", "needs":[{"category":"milk","qty":3}]});
+    n = items_of(p)[0];
+    assert n.product_spec["qty"] == 3 and n.product_spec["brand"] == "Test" and n.product_spec["size"] == "1 L";
+    turn(p, "Change the brand to Other", {"intent":"update", "needs":[{"category":"milk","brand":"Other"}]});
+    assert n.product_spec["qty"] == 3 and n.product_spec["size"] == "1 L" and n.product_spec["brand"] == "Other";
+    turn(p, "Any brand is fine", {"intent":"update", "needs":[{"category":"milk","brand":""}]});
+    assert n.product_spec["brand"] == "" and n.product_spec["qty"] == 3 and n.product_spec["size"] == "1 L";
+    turn(p, "Remove size restriction", {"intent":"update", "needs":[{"category":"milk","size":""}]});
+    assert n.product_spec["size"] == "" and n.product_spec["qty"] == 3;
+}
+
+test "new needs receive defaults while malformed specifications do not mutate saved needs" {
+    p = chat_user();
+    turn(p, "Buy rice", {"intent":"update", "needs":[{"category":"rice"}]});
+    n = items_of(p)[0]; assert n.product_spec["qty"] == 1 and n.product_spec["brand"] == "";
+    for value in [None, 12, ["bad"]] {
+        failed = False;
+        try { turn(p, "Bad brand", {"intent":"update", "needs":[{"category":"rice","brand":value}]}); }
+        except ValueError { failed = True; }
+        assert failed and n.product_spec["brand"] == "" and n.product_spec["qty"] == 1;
+    }
+}

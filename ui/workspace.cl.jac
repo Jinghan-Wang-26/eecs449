@@ -3,7 +3,7 @@
 import from .history { HistoricalPrices }
 import from .visits { VisitPlans }
 
-def:pub WorkspacePanel(workspace: dict, mode: str, busy: bool, operate: any, category: str) -> JsxElement {
+def:pub WorkspacePanel(workspace: dict, mode: str, busy: bool, operate: any, category: str, view: str = "plans") -> JsxElement {
     has address: str = "",
         locating: bool = False, location_notice: str = "",
         max_walk: str = str(workspace["profile"]["max_walk_min"]),
@@ -50,18 +50,6 @@ def:pub WorkspacePanel(workspace: dict, mode: str, busy: bool, operate: any, cat
     }
 
     return <section className="workspace-panel">
-        <div className="toolbar">
-            <strong>{"Data: " + mode}</strong>
-            <button disabled={busy or mode == "mock"} onClick={lambda e: MouseEvent { operate("set_mode", {"mode": "mock"}); }}>Demo data</button>
-            <button disabled={busy or mode == "live"} onClick={lambda e: MouseEvent { operate("set_mode", {"mode": "live"}); }}>Real stores</button>
-        </div>
-        {if mode == "mock" {
-            <p>Fictional stores, prices and stock. Demo observations use the current local day and expire after seven days. Expired simulated quotes renew when you reopen or compare plans.</p>
-        }}
-        {if mode == "live" {
-            <p>Geoapify finds nearby stores. Open Prices supplies historical price records where contributors have coverage. Current price and stock may be unknown; Kroger access is optional.</p>
-        }}
-        <p>{"Chat uses your local Codex login and account quota." if workspace["llm_backend"] == "codex" else "Chat uses the configured model API; structured controls work without it."}</p>
         {if workspace["pending_id"] != "" {
             <div className="pending-request">
                 <h3>Confirm chat request</h3>
@@ -70,7 +58,8 @@ def:pub WorkspacePanel(workspace: dict, mode: str, busy: bool, operate: any, cat
                 <button disabled={busy} onClick={lambda e: MouseEvent { operate("discard_chat", {}); }}>Discard</button>
             </div>
         }}
-        <details><summary>Your shopping profile</summary>
+        {if view == "profile" {
+        <section><h3>Your shopping profile</h3><p>Tell the assistant your preferences, or adjust them here. Saved preferences carry over to your next trip.</p>
             <p>{"Saved address: " + (workspace["profile"]["address"] or "Not set")}</p>
             <form onSubmit={save_profile} className="profile-grid">
                 <label>Budget ($)<input aria-label="Budget" type="number" min="0" value={budget} onChange={lambda e: ChangeEvent { budget = e.target.value; }} /></label>
@@ -84,10 +73,12 @@ def:pub WorkspacePanel(workspace: dict, mode: str, busy: bool, operate: any, cat
                 <label>Memberships (comma separated)<input aria-label="Memberships" value={memberships} onChange={lambda e: ChangeEvent { memberships = e.target.value; }} /></label>
                 <button type="submit" disabled={busy}>Save profile</button>
             </form>
-        </details>
+        </section>
+        }}
+        {if view == "plans" {
+        <div>
         {if mode == "live" {
-            <section>
-                <h3>Address & nearby supermarkets</h3>
+            <details><summary>Address & nearby supermarkets</summary>
                 <button disabled={busy or locating} onClick={lambda e: MouseEvent { locate(); }}>Use my current location</button>
                 <p role="status">{location_notice}</p>
                 <label>Address<input aria-label="Shopping address" value={address} placeholder="Address, city, ZIP code" onChange={lambda e: ChangeEvent { address = e.target.value; }} /></label>
@@ -109,7 +100,7 @@ def:pub WorkspacePanel(workspace: dict, mode: str, busy: bool, operate: any, cat
                     <button disabled={busy} onClick={lambda e: MouseEvent { operate("confirm_product", {"id": prod["result_id"], "weight_kg": weights.get(prod["result_id"], "")}); }}>Confirm product match</button>
                 </div> for prod in workspace["products"]]}</details>
                 <p><a href="https://www.geoapify.com/" target="_blank" rel="noreferrer">Powered by Geoapify</a> · © OpenStreetMap contributors. Historical product prices: Open Prices / Open Food Facts (ODbL). Optional current product data: Kroger.</p>
-            </section>
+            </details>
         }}
         {[<p role="status" key={str(i)}>{note}</p> for (i, note) in enumerate(workspace["notices"])]}
         {if mode == "mock" {
@@ -125,7 +116,7 @@ def:pub WorkspacePanel(workspace: dict, mode: str, busy: bool, operate: any, cat
             </details>
         }}
         {if mode == "live" { <VisitPlans workspace={workspace} busy={busy} operate={operate} /> }}
-        <h3>{"Demo shopping plans" if mode == "mock" else "Optional verified current-price plans"}</h3>
+        {if mode == "mock" or len(workspace["plans"]) > 0 { <h3>{"Demo shopping plans" if mode == "mock" else "Verified current-price plans"}</h3> }}
         {if mode == "mock" { <button disabled={busy} onClick={lambda e: MouseEvent { operate("plan", {}); }}>Compare plans</button> }}
         {if len(workspace["plans"]) == 0 and mode == "mock" { <p>Save your needs, transport and free time, then compare plans.</p> }}
         {[<article className="result-card" key={plan["key"]}>
@@ -140,5 +131,7 @@ def:pub WorkspacePanel(workspace: dict, mode: str, busy: bool, operate: any, cat
                 }}
             </div> for item in plan["items"]]}
         </article> for plan in workspace["plans"]]}
+        </div>
+        }}
     </section>;
 }

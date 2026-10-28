@@ -1,0 +1,99 @@
+{
+  "checked_date": "2026-10-26",
+  "offline": {
+    "jac_tests": 113,
+    "python_tests": 67,
+    "client_build": "passed"
+  },
+  "browser": {
+    "data": "isolated synthetic graph",
+    "checks": [
+      "dated regular hours",
+      "explicit visit acceptance",
+      "purchase two of three packages",
+      "actual amount paid separate from history",
+      "purchase and chat restored after reload",
+      "missing-model error persisted",
+      "clear chat preserves plans"
+    ],
+    "page_errors": []
+  },
+  "llm": {
+    "checked_at": "2026-10-26T14:26:20-04:00",
+    "synthetic_context": true,
+    "cases": [
+      {
+        "id": "en_quantity_only",
+        "expected": [
+          {
+            "type": "milk",
+            "qty": 3
+          }
+        ],
+        "actual": [
+          {
+            "type": "milk",
+            "qty": 3
+          }
+        ],
+        "passed": true
+      },
+      {
+        "id": "zh_remove_brand",
+        "expected": [
+          {
+            "type": "milk",
+            "brand": ""
+          }
+        ],
+        "actual": [
+          {
+            "type": "milk",
+            "brand": ""
+          }
+        ],
+        "passed": true
+      }
+    ],
+    "passed": true
+  },
+  "real_providers": {
+    "public_address": "150 E McKinley Avenue, Sunnyvale, CA 94086",
+    "checked_at": "2026-10-26T14:26:32-04:00",
+    "stores": [
+      {
+        "name": "Whole Foods Market",
+        "historical_matches": 2,
+        "opening_hours": "Mo-Su 08:00-22:00",
+        "hours_status": "REGULAR_HOURS_FIT",
+        "timezone": "America/Los_Angeles",
+        "route_verified": true,
+        "accept_allowed": true
+      },
+      {
+        "name": "Target",
+        "historical_matches": 1,
+        "opening_hours": null,
+        "hours_status": "UNKNOWN",
+        "timezone": "America/Los_Angeles",
+        "route_verified": true,
+        "accept_allowed": true
+      },
+      {
+        "name": "Trader Joe's",
+        "historical_matches": 1,
+        "opening_hours": "Mo-Su 08:00-21:00",
+        "hours_status": "REGULAR_HOURS_FIT",
+        "timezone": "America/Los_Angeles",
+        "route_verified": true,
+        "accept_allowed": true
+      }
+    ]
+  },
+  "limits": [
+    "No claim of current prices or inventory",
+    "Regular map hours do not confirm holiday or exceptional openings",
+    "No bus timetables, real delivery/multi-store optimization or hosted multi-user acceptance",
+    "Live LLM browser multi-turn evaluation not run for this update"
+  ]
+}

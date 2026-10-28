@@ -1,135 +1,46 @@
-"""Chat page. The planning panels will sit beside this later."""
-
-sv import from ..server.chat { SendMessage }
+"""Responsive shopping workspace with a persistent conversational assistant."""
+sv import from ..server.chat { SendMessage, ChatHistory, StartShoppingPlan }
 import from .shopping { ShoppingPanel }
+import from .theme { AppStyles }
 
 def:pub ChatApp -> JsxElement {
-    has messages: list[dict] = [],
-        draft: str = "",
-        pending: bool = False;
-
+    has messages: list[dict] = [], draft: str = "", pending: bool = True,
+        history_notice: str = "", workspace_epoch: int = 0;
     async def send(e: FormEvent) -> None;
-
-    # Keep the newest message in view.
+    async def history(clear: bool = False) -> None;
+    async def new_plan() -> None;
+    can with [] entry { history(); }
     can with (messages, pending) entry {
         el: any = document.querySelector(".chat-log");
-        if el {
-            el.scrollTop = el.scrollHeight;
-        }
+        if el { el.scrollTop = el.scrollHeight; }
     }
-
-    return
-        <div
-            style={{
-                "position": "fixed",
-                "inset": "0",
-                "background": "#f3efe6",
-                "color": "#1c1917",
-                "fontFamily": "Georgia, 'Iowan Old Style', serif"
-            }}
-        >
-            <div
-                style={{
-                    "maxWidth": "1100px",
-                    "margin": "0 auto",
-                    "height": "100%",
-                    "boxSizing": "border-box",
-                    "display": "flex",
-                    "flexDirection": "column",
-                    "padding": "28px 20px 20px"
-                }}
-            >
-                <header style={{"marginBottom": "18px"}}>
-                    <div style={{"fontSize": "13px", "letterSpacing": "0.14em", "textTransform": "uppercase", "color": "#78716c"}}>
-                        CartCompass
-                    </div>
-                    <h1 style={{"margin": "6px 0 0", "fontSize": "32px", "fontWeight": "500"}}>
-                        What do you need to buy?
-                    </h1>
-                    <p style={{"margin": "8px 0 0", "color": "#57534e", "fontFamily": "system-ui, sans-serif", "fontSize": "15px"}}>
-                        Tell me your needs. I will ask for missing details, update your shopping information, and generate a plan.
-                    </p>
-                </header>
-                <ShoppingPanel />
-                <div
-                    className="chat-log"
-                    style={{
-                        "flex": "1",
-                        "minHeight": "80px",
-                        "overflowY": "auto",
-                        "display": "flex",
-                        "flexDirection": "column",
-                        "gap": "12px",
-                        "padding": "8px 0 16px"
-                    }}
-                >
-                    {if len(messages) == 0 {
-                        <p style={{"color": "#a8a29e", "fontFamily": "system-ui, sans-serif"}}>
-                            Try: Plan a shopping trip for milk and rice. Ask me for any missing details.
-                        </p>
-                    }}
-                    {[
-                        <div
-                            key={str(idx)}
-                            style={{
-                                "alignSelf": ("flex-end" if turn["role"] == "user" else "flex-start"),
-                                "maxWidth": "80%",
-                                "background": ("#3f6212" if turn["role"] == "user" else "#fffdf8"),
-                                "color": ("#f7fee7" if turn["role"] == "user" else "#1c1917"),
-                                "border": ("none" if turn["role"] == "user" else "1px solid #e7e0d4"),
-                                "borderRadius": "16px",
-                                "padding": "12px 14px",
-                                "fontFamily": "system-ui, sans-serif",
-                                "fontSize": "15px",
-                                "lineHeight": "1.45",
-                                "whiteSpace": "pre-wrap"
-                            }}
-                        >
-                            <div style={{"fontSize": "11px", "letterSpacing": "0.08em", "textTransform": "uppercase", "opacity": "0.7", "marginBottom": "4px"}}>
-                                {"You" if turn["role"] == "user" else "CartCompass"}
-                            </div>
-                            {turn["content"]}
-                        </div>
-                        for (idx, turn) in enumerate(messages)
-                    ]}
-                </div>
-                <form
-                    onSubmit={send}
-                    style={{"display": "flex", "gap": "8px", "paddingTop": "8px"}}
-                >
-                    <input
-                        type="text"
-                        value={draft}
-                        onChange={lambda e: ChangeEvent { draft = e.target.value; }}
-                        placeholder="Tell me what you need"
-                        style={{
-                            "flex": "1",
-                            "minWidth": "0",
-                            "padding": "14px 16px",
-                            "border": "1px solid #d6d3d1",
-                            "borderRadius": "999px",
-                            "background": "#fffdf8",
-                            "fontSize": "16px",
-                            "fontFamily": "system-ui, sans-serif"
-                        }}
-                    />
-                    <button
-                        type="submit"
-                        disabled={pending}
-                        style={{
-                            "padding": "14px 22px",
-                            "border": "none",
-                            "borderRadius": "999px",
-                            "background": "#3f6212",
-                            "color": "#f7fee7",
-                            "fontSize": "15px",
-                            "fontFamily": "system-ui, sans-serif",
-                            "cursor": "pointer"
-                        }}
-                    >
-                        {"Sending" if pending else "Send"}
-                    </button>
-                </form>
+    return <div className="app-shell">
+        <AppStyles />
+        <header className="app-header">
+            <a className="brand" href="#" aria-label="CartCompass home"><span className="brand-icon" aria-hidden="true">↗</span><span>CartCompass<small>YOUR EVERYDAY SHOPPING ASSISTANT</small></span></a>
+            <div className="new-trip"><button className="primary" disabled={pending} onClick={lambda e: MouseEvent { new_plan(); }}>+ New shopping plan</button>
+                <span>Fresh list. Saved preferences.</span>
             </div>
-        </div>;
+        </header>
+        <div className="page-intro"><div><p className="eyebrow">A LITTLE PLANNING. A BETTER SHOP.</p><h1>Your next shop starts here.</h1><p>Build your list, find a store, and make a plan that fits your day.</p></div>
+            <details className="reset-help"><summary>Starting a new trip?</summary><p>New shopping plan starts a fresh list and conversation, pauses previous needs and cancels unfinished plans. Your address, preferences and purchase history stay saved.</p></details>
+        </div>
+        <main className="app-columns">
+            <ShoppingPanel key={workspace_epoch} />
+            <aside className="assistant-panel" aria-label="Shopping assistant">
+                <div className="assistant-heading"><span className="assistant-icon" aria-hidden="true">✦</span><div><h2>Let’s plan together</h2><p>Tell me what you need. I’ll ask the rest.</p></div></div>
+                <div className="chat-tools"><span>Conversation saved automatically</span><button className="text-button" disabled={pending} onClick={lambda e: MouseEvent { history(True); }} title="Clears messages only. Your list and plans stay saved.">Clear chat history</button></div>
+                {if history_notice { <p className="inline-alert" role="alert">{history_notice}</p> }}
+                <div className="chat-log" role="log" aria-label="Conversation" aria-live="polite">
+                    {if len(messages) == 0 {
+                        <div className="chat-empty"><div className="empty-symbol" aria-hidden="true">↗</div><h3>A plan begins with a need.</h3><p>Start with your shopping list. I can ask for your address, travel preferences and free time as we go.</p><button disabled={pending} onClick={lambda e: MouseEvent { draft = "Plan a shopping trip for milk and rice. Ask me for any missing details."; }}>Help me plan for milk and rice ↗</button><small>Your answers update the shopping workspace automatically.</small></div>
+                    }}
+                    {[<div key={str(idx)} className={"message message-user" if turn["role"] == "user" else "message message-assistant"}><span className="message-role">{"You" if turn["role"] == "user" else "CartCompass"}</span><div>{turn["content"]}</div></div> for (idx, turn) in enumerate(messages)]}
+                    {if pending { <p className="thinking" role="status">Working on your shopping workspace…</p> }}
+                </div>
+                <div className="composer-wrap"><form onSubmit={send} className="chat-composer"><input aria-label="Message your shopping assistant" type="text" value={draft} onChange={lambda e: ChangeEvent { draft = e.target.value; }} placeholder="Tell me what you need…" /><button className="primary" type="submit" disabled={pending or not draft.strip()}>{"Sending…" if pending else "Send ↗"}</button></form><p>Just reply here — your list and preferences stay in sync.</p></div>
+            </aside>
+        </main>
+        <footer className="app-footer"><span>Thoughtful trips. Clearer choices.</span><span>Historical prices are references, not current offers.</span></footer>
+    </div>;
 }

@@ -19,7 +19,7 @@ This table maps the 17 README checklist items to implementation and verification
 | 13 | Configuration | `app.toml`, `app_settings.py`, `.env.example`; mode/timezone/planning/reminder settings plus server-only provider credentials. |
 | 14 | AI use with deterministic arithmetic | Intent extraction and follow-up intent routing in `ai/intents.py`; `ai/matching.py` ranks returned candidates by name/brand/size evidence and explains mismatches; confirmations are explicit; `ai/explanations.py` asks the model to select computed fact IDs and renders only authoritative values, with deterministic fallback. The LLM does not generate prices, route times, stock, diet compatibility, or arithmetic. Local Codex model acceptance is recorded below; optional retailer/API credentials remain separate. |
 | 15 | Profile/interest/plan UI | `ui/workspace.cl.jac`, `shopping.cl.jac`, `history.cl.jac`: profile/needs editing, mode switch, address confirmation, nearby stores, paginated historical product evidence, route estimate, proposals and purchase outcomes. Browser tested with real Geoapify/Open Prices responses. |
-| 16 | Tests | 105 Jac tests and 54 Python tests (159 total), plus a GitHub Actions test/build workflow. Synthetic fixtures are labeled; actual network evidence under `docs/samples` is separate. Frontend build and browser checks described below. |
+| 16 | Tests | 121 Jac tests and 67 Python tests (188 total), plus a GitHub Actions test/build workflow. Synthetic fixtures are labeled; actual network evidence under `docs/samples` is separate. Frontend build and browser checks described below. |
 | 17 | Chat integration | `server/chat.jac` calls `harness/agent.jac`; validated profile/need updates use the shared operations automatically; persistent conversational state asks for missing inputs and generates plans when ready. Feedback stays pending and plan acceptance/purchases are never automatic. Missing-key path verified in the earlier browser run; authenticated local Codex extraction, confirmation, planning and grounded explanation verified. Legacy `take_turn` / identity pipeline helpers remain for backward compatibility, not the active UI route. |
 
 ## Verification recorded on 2026-10-12
@@ -43,7 +43,7 @@ Open Prices is historical, contributor-dependent and incomplete: Ann Arbor's tes
 - Local Codex login: two real bilingual intent cases passed; sanitized usage evidence is in `samples/llm-verification.json`. The first exploratory response exposed an ambiguous transport schema, which was clarified before the successful run.
 - `LLM_BACKEND=codex jac run scripts/verify_chat.jac`: real intent left the graph unchanged until confirmation; confirmation generated a proposed plan; a follow-up explanation selected authoritative computed facts. No automatic acceptance or purchase. The initial test with the default 15-minute walk limit correctly produced no feasible rice plan; the detached test now explicitly uses a 30-minute limit.
 - Browser (isolated local graph): package/unit prices visible, feasible plan generated and accepted, purchase marked completed; no page exceptions. Your saved shopping data was not used for this check.
-- `scripts/verify_llm.py` additionally contains ten bilingual cases for optional evaluation. Only the recorded two-case subset and graph flow were executed; no claim of ten-case or paid API acceptance.
+- `scripts/verify_llm.py` additionally contains ten English cases for optional evaluation (translated after the original multilingual checks). Only the recorded two-case subset and graph flow were executed; no claim of ten-case or paid API acceptance.
 
 Remaining issues outside this change: real public-transit timetables (#3), target-area current inventory/price coverage (#2), optional Kroger access, and deployment/background jobs. #6 is a research/acceptance deliverable; this change does not claim to add live retailer inventory or close GitHub issues automatically.
 
@@ -74,3 +74,25 @@ Moved three independent business-rule modules to Jac: `ai/conversation.jac` (mis
 105 Jac tests and 54 Python tests pass (159 total), including six new Jac regression tests for bilingual values, provider notices, unknown/zero historical prices, and invalid numeric/time inputs. The frontend build passes. An additional local comparison against the pre-migration Python modules covered 590 cases with identical returned values and exception types/messages; temporary baseline copies are outside the repository. No model/provider requests were needed for this migration verification.
 
 External API adapters, model transport/intent extraction, real-store matching/ranking and some utility modules remain Python. Migrating those larger integrations is a separate follow-up; this change keeps the application behavior intact.
+
+
+## Reliability and real-store completion (2026-10-26)
+
+Implemented the #14 partial-update fix through the model schema, Jac validation, graph merge and chat workflow. Unspecified constraints persist; explicit removal is supported. Specification changes revoke old confirmed matches. Added Jac dated scheduling, exact-identity map-hours enrichment, preparation time after provider completion, and stale-departure rejection. Visits now record full/partial purchase quantities and optional actual spending, preserve outstanding needs and support subsequent recommendations. Server-side bounded conversation history restores after reload and can be cleared independently of the shopping profile.
+
+Validation: 113 Jac + 67 Python tests (180 total), frontend build, two actual bilingual model extraction cases, a public-address provider check, and an isolated browser walkthrough. Browser checks cover dated hours, acceptance, partial quantities, spending, reload, missing-model error persistence and clearing the transcript without deleting plans. Fixtures are explicitly synthetic; real HTTP evidence uses a public Sunnyvale address. No personal shopping graph was used.
+
+These changes improve #8 tasks 4, 7, 9, 10, 15, 16 and 17 and implement #14's acceptance criteria. They do not close GitHub issues automatically or implement real transit, live stock, delivery, background jobs or hosted multi-user operation. The original issue checklist is an old snapshot; use [current product gaps](PRODUCT_GAPS.md) to distinguish implemented behavior from the remaining vision.
+
+## Explicit new shopping plan entry
+
+Added a visible **New shopping plan** button with its effects stated beside it. The Jac operation starts an empty list and fresh conversation, preserves the profile, pauses previous needs, cancels unfinished plans, and retains accepted real-visit purchase history. Previous needs can be restored explicitly. Adding the same category afresh resets trip-specific quantity/specifications/snoozing instead of silently inheriting the old trip. Request IDs prevent duplicate retries from clearing newly entered needs. Clearing chat remains a separate action.
+
+Eight additional detached-graph regression cases cover list isolation, accepted-plan replacement, purchase preservation, default specifications, restoration, retries, invalid requests, separate users, mock plans, watch/replenishment behavior and the next chat turn. Current suite: 121 Jac + 67 Python tests (188 total).
+
+
+### English interface and workspace layout (2026-10-26)
+
+The Jac client now uses a responsive workspace with My list, Plans & stores and Preferences tabs alongside a persistent assistant. New shopping plan remains a prominent header action; demo simulation and historical real-store evidence have distinct labels. Tabs support keyboard navigation. New chat-generated plans and pending confirmations surface in Plans & stores. Assistant templates and model instructions now use English, including legacy language preferences. Authored examples and fixtures use English; the older conversation verification artifact is explicitly labeled as editorial summaries of its original run, not new model evidence.
+
+Validation: 121 Jac and 67 Python tests, client build, and an isolated Chromium walkthrough of desktop/mobile layouts, preferences, real-visit acceptance, partial purchases, fresh lists, history/restore, demo comparison and chat controls. No new paid model or live-provider calls were made for this interface update.

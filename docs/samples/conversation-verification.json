@@ -6,22 +6,23 @@
   "plan_in_chat_and_panel": true,
   "persisted_after_reload": true,
   "page_errors": [],
-  "turns": [
+  "transcript_note": "English editorial summaries of a prior multilingual verification run; not verbatim model output or a new English-language verification.",
+  "turn_summaries": [
     {
-      "user": "帮我生成购物计划，我要买两包米。",
-      "assistant": "CARTCOMPASS\n已更新上方信息：2 × rice.\n从哪里出发购物？请在聊天里告诉我地址、城市和邮编。"
+      "user_summary": "Requested a plan for two packages of rice.",
+      "assistant_summary": "Saved the need and asked for a starting address."
     },
     {
-      "user": "我从150 E McKinley Avenue, Sunnyvale, CA 94086出发，预算50美元，可以步行，单程最多45分钟。",
-      "assistant": "CARTCOMPASS\n已更新上方信息：预算: 50.0; 出行方式: ['WALK']; 最长步行分钟: 45.\n请确认用于出发的地址，直接回复编号（或重新输入地址）：\n1. 150 East McKinley Avenue, Sunnyvale, CA 94086, United States of America\n2. AMC DINE-IN Sunnyvale 12, 150 East McKinley Avenue, Sunnyvale, CA 94086, United States of America\n3. Whole Foods Market, 150 East McKinley Avenue, Sunnyvale, CA 94086, United States of America"
+      "user_summary": "Provided 150 E McKinley Avenue, Sunnyvale, CA 94086, a $50 budget, walking transport and a 45-minute walking limit.",
+      "assistant_summary": "Saved preferences and presented three possible addresses for confirmation."
     },
     {
-      "user": "第一个地址。",
-      "assistant": "CARTCOMPASS\n已保存出发地址：150 East McKinley Avenue, Sunnyvale, CA 94086, United States of America\n你哪天、几点到几点有空购物？例如周六下午2点到5点，直接回复即可。"
+      "user_summary": "Selected the first address.",
+      "assistant_summary": "Confirmed the address and asked for shopping availability."
     },
     {
-      "user": "周六下午两点到五点。",
-      "assistant": "CARTCOMPASS\n已更新上方信息：空闲时间: ['SAT 14:00-17:00'].\n已生成 3 个门店候选，其中 3 个可以查看并接受：\n1. Whole Foods Market — Whole Foods Market, 150, East McKinley Avenue, Sunnyvale, Santa Clara County, California, 94086, United States\n   2 × rice\n   WALK: 3 min round trip + 20 min shopping; SAT 14:00-14:23\n   历史记录匹配 1/1 项；USD 7.58 historical reference (not today's total)\n2. Target — Target, 298, West McKinley Avenue, Sunnyvale, Santa Clara County, California, 94086, United States\n   2 × rice\n   WALK: 5 min round trip + 20 min shopping; SAT 14:00-14:25\n   历史记录匹配 0/1 项；price unknown\n3. Baraka Market — Baraka Market, 101 East El Camino Real, Sunnyvale, CA 94087, United States of America\n   2 × rice\n   WALK: 24 min round trip + 20 min shopping; SAT 14:00-14:44\n   历史记录匹配 0/1 项；price unknown\n当前价格、库存和营业时间未知。未匹配到历史记录不代表没货。请在上方门店计划中查看证据并选择接受。"
+      "user_summary": "Available Saturday from 2 pm to 5 pm.",
+      "assistant_summary": "Saved SAT 14:00-17:00 and generated three store options: Whole Foods Market, Target and Baraka Market. One historical rice record supported a USD 7.58 reference subtotal; current prices and inventory remained unknown."
     }
   ]
 }

@@ -48,3 +48,18 @@ class OpenPricesTests(unittest.TestCase):
             self.assertEqual(len(op.nearby_with_history(42,-83)['stores']),2)
 
 if __name__=='__main__':unittest.main()
+
+class StoreMetadataMergeTests(unittest.TestCase):
+    def test_only_exact_identity_transfers_map_hours_and_timezone(self):
+        mapped={'id':'map','lat':42,'lon':-83,'osm_id':123,'osm_type':'n', 'place_id':'map-place', 'opening_hours':'24/7','timezone':'America/New_York'}
+        historical={'id':'op','lat':42,'lon':-83,'osm_id':123,'osm_type':'NODE'}
+        with patch.object(p,'nearby_places',return_value=[mapped]), patch.object(p,'credential_status',return_value={}), patch.object(op,'nearby_history',return_value={'stores':[historical],'truncated':False}):
+            result=op.nearby_with_history(42,-83,include_kroger=False)['stores']
+            self.assertEqual(len(result),1)
+            self.assertEqual(result[0]['opening_hours'],'24/7')
+            self.assertEqual(result[0]['timezone'],'America/New_York')
+            self.assertNotIn('opening_hours',historical)
+            historical['osm_id']=124
+            result=op.nearby_with_history(42,-83,include_kroger=False)['stores']
+            self.assertEqual(len(result),2)
+            self.assertNotIn('opening_hours',result[0])
