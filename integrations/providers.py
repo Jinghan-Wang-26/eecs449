@@ -233,14 +233,23 @@ def nearby_kroger(lat, lon, radius_m=5000):
                     'distance_m': round(dist), 'observed_at': now_iso()})
     return sorted(out, key=lambda s: s['distance_m'])
 
+def street_number(address):
+    # Geoapify formats addresses as "<name>, <number> <street>, ..."; retailers omit
+    # the name. Take the first comma-separated part that starts with a house number.
+    for part in (address or '').split(','):
+        match = re.match(r'\s*(\d+[A-Za-z]?)\s+\S', part)
+        if match:
+            return match[1].upper()
+    return ''
+
 def merge_stores(places, retailer):
     # Retailer locations are authoritative. Associate POIs only with spatial AND
     # street-number evidence; uncertain matches remain independent, unsupported POIs.
     merged = copy.deepcopy(retailer)
     for place in places:
+        number = street_number(place['address'])
         candidates = [s for s in merged if distance_m((s['lat'], s['lon']), (place['lat'], place['lon'])) < 100
-                      and re.findall(r'^\d+', s['address']) and
-                      re.findall(r'^\d+', s['address']) == re.findall(r'^\d+', place['address'])
+                      and number and street_number(s['address']) == number
                       and ('kroger' in place['name'].lower() or s['name'].lower() == place['name'].lower())]
         if len(candidates) == 1:
             candidates[0]['map_id'] = place['id']

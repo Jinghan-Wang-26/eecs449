@@ -81,6 +81,17 @@ class ProviderTests(unittest.TestCase):
         place['address']='100 Test St'
         self.assertEqual(p.merge_stores([place],[store])[0]['map_id'],'geo:2')
 
+    def test_geoapify_name_prefixed_addresses_link_to_the_branch(self):
+        # Real formats from the 2026-10-31 Ann Arbor coverage run.
+        store={'id':'kroger:01800361','name':'Kroger - Westgate','address':'400 S Maple Rd, Ann Arbor, MI, 48103','lat':42.27757,'lon':-83.78208,'product_access':True}
+        place={'id':'geo:w','name':'Kroger','address':'Kroger, 400 South Maple Road, Ann Arbor, MI 48103, United States of America','lat':42.2775223,'lon':-83.7821358,'product_access':False}
+        merged=p.merge_stores([place],[store])
+        self.assertEqual(len(merged),1); self.assertEqual(merged[0]['map_id'],'geo:w')
+        place['address']='Kroger, 402 South Maple Road, Ann Arbor, MI 48103, United States of America'
+        self.assertEqual(len(p.merge_stores([place],[store])),2)
+        self.assertEqual(p.street_number('Kroger, 2641 Plymouth Road, Ann Arbor, MI 48105'),'2641')
+        self.assertEqual(p.street_number('Some Market, Ann Arbor, MI 48105'),'')
+
     def test_partial_failure_preserves_location_only(self):
         with patch.object(p,'nearby_places',return_value=[{'id':'map','product_access':False}]),patch.object(p,'nearby_kroger',side_effect=p.ProviderError('missing credentials')):
             result=p.nearby(42,-83)
