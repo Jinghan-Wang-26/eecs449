@@ -71,12 +71,12 @@ class VisitRecommendationTests(unittest.TestCase):
         self.assertTrue(self.candidate(rows=[])["accept_allowed"])
         self.assertIsNone(self.candidate(rows=[])["reference_subtotal"])
 
-    def test_walk_time_weight_and_unsupported_transit_block_acceptance(self):
+    def test_walk_time_weight_and_unsupported_rideshare_block_acceptance(self):
         changes = [{"max_walk_min":1}, {"free_windows":["SAT 14:00-14:10"]}, {"free_windows":[]}, {"carry_limit_kg":1}]
         for change in changes:
             c=context(); c["profile"].update(change)
             self.assertFalse(self.candidate(c)["accept_allowed"])
-        c=context(); c["profile"]["transport"]=["BUS"]
+        c=context(); c["profile"]["transport"]=["RIDESHARE"]
         with patch.object(v, "route") as call:
             plan=v.candidate(STORE, evidence(), c, NOW)
             call.assert_not_called(); self.assertFalse(plan["accept_allowed"])
@@ -86,11 +86,11 @@ class VisitRecommendationTests(unittest.TestCase):
             plan=v.candidate(STORE, evidence(), context(), NOW)
         self.assertIsNone(plan["route"]); self.assertFalse(plan["accept_allowed"])
 
-    def test_recommendation_uses_only_openprices_and_ranks_coverage_then_travel(self):
+    def test_recommendation_includes_retailer_and_keeps_history_ranked_by_coverage(self):
         second=dict(STORE, id="map:2", external_id="", source="geoapify", name="Location only", lat=42.0001)
         with patch.object(v, "nearby_with_history", return_value={"stores":[second,STORE],"notices":[]}) as search, patch.object(v, "recommendation_records", return_value=evidence()), patch.object(v, "route", return_value=TRAVEL):
             result=v.recommend(context(), NOW)
-            self.assertFalse(search.call_args.kwargs["include_kroger"])
+            self.assertTrue(search.call_args.kwargs["include_kroger"])
             self.assertEqual(result["plans"][0]["store"]["id"], STORE["id"])
             self.assertEqual(result["plans"][1]["matched"],0)
 

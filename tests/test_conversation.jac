@@ -43,7 +43,7 @@ test "conversation collects needs address transport and time then plans without 
     }
     assert "2. Synthetic B" in reply and not p.location;
     reply = turn(p, "2", {"intent":"update","address_choice":2});
-    assert p.home_address == "Synthetic B" and "walk, cycle or drive" in reply;
+    assert p.home_address == "Synthetic B" and "time range" in reply;
     reply = turn(p, "I can walk for 45 minutes", {"intent":"update","profile":{"transport":["WALK"],"max_walk_min":45}});
     assert "time range" in reply and p.max_walk_min == 45;
     with patch("server.visits.recommend", side_effect=lambda ctx: dict, now: str: result_fixture(p)) as search {
@@ -79,13 +79,13 @@ test "failed replacement address never plans from old location" {
     assert "address" in reply and p.location["id"] == "old";
 }
 
-test "only bus is kept and does not trigger unsupported route requests" {
+test "only bus is preserved while missing availability is collected" {
     p = chat_user(); p.location = {"id":"a","lat":42,"lon":-83};
     with patch("server.visits.recommend") as search {
         reply = turn(p, "Plan rice, only bus", {"intent":"plan","needs":[{"category":"rice","qty":1}]});
         assert search.call_count == 0;
     }
-    assert "bus" in reply and p.transport == ["BUS"];
+    assert "time range" in reply and p.transport == ["BUS"];
 }
 
 test "buying a watched item turns it into a need with its requested specification" {
@@ -161,4 +161,18 @@ test "new needs receive defaults while malformed specifications do not mutate sa
         except ValueError { failed = True; }
         assert failed and n.product_spec["brand"] == "" and n.product_spec["qty"] == 1;
     }
+}
+
+
+test "complete bus preferences trigger recommendations without requesting another mode" {
+    p = chat_user(); p.location = {"id":"a","lat":42.28,"lon":-83.74};
+    p.free_windows = ["SAT 14:00-17:00"]; p.max_transfers = 0;
+    result = {"plans":[], "stores":[], "notices":["No scheduled return fits this window."], "generated_at":NOW, "checked_stores":0, "nearby_count":0};
+    with patch("server.visits.recommend", return_value=result) as search {
+        reply = turn(p, "Plan rice, only bus and no transfers", {"intent":"plan","needs":[{"category":"rice","qty":1}]});
+        assert search.call_count == 1;
+        assert search.call_args[0][0]["profile"]["transport"] == ["BUS"];
+        assert search.call_args[0][0]["profile"]["max_transfers"] == 0;
+    }
+    assert "No scheduled return" in reply and p.transport == ["BUS"];
 }

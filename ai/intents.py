@@ -33,7 +33,7 @@ a weekday/time range, a transport mode, or an address selection. Keep unspecifie
 Extract ONLY changes explicitly stated in the latest message; history helps resolve references but is not a batch to replay.
 A request for a plan is intent=plan even when information is incomplete. A reply to a follow-up may be intent=update.
 If the user says they need to buy an existing watched item, include it in needs; the application changes it to NEED.
-Do not invent missing hours: "Saturday" alone needs a start/end time question. Do not turn "only bus" into WALK.
+Do not invent missing hours: "Saturday" alone needs a start/end time question. Do not turn "only bus" into WALK. Scheduled BUS visits use TheRide in Ann Arbor/Ypsilanti; live arrivals, delays and fares remain unknown.
 Use the supplied local date/time and timezone for relative weekdays; ask if a time expression is ambiguous.
 If there are numbered address choices, a number or "the first one" selects address_choice; never invent an ID.
 Do not repeat an already saved address unless the user explicitly changes it.

@@ -1,5 +1,17 @@
 # Run CartCompass with real locations and historical store prices
 
+## Current retailer workflow (2026-10-27)
+
+Kroger branch snapshots now connect address search, shopping-list matching, route and
+scheduled bus planning, and uncached quote rechecks before acceptance. Changed prices
+or selections require another explicit review; errors never reuse stale quotes.
+See [CURRENT_PRICES.md](CURRENT_PRICES.md) for credential setup, limitations and tests.
+Authenticated production queries and a scheduled-bus shopping visit with an
+uncached quote recheck passed on 2026-10-27; see
+[actual provider evidence](samples/current-prices-verification.json). Earlier
+Open Prices examples below remain historical.
+
+
 ## Local setup
 
 Use Python 3.13 and this repository's pinned virtual environment:
@@ -28,7 +40,7 @@ The [official project steps](https://myprojects.geoapify.com/help/projects/) aut
 
 **Open Prices** needs no account/key for the public reads implemented here. It is the default source of historical store product/price records. It does not provide current inventory, current shelf prices, complete store assortment, delivery charges or a shopping cart. Missing coverage stays visible.
 
-**Kroger** is optional. Leave `KROGER_CLIENT_ID` and `KROGER_CLIENT_SECRET` blank while registration is blocked. No repeated signup attempts are necessary for the default workflow. If an application is obtained later, the adapter supports client-credentials Products/Locations calls and uses `filter.locationId`. It does not need a customer login/redirect for read-only client-credentials requests. Never enter secrets as callback URLs. Authenticated Kroger responses still need live verification; synthetic tests alone are not access approval.
+**Kroger** is optional. Leave `KROGER_CLIENT_ID` and `KROGER_CLIENT_SECRET` blank while registration is blocked. No repeated signup attempts are necessary for the default workflow. If an application is obtained later, the adapter supports client-credentials Products/Locations calls and uses `filter.locationId`. It does not need a customer login/redirect for read-only client-credentials requests. Never enter secrets as callback URLs. Production responses were verified in the public-address probe above; a new account still needs its own authenticated check.
 
 **Chat** optionally needs an OpenAI-compatible LLM provider configured with `LLM_API_KEY`, `LLM_BASE_URL` and `LLM_MODEL`. The example uses DeepSeek. The structured profile, interest and plan controls work without this key. The LLM extracts validated changes; explicitly stated needs/profile values save automatically, missing required information is requested in chat, and completing the answers triggers planning. Feedback and plan acceptance still require confirmation. Pricing and constraint arithmetic remain deterministic. API credentials are never sent in model context. Text the user types into chat is sent to their configured LLM provider, so only include address details there intentionally.
 
@@ -113,3 +125,17 @@ Plan explanations use the model to select relevant fact IDs, then render their c
 ## Jac business-rule modules
 
 Conversation follow-up rules, profile/need validation and unit pricing now live in `ai/conversation.jac`, `integrations/validation.jac` and `pricing.jac`. Their imports from Jac are unchanged. Standalone Python tools that import these modules must first `import jaclang` to register the Jac import hook; the affected application entrypoint and tests already do this. Use the pinned project virtual environment for both Jac and Python commands. There is no duplicate Python fallback for these rules.
+
+
+## Scheduled buses
+
+No new transit API credentials are required. With the existing Geoapify key configured, choose Real stores, confirm an Ann Arbor/Ypsilanti address, set transport to `BUS`, and save availability and walking/transfer limits. TheRide GTFS downloads on demand. See [scheduled bus setup and verification](TRANSIT.md); schedules are not live arrival predictions.
+
+
+## Multi-store and delivery comparisons
+
+Use the existing Kroger and Geoapify credentials for branch prices and continuous
+routes. Manual merchant checkout quotes need no new API account. Follow the
+[comparison walkthrough](MULTISTORE_DELIVERY.md) to enter complete fees, delivery
+windows and source URLs. These quotes are user-entered, expire after 30 minutes
+or at delivery-window start, and never place an order.
