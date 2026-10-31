@@ -13,7 +13,11 @@ def:pub ShoppingPanel -> JsxElement {
         days: str = "7",
         purchased: str = "",
         busy: bool = False,
-        notice: str = "Loading your shopping workspace…";
+        notice: str = "Loading your shopping workspace…",
+        seen_reminders: list = [],
+        reminders_primed: bool = False,
+        notify_permission: str = "unsupported",
+        error_notice: str = "";
 
     async def operate(action: str, data: dict) -> None;
     async def save(e: FormEvent) -> None;
@@ -31,7 +35,49 @@ def:pub ShoppingPanel -> JsxElement {
         document.getElementById("tab-" + next_tab).focus();
     }
 
-    can with [] entry { operate("view", {}); }
+    can with [] entry {
+        operate("view", {});
+        if window.Notification { notify_permission = window.Notification.permission; }
+        # Poll so reminders created by the server's background checks appear while the page is open.
+        timer = setInterval(lambda { window.dispatchEvent(new(CustomEvent, "shopping-chat-updated")); }, 60000);
+        return lambda { clearInterval(timer); };
+    }
+    can with (snapshot) entry {
+        if not snapshot.get("background") { return; }
+        keys = [item["key"] for item in snapshot["reminders"]];
+        if reminders_primed and notify_permission == "granted" {
+            for item in snapshot["reminders"] {
+                if not seen_reminders.includes(item["key"]) {
+                    new(window.Notification, "CartCompass reminder", {"body": item["message"], "tag": item["key"]});
+                }
+            }
+        }
+        seen_reminders = keys;
+        reminders_primed = True;
+    }
+
+    async def ask_notifications() -> None {
+        if not window.Notification { return; }
+        notify_permission = await window.Notification.requestPermission();
+    }
+
+    def background_status(bg: dict) -> str {
+        if not bg.get("enabled") { return "Off. Reminders are only checked when you press Refresh tools."; }
+        status = "Checked every " + str(bg["interval_minutes"]) + " minutes while the server is running, even when this page is closed.";
+        if bg["last_run_at"] == "" { status += " First check within a minute."; }
+        else { status += " Last check " + bg["last_run_at"] + "; next after " + bg["next_check_at"] + "."; }
+        if bg["quiet"] { status += " Paused during quiet hours."; }
+        if bg["last_error"] != "" { status += " Last error: " + bg["last_error"]; }
+        return status;
+    }
+
+    def show_reminders() -> None {
+        active_tab = "list";
+        setTimeout(lambda {
+            el = document.getElementById("reminders-details");
+            if el { el.open = True; el.scrollIntoView({"block": "start", "behavior": "smooth"}); }
+        }, 0);
+    }
     can with (snapshot, busy) entry {
         listener = lambda e: any { operate("view", {}); };
         window.addEventListener("shopping-chat-updated", listener);
@@ -43,11 +89,15 @@ def:pub ShoppingPanel -> JsxElement {
             <button aria-pressed={snapshot.get("data_mode", "mock") == "mock"} disabled={busy or snapshot.get("data_mode", "mock") == "mock"} onClick={lambda e: MouseEvent { operate("set_mode", {"mode":"mock"}); }}>Demo data</button>
             <button aria-pressed={snapshot.get("data_mode", "mock") == "live"} disabled={busy or snapshot.get("data_mode", "mock") == "live"} onClick={lambda e: MouseEvent { operate("set_mode", {"mode":"live"}); }}>Real stores</button>
         </div></div>
+        {if len(snapshot["reminders"]) > 0 {
+            <div className="reminder-banner" role="status"><span>{"🔔 " + str(len(snapshot["reminders"])) + (" reminder" if len(snapshot["reminders"]) == 1 else " reminders") + ": " + snapshot["reminders"][0]["message"]}</span><button type="button" onClick={lambda e: MouseEvent { show_reminders(); }}>View</button></div>
+        }}
         <div className="source-note"><strong>{"DEMO · Simulated shopping" if snapshot.get("data_mode", "mock") == "mock" else "REAL STORES · Historical price evidence"}</strong>{"Explore budgets, store comparisons and purchase tracking with fictional prices and stock." if snapshot.get("data_mode", "mock") == "mock" else "Nearby stores use your address. Open Prices coverage varies; today's prices and stock are unknown."}</div>
         <nav className="workspace-tabs" role="tablist" aria-label="Shopping sections">
             {[<button key={tab["id"]} id={"tab-" + tab["id"]} role="tab" tabIndex={0 if active_tab == tab["id"] else -1} onKeyDown={lambda e: any { tab_key(e, tab["id"]); }} aria-selected={active_tab == tab["id"]} aria-controls={"panel-" + tab["id"]} onClick={lambda e: MouseEvent { active_tab = tab["id"]; }}>{tab["label"]}</button> for tab in [{"id":"list","label":"My list"},{"id":"plans","label":"Plans & stores"},{"id":"profile","label":"Preferences"}]]}
         </nav>
         <div className="workspace-content" role="tabpanel" id={"panel-" + active_tab} aria-labelledby={"tab-" + active_tab} tabIndex={0}>
+            {if error_notice != "" { <div className="error-banner" role="alert"><span>{error_notice}</span><button type="button" aria-label="Dismiss error" onClick={lambda e: MouseEvent { error_notice = ""; }}>×</button></div> }}
             {if active_tab == "list" {
             <div>
                 <div className="list-intro"><div><h3>Your shopping list</h3><p>Add items here or tell your assistant what you need.</p></div><span className="count-pill">{str(len([item for item in snapshot["interests"] if item.get("in_current_list", True)])) + " items"}</span></div>
@@ -85,7 +135,7 @@ def:pub ShoppingPanel -> JsxElement {
                     </div> for item in snapshot["interests"] if not item.get("in_current_list", True)]}
                 </details>
             }}
-            <details className="secondary-tools"><summary>Discoveries & reminders</summary>
+            <details id="reminders-details" className="secondary-tools"><summary>Discoveries & reminders</summary>
             <h3>Discoveries</h3>
             {if len(snapshot["discoveries"]) == 0 { <p>No new recommendations. Save an interest to get started.</p> }}
             {[<div key={item["key"]} style={{"marginBottom": "10px"}}>
@@ -94,6 +144,13 @@ def:pub ShoppingPanel -> JsxElement {
                 <button type="button" disabled={busy} onClick={lambda e: MouseEvent { operate("discovery", {"key": item["key"], "action": "dismiss"}); }}>Not interested</button>
             </div> for item in snapshot["discoveries"]]}
             <h3>Reminders</h3>
+            <div className="background-reminders">
+                <label><input type="checkbox" checked={snapshot.get("background", {}).get("enabled", False)} disabled={busy} onChange={lambda e: ChangeEvent { operate("background", {"enabled": e.target.checked}); }} /> Check for reminders in the background</label>
+                <p>{background_status(snapshot.get("background", {}))}</p>
+                {if notify_permission == "default" { <button type="button" onClick={lambda e: MouseEvent { ask_notifications(); }}>Enable desktop notifications</button> }}
+                {if notify_permission == "denied" { <p>Desktop notifications are blocked in this browser; reminders still appear here.</p> }}
+                {if notify_permission == "granted" { <p>Desktop notifications are on while this page is open.</p> }}
+            </div>
             {if snapshot["quiet"] { <p>Quiet hours are active. Refresh after quiet hours to see reminders.</p> }}
             {if not snapshot["quiet"] and len(snapshot["reminders"]) == 0 { <p>No reminders are due from fresh catalog data.</p> }}
             {[<div key={item["key"]} style={{"marginBottom": "10px"}}>

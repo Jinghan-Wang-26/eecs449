@@ -9,7 +9,9 @@ impl ShoppingPanel.operate(action: str, data: dict) -> None {
             payload = result.reports[0];
             if payload["error"] {
                 notice = payload["error"];
+                error_notice = payload["error"];
             } else {
+                error_notice = "";
                 # Surface new chat-generated plans and confirmation requests.
                 if action == "view" and snapshot.get("workspace") {
                     next_workspace = payload["workspace"];

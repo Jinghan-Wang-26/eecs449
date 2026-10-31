@@ -48,6 +48,15 @@ node SyncState {
         discovery_counts: dict = {};
 }
 
+"""Opt-in background reminder checks and the outcome of the latest run."""
+node BackgroundState {
+    has enabled: bool = False,
+        last_run_at: str = "",
+        last_error: str = "",
+        last_created: int = 0,
+        runs: int = 0;
+}
+
 node ShoppingWorkspace {
     has delivery_quotes: list = [];
     has visit_history: list = [], new_plan_request_ids: list = [];

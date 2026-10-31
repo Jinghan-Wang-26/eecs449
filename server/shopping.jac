@@ -14,6 +14,7 @@ import from models.graph { Has, profile_of, catalog_of, items_of, add_need, find
 import from providers.mock { load_mock, mock_updates }
 import from interests.discovery { discover_products, discovery_action }
 import from notify.reminders { inbox, reminder_action }
+import from notify.background { set_background, background_view }
 import from sync.engine { sync_events }
 
 def shopping_operation(p: UserProfile, action: str, data: dict, now: str) -> dict {
@@ -65,6 +66,8 @@ def shopping_operation(p: UserProfile, action: str, data: dict, now: str) -> dic
     } elif action == "reminder" {
         if not reminder_action(p, data.get("key", ""), data.get("action", ""), now, cfg) { raise ValueError("Reminder is no longer actionable"); }
         message = "Reminder updated.";
+    } elif action == "background" {
+        message = set_background(p, data.get("enabled", False) == True);
     } elif action == "feedback" {
         sync_events(p, [data], now, cfg);
         message = "Feedback recorded.";
@@ -114,13 +117,13 @@ def shopping_operation(p: UserProfile, action: str, data: dict, now: str) -> dic
         state = owned(p, ShoppingWorkspace);
         state.pending_intent = {}; state.pending_id = "";
         message = "Chat proposal discarded.";
-    } elif action not in ["refresh", "view", "discover"] {
+    } elif action not in ["refresh", "view", "discover", "background"] {
         message = workflow(p, action, data, now);
         cfg["data_mode"] = mode_of(p);
         cat = catalog_of(p);
         if cat.mode == "mock" and not [cat ->:Has:->][?:Product] { load_mock(cat, now=now); }
     }
-    if action != "view" {
+    if action not in ["view", "background"] {
         if refresh_requested and cfg["data_mode"] == "live" { refresh_live(p); }
         updates = [];
         if refresh_requested and cfg["data_mode"] == "mock" {
@@ -144,9 +147,10 @@ def shopping_operation(p: UserProfile, action: str, data: dict, now: str) -> dic
               "qty": n.product_spec.get("qty", 1), "brand": n.product_spec.get("brand", ""), "size": n.product_spec.get("size", ""),
               "in_current_list": getattr(n, "in_current_list", True)}
              for n in items_of(p) if n.kind != InterestKind.DISCOVER and n.status != InterestStatus.ARCHIVED];
+    workspace = workspace_view(p, now);
     return {"message": message, "discoveries": discoveries, "reminders": inbox(p, now, cfg),
             "interests": needs, "categories": sorted(set([prod.category for prod in [cat ->:Has:->][?:Product]])),
-            "quiet": quiet(now, cfg), "data_mode": cfg["data_mode"], "checked_at": now, "workspace": workspace_view(p, now)};
+            "quiet": quiet(now, cfg), "background": background_view(p, now, cfg), "data_mode": cfg["data_mode"], "checked_at": now, "workspace": workspace};
 }
 
 walker:pub ShoppingAction {
