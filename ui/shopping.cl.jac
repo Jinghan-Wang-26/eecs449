@@ -86,6 +86,24 @@ def:pub ShoppingPanel -> JsxElement {
         return status;
     }
 
+    # What the active data source can actually tell the user. Kroger branches give
+    # current prices and stock only when the server has Kroger credentials.
+    def live_prices() -> bool {
+        creds = snapshot.get("workspace", {}).get("credentials", {});
+        return bool(creds.get("KROGER_CLIENT_ID")) and bool(creds.get("KROGER_CLIENT_SECRET"));
+    }
+
+    def source_title() -> str {
+        if snapshot.get("data_mode", "mock") == "mock" { return "DEMO · Simulated shopping"; }
+        return "REAL STORES · Current Kroger prices" if live_prices() else "REAL STORES · Historical price evidence";
+    }
+
+    def source_detail() -> str {
+        if snapshot.get("data_mode", "mock") == "mock" { return "Explore budgets, store comparisons and purchase tracking with fictional prices and stock."; }
+        if live_prices() { return "Kroger branches near your address show current prices and stock levels, rechecked before you accept a visit. Other stores show historical Open Prices records or location only."; }
+        return "Nearby stores use your address. Open Prices coverage varies; today's prices and stock are unknown. Add Kroger credentials for current prices.";
+    }
+
     def show_reminders() -> None {
         active_tab = "list";
         setTimeout(lambda {
@@ -107,7 +125,7 @@ def:pub ShoppingPanel -> JsxElement {
         {if len(snapshot["reminders"]) > 0 {
             <div className="reminder-banner" role="status"><span>{"🔔 " + str(len(snapshot["reminders"])) + (" reminder" if len(snapshot["reminders"]) == 1 else " reminders") + ": " + snapshot["reminders"][0]["message"]}</span><button type="button" onClick={lambda e: MouseEvent { show_reminders(); }}>View</button></div>
         }}
-        <div className="source-note"><strong>{"DEMO · Simulated shopping" if snapshot.get("data_mode", "mock") == "mock" else "REAL STORES · Historical price evidence"}</strong>{"Explore budgets, store comparisons and purchase tracking with fictional prices and stock." if snapshot.get("data_mode", "mock") == "mock" else "Nearby stores use your address. Open Prices coverage varies; today's prices and stock are unknown."}</div>
+        <div className="source-note"><strong>{source_title()}</strong>{source_detail()}</div>
         <nav className="workspace-tabs" role="tablist" aria-label="Shopping sections">
             {[<button key={tab["id"]} id={"tab-" + tab["id"]} role="tab" tabIndex={0 if active_tab == tab["id"] else -1} onKeyDown={lambda e: any { tab_key(e, tab["id"]); }} aria-selected={active_tab == tab["id"]} aria-controls={"panel-" + tab["id"]} onClick={lambda e: MouseEvent { active_tab = tab["id"]; }}>{tab["label"]}</button> for tab in [{"id":"list","label":"My list"},{"id":"plans","label":"Plans & stores"},{"id":"budget","label":"Budget"},{"id":"profile","label":"Preferences"}]]}
         </nav>

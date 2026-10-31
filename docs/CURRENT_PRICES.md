@@ -57,7 +57,7 @@ That field means the store sells the product, not that it is in stock. Only
 1. Start the project using the existing [setup instructions](SETUP_LIVE.md).
 2. Select **Real stores**, confirm an address near a Kroger-family store, and save
    needs, package quantities, travel mode, free time and optional budget/tax.
-3. Open **Plans & stores** and choose **Recommend stores for my list**. With
+3. Open **Plans & stores** and choose **Compare store options**. With
    credentials configured, retailer branches are checked alongside historical
    and location-only options. Review the selected product, brand, package size,
    source store, query timestamp, refresh deadline and available/unknown status.

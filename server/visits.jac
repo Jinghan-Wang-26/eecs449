@@ -97,7 +97,7 @@ def visit_action(p: UserProfile, data: dict, now: str) -> str {
         state.visit_plans = list(state.visit_plans);
         if not plan['accept_allowed'] or plan['quote_changes'] or action == 'refresh' {
             plan['review_reason'] = 'Prices and availability were rechecked. ' + ' '.join(plan['quote_changes']);
-            if not plan['accept_allowed'] { plan['review_reason'] += ' Resolve the listed blockers or recommend stores again for alternatives.'; }
+            if not plan['accept_allowed'] { plan['review_reason'] += ' Resolve the listed blockers or compare store options again for alternatives.'; }
             else { plan['review_reason'] += ' Review the updated selection and confirm again.'; }
             return plan['review_reason'];
         }

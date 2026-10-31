@@ -77,7 +77,7 @@ If a key was shared in chat, replace it in the provider console and update only 
 3. Click **Find nearby supermarkets**. A store can have historical prices, optional Kroger product access, or location information only.
 4. Click **View historical products** on Whole Foods or another Open Prices location. Each record displays observation date, currency, discount conditions, source and supporting evidence. Pagination browses up to 100 pages, 20 records each; the text filter filters the current page only.
 5. Click **Estimate walk** for a Geoapify round-trip estimate. This is not a transit timetable. BUS/RIDESHARE are intentionally unsupported by the routing adapter.
-6. For a real shopping visit, save profile/free time and needs, choose a radius under **Real-store shopping visits**, and click **Recommend stores for my list**. Review historical evidence and unknowns, accept a visit, then record purchase/not-found/skipped outcomes. See the [complete real-address walkthrough](REAL_STORE_VISITS.md). Historical records remain excluded from the current-price optimizer.
+6. For a real shopping visit, save profile/free time and needs, choose a radius under **Real-store shopping visits**, and click **Compare store options**. Review historical evidence and unknowns, accept a visit, then record purchase/not-found/skipped outcomes. See the [complete real-address walkthrough](REAL_STORE_VISITS.md). Historical records remain excluded from the current-price optimizer.
 
 On 2026-10-12, the public Sunnyvale example returned records, while Ann Arbor city center within 5 km returned none from Open Prices. Mapped supermarkets can still appear in areas without price contributions. This is a coverage limitation, not a claim that the stores lack products.
 

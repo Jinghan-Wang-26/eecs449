@@ -10,7 +10,7 @@ def:pub VisitPlans(workspace: dict, busy: bool, operate: any) -> JsxElement {
         <label>Search radius<select aria-label="Visit search radius" value={radius} onChange={lambda e: ChangeEvent { radius = e.target.value; }}>
             <option value="500">500 m</option><option value="1000">1 km</option><option value="5000">5 km</option><option value="10000">10 km</option><option value="20000">20 km</option>
         </select></label>
-        <button disabled={busy} onClick={lambda e: MouseEvent { operate("recommend_visits", {"radius_m": radius}); }}>Recommend stores for my list</button>
+        <button disabled={busy} onClick={lambda e: MouseEvent { operate("recommend_visits", {"radius_m": radius}); }}>Compare store options</button>
         <p>Allow time for retailer lookups, historical evidence and routes. Walking, cycling and driving are supported. Scheduled TheRide buses cover Ann Arbor/Ypsilanti; live arrivals and rideshare estimates are unavailable.</p>
         {if workspace["visit_search"].get("generated_at") {
             <p>{"Checked " + str(workspace["visit_search"]["checked_stores"]) + " of " + str(workspace["visit_search"]["nearby_count"]) + " nearby stores · " + workspace["visit_search"]["generated_at"]}</p>
