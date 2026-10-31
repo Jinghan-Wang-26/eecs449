@@ -2,11 +2,13 @@
 
 import from .history { HistoricalPrices }
 import from .visits { VisitPlans }
+import from .delivery { DeliveryQuotes }
 
 def:pub WorkspacePanel(workspace: dict, mode: str, busy: bool, operate: any, category: str, view: str = "plans") -> JsxElement {
     has address: str = "",
         locating: bool = False, location_notice: str = "",
         max_walk: str = str(workspace["profile"]["max_walk_min"]),
+        max_transfers: str = str(workspace["profile"].get("max_transfers", 1)),
         budget: str = str(workspace["profile"]["budget"]),
         carry: str = str(workspace["profile"]["carry_limit_kg"]),
         transport: str = workspace["profile"]["transport"].join(","),
@@ -40,6 +42,7 @@ def:pub WorkspacePanel(workspace: dict, mode: str, busy: bool, operate: any, cat
     async def save_profile(e: FormEvent) -> None {
         e.preventDefault();
         values = {"weekly_budget": budget, "carry_limit_kg": carry, "max_walk_min": max_walk,
+            "max_transfers": max_transfers,
             "transport": [v.strip().upper() for v in transport.split(",") if v.strip()],
             "free_windows": [v.strip() for v in windows.split(";") if v.strip()],
             "dietary": [v.strip() for v in dietary.split(",") if v.strip()],
@@ -59,12 +62,13 @@ def:pub WorkspacePanel(workspace: dict, mode: str, busy: bool, operate: any, cat
             </div>
         }}
         {if view == "profile" {
-        <section><h3>Your shopping profile</h3><p>Tell the assistant your preferences, or adjust them here. Saved preferences carry over to your next trip.</p>
+        <section><h3>Your shopping profile</h3><p>Scheduled TheRide searches support up to two transfers per travel segment and respect lower saved limits.</p><p>Tell the assistant your preferences, or adjust them here. Saved preferences carry over to your next trip.</p>
             <p>{"Saved address: " + (workspace["profile"]["address"] or "Not set")}</p>
             <form onSubmit={save_profile} className="profile-grid">
                 <label>Budget ($)<input aria-label="Budget" type="number" min="0" value={budget} onChange={lambda e: ChangeEvent { budget = e.target.value; }} /></label>
                 <label>Carrying limit (kg)<input aria-label="Carrying limit" type="number" min="0.1" step="0.1" value={carry} onChange={lambda e: ChangeEvent { carry = e.target.value; }} /></label>
                 <label>Maximum walking segment (minutes)<input aria-label="Maximum walking minutes" type="number" min="0" max="240" value={max_walk} onChange={lambda e: ChangeEvent { max_walk = e.target.value; }} /></label>
+                <label>Maximum bus transfers per travel segment<input aria-label="Maximum bus transfers" type="number" min="0" max="10" step="1" value={max_transfers} onChange={lambda e: ChangeEvent { max_transfers = e.target.value; }} /></label>
                 <label>Transport (comma separated)<input aria-label="Transport" value={transport} placeholder="WALK,BUS" onChange={lambda e: ChangeEvent { transport = e.target.value; }} /></label>
                 <label>Free time (semicolon separated)<input aria-label="Free time" value={windows} placeholder="SAT 14:00-17:00;SUN 10:00-12:00" onChange={lambda e: ChangeEvent { windows = e.target.value; }} /></label>
                 <label>Estimated tax rate (e.g. 0.06)<input aria-label="Tax rate" type="number" min="0" max="0.3" step="0.001" value={tax} onChange={lambda e: ChangeEvent { tax = e.target.value; }} /></label>
@@ -115,7 +119,8 @@ def:pub WorkspacePanel(workspace: dict, mode: str, busy: bool, operate: any, cat
                 </div> for quote in workspace["catalog_prices"] if quote["category"] == category]}
             </details>
         }}
-        {if mode == "live" { <VisitPlans workspace={workspace} busy={busy} operate={operate} /> }}
+        {if mode == "live" { <DeliveryQuotes workspace={workspace} busy={busy} operate={operate} />
+            <VisitPlans workspace={workspace} busy={busy} operate={operate} /> }}
         {if mode == "mock" or len(workspace["plans"]) > 0 { <h3>{"Demo shopping plans" if mode == "mock" else "Verified current-price plans"}</h3> }}
         {if mode == "mock" { <button disabled={busy} onClick={lambda e: MouseEvent { operate("plan", {}); }}>Compare plans</button> }}
         {if len(workspace["plans"]) == 0 and mode == "mock" { <p>Save your needs, transport and free time, then compare plans.</p> }}

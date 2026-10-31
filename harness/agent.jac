@@ -17,7 +17,7 @@ def conversation_context(p: UserProfile) -> dict {
     state = owned(p, ShoppingWorkspace);
     return {"data_mode": mode_of(p), "has_confirmed_address": bool(p.location),
         "transport": p.transport, "budget": p.weekly_budget, "free_windows": p.free_windows,
-        "max_walk_min": p.max_walk_min, "carry_limit_kg": p.carry_limit_kg,
+        "max_walk_min": p.max_walk_min, "max_transfers": p.max_transfers, "carry_limit_kg": p.carry_limit_kg,
         "address_pending": state.chat_address_pending,
         "address_candidates": [{"address": c["address"]} for c in state.address_candidates],
         "current_question": state.chat_question, "planning_requested": state.chat_planning,

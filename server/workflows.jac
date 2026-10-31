@@ -1,7 +1,7 @@
 """Address, profile, live catalog, and plan operations on the user's graph."""
 
 import uuid;
-import from server.visits { recommend_visits, visit_action, visit_view, invalidate_visits }
+import from server.visits { recommend_visits, visit_action, visit_view, invalidate_visits, delivery_operation }
 import from pricing { price_details }
 import from ai.matching { rank_products }
 import json;
@@ -80,7 +80,7 @@ def start_new_plan(p: UserProfile, request_id: str, now: str) -> str {
             history.append(plan); keys.add(plan["key"]);
         }
     }
-    state.visit_history = history; state.visit_plans = []; state.visit_search = {};
+    state.visit_history = history; state.visit_plans = []; state.visit_search = {}; state.delivery_quotes = [];
     for plan in plans_of(p) {
         if plan.status not in [PlanStatus.COMPLETED, PlanStatus.CANCELLED] { plan.move_to(PlanStatus.CANCELLED); }
     }
@@ -293,6 +293,8 @@ def workflow(p: UserProfile, action: str, data: dict, now: str) -> str {
         }
         invalidate_plans(p, "Product match changed.");
         return "Product match confirmed.";
+    } elif action in ["save_delivery_quote", "remove_delivery_quote"] {
+        return delivery_operation(p, action, data, now);
     } elif action == "recommend_visits" {
         radius = int(number(data.get("radius_m", state.search_radius_m), 500, 20000, "radius"));
         if radius != state.search_radius_m { invalidate_visits(p, "Search radius changed."); }
@@ -356,10 +358,12 @@ def workspace_view(p: UserProfile, now: str = "") -> dict {
     }
     products_view = [row | price_details(row.get("price"), label=row.get("size_label", "")) for row in state.product_results];
     return {"llm_backend": credentials().get("LLM_BACKEND", "api"), "catalog_prices": catalog_prices, "profile": {"address": p.home_address, "transport": p.transport, "budget": p.weekly_budget,
-            "max_walk_min": p.max_walk_min, "carry_limit_kg": p.carry_limit_kg, "free_windows": p.free_windows, "tax_rate": p.tax_rate,
+            "max_walk_min": p.max_walk_min, "max_transfers": p.max_transfers, "carry_limit_kg": p.carry_limit_kg, "free_windows": p.free_windows, "tax_rate": p.tax_rate,
             "transport_cost": p.transport_cost, "dietary": p.dietary, "memberships": p.memberships},
         "address_candidates": state.address_candidates, "stores": state.nearby_stores,
         "products": products_view, "plans": plans[-10:], "notices": state.notices,
+        "shopping_needs": [dict(n.product_spec) for n in items_of(p) if n.plannable()],
+        "delivery_quotes": list(getattr(state,"delivery_quotes",[])) if mode_of(p)=="live" else [],
         "visit_plans": visit_view(p, stamp(now)), "visit_search": state.visit_search, "search_radius_m": state.search_radius_m,
         "visit_history": list(getattr(state, "visit_history", [])) if mode_of(p) == "live" else [],
         "historical_prices": state.historical_prices,

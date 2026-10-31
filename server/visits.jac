@@ -1,6 +1,9 @@
-"""Persistent historical store visits, separate from current-price ShoppingPlan/Offer."""
+"""Persistent store visits with historical evidence or rechecked retailer snapshots."""
 import from app_settings { due, instant, get_settings }
-import from planning.visits { recommend, signature }
+import from planning.visits { recommend, signature, refresh_visit }
+import from planning.retail { fresh_quote }
+import from planning.multistore { comparison_kind }
+import from planning.delivery { save_delivery_quote, delivery_issues }
 import from models.profile { UserProfile }
 import from models.events { ShoppingWorkspace }
 import from models.graph { owned, items_of }
@@ -11,11 +14,12 @@ import from integrations.validation { purchase_result }
 def visit_context(p: UserProfile, now: str) -> dict {
     state = owned(p, ShoppingWorkspace);
     return {"origin": p.location, "radius_m": state.search_radius_m,
+        "delivery_quotes": list(getattr(state,"delivery_quotes",[])),
         "needs": [dict(n.product_spec) for n in items_of(p) if n.plannable() and (n.snoozed_until == "" or due(n.snoozed_until, now))],
-        "profile": {"transport": p.transport, "max_walk_min": p.max_walk_min,
+        "profile": {"transport": p.transport, "max_walk_min": p.max_walk_min, "max_transfers": p.max_transfers,
             "free_windows": p.free_windows, "weekly_budget": p.weekly_budget,
             "carry_limit_kg": p.carry_limit_kg, "dietary": p.dietary,
-            "transport_cost": p.transport_cost, "memberships": p.memberships}};
+            "time_value_per_hour": p.time_value_per_hour, "transport_cost": p.transport_cost, "tax_rate": p.tax_rate, "memberships": p.memberships}};
 }
 
 def invalidate_visits(p: UserProfile, message: str) -> None {
@@ -37,12 +41,17 @@ def visit_view(p: UserProfile, now: str) -> list {
     for plan in state.visit_plans {
         if plan["status"] not in ["PROPOSED", "ACCEPTED", "IN_PROGRESS"] { continue; }
         changed = plan["input_signature"] != sig;
-        expired = plan["route"] is not None and not due(now, plan["route"]["valid_until"]);
-        departed = plan["route"] is not None and bool(plan["route"].get("departure_at")) and due(plan["route"]["departure_at"], now);
-        if changed or expired or (departed and plan["status"] == "PROPOSED") {
+        # The caller's clock may be the request start, before HTTP queries finished.
+        as_of = max(instant(now), instant(plan.get('quote_checked_at') or now)).isoformat();
+        expired = plan["route"] is not None and not due(as_of, plan["route"]["valid_until"]);
+        departed = plan["route"] is not None and bool(plan["route"].get("departure_at")) and due(plan["route"]["departure_at"], as_of);
+        stale_quotes = (plan.get('kind') == 'CURRENT_STORE_VISIT' or comparison_kind(plan)) and any([not fresh_quote(item['quote'], as_of) for item in plan['items'] if item.get('quote')]);
+        stale_delivery = bool(plan.get('delivery_quote')) and instant(plan['delivery_quote']['valid_until']) <= instant(as_of);
+        plan['quotes_expired'] = stale_quotes or stale_delivery;
+        if changed or expired or stale_quotes or stale_delivery or (departed and plan["status"] == "PROPOSED") {
             plan["status"] = "NEEDS_REVIEW";
             plan["accept_allowed"] = False;
-            plan["review_reason"] = "Inputs changed, the route estimate expired, or the proposed departure passed. Generate and review a new visit plan.";
+            plan["review_reason"] = "Inputs changed, quotes or route evidence expired, or departure passed. Refresh prices if the route still fits; otherwise generate a new visit.";
         }
     }
     state.visit_plans = list(state.visit_plans);
@@ -60,7 +69,7 @@ def recommend_visits(p: UserProfile, now: str) -> str {
     state.nearby_stores = result["stores"];
     state.notices = result["notices"];
     state.visit_search = {"generated_at": result["generated_at"], "checked_stores": result["checked_stores"], "nearby_count": result["nearby_count"]};
-    return f"Generated {len(proposals)} historical store-visit options. Review coverage, route limits and unknown current prices before accepting.";
+    return f"Generated {len(proposals)} store-visit options. Review retailer snapshots or historical evidence, product matches and route limits before accepting.";
 }
 
 def visit_action(p: UserProfile, data: dict, now: str) -> str {
@@ -70,6 +79,30 @@ def visit_action(p: UserProfile, data: dict, now: str) -> str {
     found = [plan for plan in plans if plan["key"] == data.get("key")];
     if len(found) != 1 { raise ValueError("Visit plan not found. Generate new recommendations."); }
     plan = found[0]; action = data.get("action");
+    if action == "refresh" or (action == "accept" and (plan.get('kind') == 'CURRENT_STORE_VISIT' or comparison_kind(plan))) {
+        if (plan.get('kind') != 'CURRENT_STORE_VISIT' and not comparison_kind(plan)) or plan.get('accepted_at') or plan['status'] not in ['PROPOSED', 'NEEDS_REVIEW'] { raise ValueError('Only unaccepted retailer visits can refresh prices.'); }
+        if plan['input_signature'] != signature(visit_context(p, now)) { raise ValueError('Shopping inputs changed. Generate new recommendations.'); }
+        if action == 'accept' {
+            if data.get('acknowledge_unknowns') is not True { raise ValueError('Review product matches, prices and unknowns before accepting.'); }
+            if data.get('quote_revision') != plan.get('quote_revision') { raise ValueError('The displayed quote changed. Reload and review the latest version.'); }
+        }
+        if action == 'accept' and plan.get('delivery_quote') and data.get('delivery_reconfirmed') is not True { raise ValueError('Reconfirm the merchant checkout quote, address, basket, fees and slot before accepting. This does not place an order.'); }
+        updated = refresh_visit(plan, visit_context(p, now), now);
+        # A refreshed quote has not been compared against the other options again.
+        updated['comparison_labels'] = []; updated['savings_vs_single'] = None; updated['compared_options'] = 0;
+        plan.update(updated);
+        plan['status'] = 'PROPOSED' if plan['accept_allowed'] else 'NEEDS_REVIEW';
+        plan['quotes_expired'] = False;
+        state.visit_plans = list(state.visit_plans);
+        if not plan['accept_allowed'] or plan['quote_changes'] or action == 'refresh' {
+            plan['review_reason'] = 'Prices and availability were rechecked. ' + ' '.join(plan['quote_changes']);
+            if not plan['accept_allowed'] { plan['review_reason'] += ' Resolve the listed blockers or recommend stores again for alternatives.'; }
+            else { plan['review_reason'] += ' Review the updated selection and confirm again.'; }
+            return plan['review_reason'];
+        }
+        plan['last_verified_at'] = plan['quote_checked_at'];
+        plan.pop('review_reason', None);
+    }
     if action == "accept" {
         if plan["status"] != "PROPOSED" or not plan["accept_allowed"] { raise ValueError("This visit needs new recommendations or corrected travel constraints."); }
         if data.get("acknowledge_unknowns") is not True { raise ValueError("Acknowledge that current prices, stock and opening hours need checking."); }
@@ -77,7 +110,7 @@ def visit_action(p: UserProfile, data: dict, now: str) -> str {
             raise ValueError("Complete or cancel your existing visit before accepting another.");
         }
         plan["status"] = "ACCEPTED";
-        plan["accepted_at"] = now;
+        plan["accepted_at"] = plan.get("last_verified_at") or now;
         for other in state.visit_plans {
             if other["key"] != plan["key"] and other["status"] == "PROPOSED" { other["status"] = "CANCELLED"; }
         }
@@ -116,4 +149,22 @@ def visit_action(p: UserProfile, data: dict, now: str) -> str {
     } else { raise ValueError("Unsupported visit action."); }
     state.visit_plans = list(state.visit_plans);
     return "Store visit updated. Unpurchased needs remain on your list.";
+}
+
+
+def delivery_operation(p: UserProfile, action: str, data: dict, now: str) -> str {
+    if (p.data_mode or get_settings()['data_mode']) != 'live' { raise ValueError('Choose Real stores first.'); }
+    state = owned(p,ShoppingWorkspace); quotes = list(getattr(state,'delivery_quotes',[]));
+    if action == 'save_delivery_quote' {
+        quote = save_delivery_quote(data,visit_context(p,now),now);
+        replace_id = data.get('replace_id');
+        if replace_id and replace_id not in [q['id'] for q in quotes] { raise ValueError('The delivery quote to replace is no longer saved.'); }
+        quotes = [q for q in quotes if q['id']!=replace_id];
+        if len(quotes)>=3 { raise ValueError('Keep at most three delivery quotes; remove or replace one first.'); }
+        quotes.append(quote);
+    } elif action == 'remove_delivery_quote' { quotes = [q for q in quotes if q['id']!=data.get('id')]; }
+    else { raise ValueError('Unknown delivery quote operation.'); }
+    state.delivery_quotes = quotes;
+    invalidate_visits(p,'A delivery checkout quote changed. Generate new comparisons.');
+    return 'Delivery quote saved or removed. Compare plans again. This is user-entered checkout evidence, not an API quote or an order.';
 }
