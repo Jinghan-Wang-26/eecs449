@@ -1,5 +1,19 @@
 # Issue #8 implementation and verification
 
+## Current retailer workflow (2026-10-27)
+
+Kroger branch snapshots now connect address search, shopping-list matching, route and
+scheduled bus planning, and uncached quote rechecks before acceptance. Changed prices
+or selections require another explicit review; errors never reuse stale quotes.
+See [CURRENT_PRICES.md](CURRENT_PRICES.md) for credential setup, limitations and tests.
+Authenticated production queries and a scheduled-bus shopping visit with an
+uncached quote recheck passed on 2026-10-27; see
+[actual provider evidence](samples/current-prices-verification.json). Earlier
+Open Prices examples below remain historical.
+
+
+**Current transit update (2026-10-27):** scheduled TheRide bus visits are now supported; see [TRANSIT.md](TRANSIT.md). Earlier verification entries below describe their dated snapshots.
+
 This table maps the 17 README checklist items to implementation and verification evidence. Read [setup](SETUP_LIVE.md) and [API research](ISSUE6_API_RESEARCH.md) for the historical-price scope and remaining external-service verification requirements.
 
 | # | Task | Implementation / evidence |
@@ -11,7 +25,7 @@ This table maps the 17 README checklist items to implementation and verification
 | 5 | Mock dataset | `data/mock/catalog.json`: four fictional stores, twelve products, thirty offers. Kept separate from real-provider data; fixed raw fixture dates with application-only demo rebasing and persisted-expiry migration. |
 | 6 | Basket cost | `planning/cost.jac`: eligible discounts, tax, fees, tips and travel; `pricing.jac` supplies package and normalized unit prices with membership eligibility and snapshot display; tests include membership and unknown fees. |
 | 7 | Hard constraints | `planning/constraints.jac`, `inputs.jac`: budget, carry, time, modes, transfers, windows, freshness, dietary evidence. Missing mass/route/tax assumptions block optional current-offer live planning. |
-| 8 | In-store/delivery/mixed ranking | `planning/candidates.jac`: cost/convenience/balanced, bounded channel count and 20,000 candidate/combination limits. Mock scenarios verify all channels. Historical observations cannot supply live delivery fees or prices. |
+| 8 | In-store/delivery/mixed ranking | Demo: `planning/candidates.jac`. Real mode: `planning/multistore.jac`, `delivery.jac` and `itineraries.jac` compare single/two-store trips and user-entered checkout quotes. Continuous routes, full basket fees, home availability and acceptance rechecks are covered. Delivery is not API verified; see [walkthrough and evidence](MULTISTORE_DELIVERY.md). |
 | 9 | Plan lifecycle | `planning/lifecycle.jac`, `server/workflows.jac`: UUID keys, mode-specific selection, acceptance/cancellation, partial outcomes, review after changes. Reject expired quotes at acceptance. |
 | 10 | Feedback and sync | `feedback/apply.jac`, `sync/engine.jac`: validated batches, persistent event IDs, no duplicate application, coalesced replan and explicit review of accepted plans. Live public API rejects injected offer updates. |
 | 11 | Reminders | `notify/reminders.jac`: replenishment, target price and restock, cooldown, quiet hours, snooze/ignore/dismiss and deduplication. Manual refresh; no background scheduler. Historical price evidence does not trigger current-price/stock reminders. |
@@ -19,7 +33,7 @@ This table maps the 17 README checklist items to implementation and verification
 | 13 | Configuration | `app.toml`, `app_settings.py`, `.env.example`; mode/timezone/planning/reminder settings plus server-only provider credentials. |
 | 14 | AI use with deterministic arithmetic | Intent extraction and follow-up intent routing in `ai/intents.py`; `ai/matching.py` ranks returned candidates by name/brand/size evidence and explains mismatches; confirmations are explicit; `ai/explanations.py` asks the model to select computed fact IDs and renders only authoritative values, with deterministic fallback. The LLM does not generate prices, route times, stock, diet compatibility, or arithmetic. Local Codex model acceptance is recorded below; optional retailer/API credentials remain separate. |
 | 15 | Profile/interest/plan UI | `ui/workspace.cl.jac`, `shopping.cl.jac`, `history.cl.jac`: profile/needs editing, mode switch, address confirmation, nearby stores, paginated historical product evidence, route estimate, proposals and purchase outcomes. Browser tested with real Geoapify/Open Prices responses. |
-| 16 | Tests | 121 Jac tests and 67 Python tests (188 total), plus a GitHub Actions test/build workflow. Synthetic fixtures are labeled; actual network evidence under `docs/samples` is separate. Frontend build and browser checks described below. |
+| 16 | Tests | 136 Jac tests and 110 Python tests (246 total, 2026-10-27), plus a GitHub Actions test/build workflow. Synthetic fixtures are labeled; actual network evidence under `docs/samples` is separate. Frontend build and browser checks described below. |
 | 17 | Chat integration | `server/chat.jac` calls `harness/agent.jac`; validated profile/need updates use the shared operations automatically; persistent conversational state asks for missing inputs and generates plans when ready. Feedback stays pending and plan acceptance/purchases are never automatic. Missing-key path verified in the earlier browser run; authenticated local Codex extraction, confirmation, planning and grounded explanation verified. Legacy `take_turn` / identity pipeline helpers remain for backward compatibility, not the active UI route. |
 
 ## Verification recorded on 2026-10-12
@@ -33,7 +47,7 @@ This table maps the 17 README checklist items to implementation and verification
 
 ## Remaining scope boundaries
 
-Open Prices is historical, contributor-dependent and incomplete: Ann Arbor's tested radius returned zero records. It satisfies the user-approved source-evidence scope, not a promise of real-time store inventory. Kroger authenticated access is optional and remains unverified. Real transit schedules, retailer checkout, background notifications, multi-user deployment/login UI and distributed coordination are not implemented. The demo graph/plan lifecycle remains usable without external accounts.
+Open Prices is historical, contributor-dependent and incomplete: Ann Arbor's tested radius returned zero records. It satisfies the user-approved source-evidence scope, not a promise of real-time store inventory. Kroger production access and scheduled TheRide visits are now verified in the 2026-10-27 update above. Retailer checkout, live transit predictions, background notifications, multi-user deployment/login UI and distributed coordination are not implemented. The demo graph/plan lifecycle remains usable without external accounts.
 
 ## Follow-up verification (2026-10-21 America/New_York)
 
@@ -96,3 +110,20 @@ Eight additional detached-graph regression cases cover list isolation, accepted-
 The Jac client now uses a responsive workspace with My list, Plans & stores and Preferences tabs alongside a persistent assistant. New shopping plan remains a prominent header action; demo simulation and historical real-store evidence have distinct labels. Tabs support keyboard navigation. New chat-generated plans and pending confirmations surface in Plans & stores. Assistant templates and model instructions now use English, including legacy language preferences. Authored examples and fixtures use English; the older conversation verification artifact is explicitly labeled as editorial summaries of its original run, not new model evidence.
 
 Validation: 121 Jac and 67 Python tests, client build, and an isolated Chromium walkthrough of desktop/mobile layouts, preferences, real-visit acceptance, partial purchases, fresh lists, history/restore, demo comparison and chat controls. No new paid model or live-provider calls were made for this interface update.
+
+
+### Scheduled bus visits (2026-10-27)
+
+TheRide GTFS now supports Ann Arbor/Ypsilanti outbound and return shopping journeys, with service-date exceptions, walking connections, transfer limits, a boarding buffer, and shopping/free-time checks. The core calendar and routing rules are implemented in `planning/transit.jac`; `integrations/transit.py` handles official feed I/O and verified pedestrian adapters. New English itinerary cards show scheduled bus numbers, stops, walks, waits, source/version and unknown fares. BUS-only chat requests proceed to planning instead of asking the user to switch transport. Changing a transfer limit invalidates stale visits.
+
+A real public-address HTTP check found 62/23 and 23/62 journeys between Michigan Union and Kroger on Plymouth Road. Live predictions, detours and fare calculations remain unavailable. This implements the scheduled-journey part of #3 and extends #8's route/time feasibility; no GitHub issue is automatically closed.
+
+
+Validation: 125 Jac + 86 Python tests (211 total), client build, isolated desktop/mobile bus-workflow checks with no page errors, and the separately recorded real public-address HTTP probe passed. No paid LLM calls were needed for this transit update.
+
+
+### Real multi-store and entered-delivery comparisons (2026-10-27)
+
+Real mode now compares branch-bound current prices across up to two physical stores, with directional inter-store travel, shopping time, return deadlines, cumulative carrying weight and scheduled bus support. Manual checkout quotes bind the exact basket/address, require complete fees and a fitting receipt window, and remain explicitly unverified by API. Mixed plans avoid the delivery window; acceptance rechecks each retailer branch and requires separate checkout reconfirmation. No order is placed. See [implementation, walkthrough and validation](MULTISTORE_DELIVERY.md).
+
+This extends tasks 6–10 and 14–17. The real two-store API probe and separately synthetic delivery/browser checks passed. Older single-store-only and demo-only statements above describe their dated snapshots. Automatic checkout, additional retailer coverage and larger optimization searches remain open; no GitHub issue was closed automatically.
