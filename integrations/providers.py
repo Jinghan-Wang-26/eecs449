@@ -38,7 +38,8 @@ def credentials():
             key, value = line.removeprefix('export ').split('=', 1)
             values[key.strip()] = value.strip().strip('\"\'')
     for key in ('KROGER_CLIENT_ID', 'KROGER_CLIENT_SECRET', 'GEOAPIFY_API_KEY',
-                'LLM_API_KEY', 'LLM_BASE_URL', 'LLM_MODEL', 'LLM_BACKEND'):
+                'LLM_API_KEY', 'LLM_BASE_URL', 'LLM_MODEL', 'LLM_BACKEND',
+                'SMTP_HOST', 'SMTP_PORT', 'SMTP_USER', 'SMTP_PASSWORD', 'SMTP_FROM'):
         if key in os.environ:
             values[key] = os.environ[key]
     return values

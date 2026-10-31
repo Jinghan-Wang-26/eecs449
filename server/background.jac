@@ -2,9 +2,9 @@
 
 The Jac scheduler ticks every minute on a daemon thread with no request context.
 Each tick opens a request-style context per user root (as the HTTP server does),
-runs the same refresh as the panel's Refresh button when that user is due, and
-commits. A concurrent request that wins a write conflict simply defers the
-check to the next tick.
+runs the same refresh as the panel's Refresh button when that user is due,
+emails new reminders to users who opted in, and commits. A concurrent request
+that wins a write conflict simply defers the check to the next tick.
 """
 
 import os;
@@ -18,6 +18,7 @@ import from app_settings { get_settings, stamp }
 import from models.profile { UserProfile }
 import from models.graph { reminders_of }
 import from notify.background { skip_reason, record_run }
+import from notify.delivery { deliver_reminders }
 import from server.shopping { shopping_operation }
 import from server.workflows { mode_of }
 
@@ -64,7 +65,10 @@ def check_root(root_id: str, now: str) -> dict {
         found = [Jac.root() -->][?:UserProfile];
         if not found { return {"ran": False, "reason": "no profile"}; }
         result = background_tick(found[0], now);
-        if result["ran"] { Jac.commit(); }
+        # Delivery runs every tick so a failed send retries on its own backoff,
+        # not only when the next refresh is due.
+        result["delivered"] = deliver_reminders(found[0], now);
+        Jac.commit();
         return result;
     } except WriteConflict {
         ctx.mem.abort();
@@ -87,7 +91,7 @@ def run_background_reminders -> None {
         now = stamp();
         for root_id in user_roots() {
             result = check_root(root_id, now);
-            if result["ran"] {
+            if result["ran"] or result["delivered"] not in [0, "disabled"] {
                 logger.info(f"Background reminders for {root_id[:8]}: {result}");
             }
         }

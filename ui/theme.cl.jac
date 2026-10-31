@@ -67,6 +67,11 @@ details { margin:12px 0; } summary { cursor:pointer; font-weight:600; padding:12
 .error-banner button { background:none; border:none; color:inherit; font-size:18px; cursor:pointer; padding:0 4px; }
 .background-reminders { border:1px solid var(--line); border-radius:11px; padding:12px 14px; margin-bottom:12px; }
 .background-reminders label { display:flex; align-items:center; gap:8px; font-size:13px; }
+.delivery-settings h4 { margin:0 0 4px; }
+.delivery-settings label { flex-wrap:wrap; margin:8px 0; }
+.delivery-settings label input:not([type=checkbox]) { flex:1 1 220px; min-width:0; }
+.delivery-settings .check-row { flex-wrap:nowrap; }
+.delivery-settings .row-actions { flex-wrap:wrap; }
 .sync-status { display:flex; align-items:center; justify-content:space-between; gap:15px; border-top:1px solid var(--line); padding:12px 24px; background:#fafbf7; }
 .sync-status p { margin:0; font-size:11px; color:var(--muted); } .sync-status button { font-size:11px; padding:6px 8px; flex-shrink:0; }
 .workspace-panel label { margin:12px 0; } .profile-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:4px 16px; align-items:end; }

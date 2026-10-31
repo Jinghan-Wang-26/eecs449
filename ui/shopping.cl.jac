@@ -17,7 +17,8 @@ def:pub ShoppingPanel -> JsxElement {
         seen_reminders: list = [],
         reminders_primed: bool = False,
         notify_permission: str = "unsupported",
-        error_notice: str = "";
+        error_notice: str = "",
+        email: str = "", email_on: bool = False;
 
     async def operate(action: str, data: dict) -> None;
     async def save(e: FormEvent) -> None;
@@ -54,6 +55,19 @@ def:pub ShoppingPanel -> JsxElement {
         }
         seen_reminders = keys;
         reminders_primed = True;
+    }
+
+    # Load saved channel settings into the form when they first arrive or change.
+    can with (JSON.stringify(snapshot.get("delivery", {}))) entry {
+        saved = snapshot.get("delivery");
+        if not saved { return; }
+        email = saved["email"]; email_on = saved["email_enabled"];
+    }
+
+    def delivery_status(saved: dict) -> str {
+        if saved["failure"].get("last_error") { return "Last attempt failed: " + saved["failure"]["last_error"] + " Retrying after " + saved["failure"]["next_retry_at"] + "."; }
+        if saved["last_delivery"].get("at") { return "Last sent " + saved["last_delivery"]["at"] + " (" + str(saved["last_delivery"]["count"]) + " reminders)."; }
+        return "";
     }
 
     async def ask_notifications() -> None {
@@ -151,6 +165,20 @@ def:pub ShoppingPanel -> JsxElement {
                 {if notify_permission == "denied" { <p>Desktop notifications are blocked in this browser; reminders still appear here.</p> }}
                 {if notify_permission == "granted" { <p>Desktop notifications are on while this page is open.</p> }}
             </div>
+            {if snapshot.get("delivery") {
+            <div className="background-reminders delivery-settings">
+                <h4>Email reminders</h4>
+                <p>Background checks email new reminders even when no CartCompass page is open, at most once per reminder and never during quiet hours.</p>
+                <label>Email address<input aria-label="Reminder email" type="email" value={email} maxLength="254" onChange={lambda e: ChangeEvent { email = e.target.value; }} /></label>
+                <label className="check-row"><input type="checkbox" checked={email_on} disabled={not snapshot["delivery"]["email_available"]} onChange={lambda e: ChangeEvent { email_on = e.target.checked; }} /> Email me new reminders</label>
+                {if not snapshot["delivery"]["email_available"] { <p>Email needs SMTP settings in the server's .env (see docs/NOTIFICATIONS.md).</p> }}
+                <p>{delivery_status(snapshot["delivery"])}</p>
+                <div className="row-actions">
+                    <button type="button" disabled={busy} onClick={lambda e: MouseEvent { operate("notify_settings", {"email": email, "email_enabled": email_on}); }}>Save email settings</button>
+                    <button type="button" disabled={busy or snapshot["delivery"]["email"] == "" or not snapshot["delivery"]["email_available"]} onClick={lambda e: MouseEvent { operate("notify_test", {}); }}>Send test email</button>
+                </div>
+            </div>
+            }}
             {if snapshot["quiet"] { <p>Quiet hours are active. Refresh after quiet hours to see reminders.</p> }}
             {if not snapshot["quiet"] and len(snapshot["reminders"]) == 0 { <p>No reminders are due from fresh catalog data.</p> }}
             {[<div key={item["key"]} style={{"marginBottom": "10px"}}>

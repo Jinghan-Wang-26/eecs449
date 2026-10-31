@@ -48,6 +48,15 @@ node SyncState {
         discovery_counts: dict = {};
 }
 
+"""Opted-in reminder email and its delivery receipts."""
+node DeliveryState {
+    has email: str = "",
+        email_enabled: bool = False,
+        delivered: dict = {},              # reminder key -> delivered_at
+        failure: dict = {},                # {count, next_retry_at, last_error} while retrying
+        last_delivery: dict = {};          # {at, count}
+}
+
 """Opt-in background reminder checks and the outcome of the latest run."""
 node BackgroundState {
     has enabled: bool = False,
