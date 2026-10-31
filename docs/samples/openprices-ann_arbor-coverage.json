@@ -1,0 +1,24 @@
+{
+ "kind": "actual HTTP response excerpt, not synthetic",
+ "retrieved_at": "2026-10-31T20:29:53+00:00",
+ "center": {
+  "label": "Michigan Union, 530 South State Street, Ann Arbor, MI 48109",
+  "lat": 42.2751698,
+  "lon": -83.7415127
+ },
+ "endpoint": "GET https://prices.openfoodfacts.org/api/v1/locations/nearby",
+ "results": [
+  {
+   "radius_km": 8,
+   "request_succeeded": true,
+   "total": 0,
+   "items": []
+  },
+  {
+   "radius_km": 20,
+   "request_succeeded": true,
+   "total": 0,
+   "items": []
+  }
+ ]
+}
