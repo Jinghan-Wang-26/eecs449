@@ -65,6 +65,26 @@ details { margin:12px 0; } summary { cursor:pointer; font-weight:600; padding:12
 .reminder-banner span { min-width:0; overflow-wrap:anywhere; }
 .error-banner { display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:14px; padding:10px 13px; background:#fbe9e7; color:#8a2b1d; border:1px solid #f1c4bc; border-radius:9px; font-size:13px; }
 .error-banner button { background:none; border:none; color:inherit; font-size:18px; cursor:pointer; padding:0 4px; }
+.budget-summary, .budget-breakdown, .budget-weeks { border:1px solid var(--line); border-radius:11px; padding:14px; margin-bottom:14px; }
+.budget-summary h3, .budget-breakdown h3, .budget-weeks h3 { margin:0 0 4px; }
+.budget-summary p { font-size:12px; color:var(--muted); margin:6px 0; }
+.budget-figures { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:10px; margin:10px 0; }
+.budget-figures span { display:block; font-size:11px; color:var(--muted); }
+.budget-figures strong { font-size:20px; }
+.budget-figures .over strong, .budget-figures .over span { color:#a3321f; }
+.budget-meter { height:8px; background:#ece8dc; border-radius:99px; overflow:hidden; }
+.budget-meter span { display:block; height:100%; background:#3f7a4e; }
+.budget-meter span.over { background:#c2452f; }
+.budget-row { display:flex; justify-content:space-between; font-size:13px; padding:4px 0; border-bottom:1px solid var(--line); }
+.week-bars { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:10px; align-items:end; height:120px; margin-top:8px; }
+.week-bar { display:flex; flex-direction:column; justify-content:flex-end; align-items:center; height:100%; font-size:11px; }
+.week-bar .bar { width:60%; min-height:2px; background:#8fb59a; border-radius:4px 4px 0 0; }
+.week-bar small { color:var(--muted); }
+.budget-note { padding:8px 11px; background:#fdf3e1; color:#7a5414; border-radius:8px; font-size:12px; }
+.ledger-row { display:flex; align-items:center; justify-content:space-between; gap:12px; border:1px solid var(--line); border-radius:11px; padding:12px 14px; margin-bottom:8px; }
+.ledger-row.voided { opacity:.55; }
+.ledger-row .item-meta { display:block; }
+.ledger-row .row-actions input { width:90px; }
 .background-reminders { border:1px solid var(--line); border-radius:11px; padding:12px 14px; margin-bottom:12px; }
 .background-reminders label { display:flex; align-items:center; gap:8px; font-size:13px; }
 .delivery-settings h4 { margin:0 0 4px; }

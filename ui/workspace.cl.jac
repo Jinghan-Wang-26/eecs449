@@ -127,6 +127,7 @@ def:pub WorkspacePanel(workspace: dict, mode: str, busy: bool, operate: any, cat
         {[<article className="result-card" key={plan["key"]}>
             <h4>{plan["strategy"] + " · " + plan["status"]}</h4>
             <p>{"Estimated $" + str(plan["total"]) + " · " + str(plan["minutes"]) + " active minutes · " + str(plan["weight"]) + " kg"}</p>
+            {if workspace.get("budget_notes", {}).get(plan["key"]) { <p className="budget-note">{workspace["budget_notes"][plan["key"]]}</p> }}
             <p style={{"whiteSpace": "pre-wrap"}}>{plan["explanation"]}</p>
             {if plan["status"] == "PROPOSED" { <button disabled={busy} onClick={lambda e: MouseEvent { operate("plan_action", {"key": plan["key"], "action": "accept"}); }}>Accept plan</button> }}
             {if plan["status"] not in ["COMPLETED", "CANCELLED"] { <button disabled={busy} onClick={lambda e: MouseEvent { operate("plan_action", {"key": plan["key"], "action": "cancel"}); }}>Cancel plan</button> }}

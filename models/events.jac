@@ -57,6 +57,11 @@ node DeliveryState {
         last_delivery: dict = {};          # {at, count}
 }
 
+"""User-reported spending. Entries are corrected or voided, never deleted."""
+node SpendingLedger {
+    has entries: list = [];
+}
+
 """Opt-in background reminder checks and the outcome of the latest run."""
 node BackgroundState {
     has enabled: bool = False,

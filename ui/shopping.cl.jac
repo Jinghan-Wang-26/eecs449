@@ -2,6 +2,7 @@
 
 sv import from ..server.shopping { ShoppingAction }
 import from .workspace { WorkspacePanel }
+import from .budget { BudgetPanel }
 
 def:pub ShoppingPanel -> JsxElement {
     has snapshot: dict = {"interests": [], "discoveries": [], "reminders": [], "quiet": False},
@@ -24,12 +25,12 @@ def:pub ShoppingPanel -> JsxElement {
     async def save(e: FormEvent) -> None;
 
     def tab_key(e: any, id: str) -> None {
-        tabs = ["list", "plans", "profile"];
+        tabs = ["list", "plans", "budget", "profile"];
         idx = tabs.indexOf(id);
-        if e.key == "ArrowRight" { idx = (idx + 1) % 3; }
-        elif e.key == "ArrowLeft" { idx = (idx + 2) % 3; }
+        if e.key == "ArrowRight" { idx = (idx + 1) % 4; }
+        elif e.key == "ArrowLeft" { idx = (idx + 3) % 4; }
         elif e.key == "Home" { idx = 0; }
-        elif e.key == "End" { idx = 2; }
+        elif e.key == "End" { idx = 3; }
         else { return; }
         e.preventDefault();
         next_tab = tabs[idx]; active_tab = next_tab;
@@ -108,7 +109,7 @@ def:pub ShoppingPanel -> JsxElement {
         }}
         <div className="source-note"><strong>{"DEMO · Simulated shopping" if snapshot.get("data_mode", "mock") == "mock" else "REAL STORES · Historical price evidence"}</strong>{"Explore budgets, store comparisons and purchase tracking with fictional prices and stock." if snapshot.get("data_mode", "mock") == "mock" else "Nearby stores use your address. Open Prices coverage varies; today's prices and stock are unknown."}</div>
         <nav className="workspace-tabs" role="tablist" aria-label="Shopping sections">
-            {[<button key={tab["id"]} id={"tab-" + tab["id"]} role="tab" tabIndex={0 if active_tab == tab["id"] else -1} onKeyDown={lambda e: any { tab_key(e, tab["id"]); }} aria-selected={active_tab == tab["id"]} aria-controls={"panel-" + tab["id"]} onClick={lambda e: MouseEvent { active_tab = tab["id"]; }}>{tab["label"]}</button> for tab in [{"id":"list","label":"My list"},{"id":"plans","label":"Plans & stores"},{"id":"profile","label":"Preferences"}]]}
+            {[<button key={tab["id"]} id={"tab-" + tab["id"]} role="tab" tabIndex={0 if active_tab == tab["id"] else -1} onKeyDown={lambda e: any { tab_key(e, tab["id"]); }} aria-selected={active_tab == tab["id"]} aria-controls={"panel-" + tab["id"]} onClick={lambda e: MouseEvent { active_tab = tab["id"]; }}>{tab["label"]}</button> for tab in [{"id":"list","label":"My list"},{"id":"plans","label":"Plans & stores"},{"id":"budget","label":"Budget"},{"id":"profile","label":"Preferences"}]]}
         </nav>
         <div className="workspace-content" role="tabpanel" id={"panel-" + active_tab} aria-labelledby={"tab-" + active_tab} tabIndex={0}>
             {if error_notice != "" { <div className="error-banner" role="alert"><span>{error_notice}</span><button type="button" aria-label="Dismiss error" onClick={lambda e: MouseEvent { error_notice = ""; }}>×</button></div> }}
@@ -191,7 +192,8 @@ def:pub ShoppingPanel -> JsxElement {
             </details>
             </div>
             }}
-            {if active_tab != "list" and snapshot.get("workspace") { <WorkspacePanel key={JSON.stringify(snapshot["workspace"]["profile"])} workspace={snapshot["workspace"]} mode={snapshot["data_mode"]} busy={busy} operate={operate} category={category} view={active_tab} /> }}
+            {if active_tab == "budget" and snapshot.get("budget") { <BudgetPanel budget={snapshot["budget"]} busy={busy} operate={operate} /> }}
+            {if active_tab in ["plans", "profile"] and snapshot.get("workspace") { <WorkspacePanel key={JSON.stringify(snapshot["workspace"]["profile"])} workspace={snapshot["workspace"]} mode={snapshot["data_mode"]} busy={busy} operate={operate} category={category} view={active_tab} /> }}
         </div>
         <div className="sync-status"><p role="status" aria-live="polite">{notice}</p><button type="button" disabled={busy} onClick={lambda e: MouseEvent { operate("refresh", {}); }}>{"Refreshing…" if busy else "Refresh tools"}</button></div>
     </section>;
