@@ -5,6 +5,7 @@ import from models.profile { UserProfile }
 import from models.events { ShoppingWorkspace }
 import from models.graph { owned, items_of }
 import from sync.engine { sync_events }
+import from integrations.validation { purchase_result }
 
 
 def visit_context(p: UserProfile, now: str) -> dict {
@@ -37,10 +38,11 @@ def visit_view(p: UserProfile, now: str) -> list {
         if plan["status"] not in ["PROPOSED", "ACCEPTED", "IN_PROGRESS"] { continue; }
         changed = plan["input_signature"] != sig;
         expired = plan["route"] is not None and not due(now, plan["route"]["valid_until"]);
-        if changed or expired {
+        departed = plan["route"] is not None and bool(plan["route"].get("departure_at")) and due(plan["route"]["departure_at"], now);
+        if changed or expired or (departed and plan["status"] == "PROPOSED") {
             plan["status"] = "NEEDS_REVIEW";
             plan["accept_allowed"] = False;
-            plan["review_reason"] = "Inputs changed or the route estimate expired. Generate and review a new visit plan.";
+            plan["review_reason"] = "Inputs changed, the route estimate expired, or the proposed departure passed. Generate and review a new visit plan.";
         }
     }
     state.visit_plans = list(state.visit_plans);
@@ -87,17 +89,26 @@ def visit_action(p: UserProfile, data: dict, now: str) -> str {
         if plan["input_signature"] != signature(visit_context(p, now)) { raise ValueError("Your shopping needs or constraints changed. Rebuild the visit before applying outcomes."); }
         items = [item for item in plan["items"] if item["category"] == data.get("category")];
         if len(items) != 1 { raise ValueError("Item is not in this visit."); }
-        item = items[0]; outcome = data.get("outcome");
-        if outcome not in ["PURCHASED", "NOT_FOUND", "SKIPPED"] { raise ValueError("Choose bought, not found or skipped."); }
+        item = items[0]; result = purchase_result(data, item); outcome = result["outcome"];
         if item["outcome"] != "PENDING" {
-            if item["outcome"] == outcome { return "Outcome already recorded."; }
+            if item["outcome"] == outcome and item.get("bought_qty", result["bought_qty"]) == result["bought_qty"] and item.get("actual_paid") == result["actual_paid"] { return "Outcome already recorded."; }
             raise ValueError("This item already has an outcome.");
+        }
+        if outcome == "PARTIAL" {
+            needs = [n for n in items_of(p) if n.plannable() and n.product_spec.get("type") == item["category"]];
+            if len(needs) != 1 or needs[0].product_spec["qty"] != item["qty"] { raise ValueError("The requested quantity changed. Rebuild this visit."); }
+            spec = dict(needs[0].product_spec);
+            spec["qty"] = result["remaining_qty"];
+            needs[0].product_spec = spec;
         }
         if outcome == "PURCHASED" {
             sync_events(p, [{"id": f"visit:{plan['key']}:{item['category']}",
                 "type": "feedback", "target": item["category"], "reason": "PURCHASED"}], now, {"data_mode": "live"});
         }
-        item["outcome"] = outcome;
+        item.update(result);
+        paid_items = [it for it in plan["items"] if it.get("actual_paid") is not None];
+        plan["reported_paid_usd"] = round(sum([it["actual_paid"] for it in paid_items]), 2) if paid_items else None;
+        plan["paid_items_count"] = len(paid_items);
         plan["status"] = "COMPLETED" if all([it["outcome"] != "PENDING" for it in plan["items"]]) else "IN_PROGRESS";
         # Purchased needs are removed by the usual feedback engine. Keep the remaining
         # checklist valid without treating a reported absence as global inventory data.

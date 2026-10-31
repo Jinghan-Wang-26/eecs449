@@ -1,3 +1,4 @@
+import jaclang  # Enable direct imports of the migrated .jac modules.
 import unittest
 from pricing import price_details
 

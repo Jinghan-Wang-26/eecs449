@@ -1,22 +1,25 @@
 """Real-address store visits supported by historical evidence, never current offers.
 
 One store per option; evidence coverage first, travel time second. No claim of an
-optimal/current-price basket, store opening hours, public transit or inventory.
+optimal/current-price basket, actual opening, public transit or inventory.
 """
+import jaclang
 import hashlib
 import json
 import math
 import re
+import time
 import uuid
 from concurrent.futures import ThreadPoolExecutor
-from datetime import date
+from datetime import date, timedelta
 from urllib.parse import urlencode
 from app_settings import instant, stamp
-from integrations.providers import route, ProviderError, distance_m
+from integrations.providers import route, ProviderError, distance_m, store_details
+from planning.schedule import schedule_visit
 from integrations.openprices import nearby_with_history, recommendation_records, CATEGORY_TAGS
 from ai.matching import satisfies_requested_spec
 
-ALIASES = {"牛奶": "milk", "鸡蛋": "eggs", "米": "rice", "大米": "rice", "咖啡": "coffee", "酸奶": "yogurt", "豆腐": "tofu", "洗衣液": "laundry detergent"}
+ALIASES = {"yoghurt": "yogurt", "egg": "eggs"}
 SUPPORTED = {"WALK", "BIKE", "CAR"}
 DISCLAIMER = "Historical observations only. Today's prices, stock and opening hours are unverified. Confirm package size, diet requirements and prices before buying."
 
@@ -60,18 +63,6 @@ def evidence_for(store, needs, dietary, now):
         return {"records": [], "checked": 0, "partial": True, "notice": "Historical lookup unavailable: " + str(error)}
 
 
-def window_for(windows, minutes):
-    for window in windows:
-        day, interval = window.split()
-        start, end = interval.split("-")
-        begin = int(start[:2])*60 + int(start[3:])
-        finish = int(end[:2])*60 + int(end[3:])
-        if finish-begin >= minutes:
-            stop = begin + minutes
-            return f"{day} {start}-{stop//60:02d}:{stop%60:02d}"
-    return ""
-
-
 def route_for(origin, store, profile, now):
     candidates, errors = [], []
     for mode in profile["transport"]:
@@ -86,11 +77,11 @@ def route_for(origin, store, profile, now):
             if mode == "WALK" and travel["walk_min"] > profile["max_walk_min"]:
                 violations.append("Walking segment exceeds your walking limit.")
             total = int(travel["min"]) + 20
-            window = window_for(profile["free_windows"], total)
-            if not window:
-                violations.append("Save a free-time window long enough for travel plus 20 minutes shopping.")
+            schedule = schedule_visit(profile["free_windows"], travel, store, now, origin.get("timezone", ""))
+            if schedule["blocker"]:
+                violations.append(schedule["blocker"])
             candidates.append({**travel, "mode": mode, "total_min": total, "shopping_min": 20,
-                               "window": window, "violations": violations})
+                               **schedule, "violations": violations})
         except ProviderError as error:
             errors.append(mode + ": " + str(error))
     if not candidates:
@@ -128,6 +119,14 @@ def candidate(store, evidence, context, now):
         blockers.append("Known net product mass already exceeds your carrying limit.")
     subtotal = round(subtotal, 2)
     warnings = [DISCLAIMER]
+    if store.get("details_notice"): warnings.append(store["details_notice"])
+    if travel:
+        if travel["timezone_notice"]: warnings.append(travel["timezone_notice"])
+        if travel["hours_status"] == "REGULAR_HOURS_FIT":
+            warnings.append("The suggested visit fits recorded regular opening hours. Holiday exceptions and unexpected closures still need checking.")
+        else:
+            warnings.append("Opening hours are missing, unsupported or do not fit your available time. Check the store before travelling.")
+        warnings.append("Future travel uses a current route estimate, not a traffic forecast. Refresh before departure.")
     if matched < len(needs): warnings.append(f"{len(needs)-matched} shopping need(s) have no matching evidence in the checked records.")
     if evidence.get("partial"): warnings.append("Historical search coverage is partial; unmatched does not mean unavailable.")
     if priced < len(needs): warnings.append("Reference subtotal excludes missing, discounted, non-USD and non-package prices.")
@@ -155,6 +154,7 @@ def candidate(store, evidence, context, now):
 
 
 def recommend(context, now):
+    started = time.monotonic()
     if not context.get("origin"):
         raise ValueError("Confirm your shopping address first.")
     if not context.get("needs"):
@@ -168,11 +168,33 @@ def recommend(context, now):
         if len(chosen) >= 6: break
         if store["id"] not in {s["id"] for s in chosen}: chosen.append(store)
     def build(store):
+        try:
+            store = store_details(store)
+        except ProviderError as error:
+            store = {**store, "details_notice": str(error)}
         evidence = evidence_for(store, context["needs"], context["profile"]["dietary"], now)
         return candidate(store, evidence, context, now)
     with ThreadPoolExecutor(max_workers=3) as pool:
         plans = list(pool.map(build, chosen))
+    # Provider calls can take time. Schedule against completion, not the instant
+    # the user clicked, without issuing the route/history requests again.
+    ready = (instant(now) + timedelta(seconds=math.ceil(time.monotonic() - started))).isoformat()
+    for plan in plans:
+        travel = plan['route']
+        if not travel: continue
+        previous = travel.get('blocker', '')
+        schedule = schedule_visit(context['profile']['free_windows'], travel, plan['store'], ready, context['origin'].get('timezone', ''))
+        plan['blockers'] = [b for b in plan['blockers'] if not previous or b != previous]
+        travel['violations'] = [b for b in travel['violations'] if not previous or b != previous]
+        travel.update(schedule)
+        if schedule['blocker']:
+            plan['blockers'].append(schedule['blocker'])
+            travel['violations'].append(schedule['blocker'])
+        if instant(travel['valid_until']) < instant(ready):
+            plan['blockers'].append('Route estimate expired during lookup. Refresh recommendations.')
+        plan['accept_allowed'] = not plan['blockers']
+        plan['created_at'] = stamp(ready)
     plans.sort(key=lambda p: (not p["accept_allowed"], -p["matched"], p["route"]["total_min"] if p["route"] else float('inf'), distance_m((context["origin"]["lat"], context["origin"]["lon"]), (p["store"]["lat"], p["store"]["lon"]))))
     notices = found["notices"] + [f"Checked {len(chosen)} of {len(nearby)} nearby stores; showing up to three single-store alternatives. This is a bounded search, not an exhaustive inventory comparison."]
     if not plans: notices.append("No nearby stores were returned. Try a larger radius or another confirmed address.")
-    return {"plans":plans[:3], "stores":nearby, "notices":notices, "checked_stores":len(chosen), "nearby_count":len(nearby), "generated_at":stamp(now)}
+    return {"plans":plans[:3], "stores":nearby, "notices":notices, "checked_stores":len(chosen), "nearby_count":len(nearby), "generated_at":stamp(ready)}

@@ -11,6 +11,7 @@ node InterestPool {}
 
 node InterestItem {
     has product_spec: dict,                # {"type": "milk", "size": "1 gal", "brand": "", "qty": 1, "substitutes": "ask"}
+        in_current_list: bool = True,
         kind: InterestKind = InterestKind.NEED,
         status: InterestStatus = InterestStatus.ACTIVE,
         priority: int = 2,                 # 1 high .. 3 low
@@ -28,7 +29,7 @@ node InterestItem {
 
     """NEED and REPLENISH items enter planning. DISCOVER needs confirmation first."""
     def plannable() -> bool {
-        return self.status == InterestStatus.ACTIVE
+        return getattr(self, "in_current_list", True) and self.status == InterestStatus.ACTIVE
             and (self.kind == InterestKind.NEED or self.kind == InterestKind.REPLENISH);
     }
 }

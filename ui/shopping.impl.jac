@@ -10,6 +10,14 @@ impl ShoppingPanel.operate(action: str, data: dict) -> None {
             if payload["error"] {
                 notice = payload["error"];
             } else {
+                # Surface new chat-generated plans and confirmation requests.
+                if action == "view" and snapshot.get("workspace") {
+                    next_workspace = payload["workspace"];
+                    previous_workspace = snapshot["workspace"];
+                    if next_workspace["pending_id"] != "" or JSON.stringify([p["key"] for p in next_workspace["visit_plans"].concat(next_workspace["plans"])]) != JSON.stringify([p["key"] for p in previous_workspace["visit_plans"].concat(previous_workspace["plans"])]) {
+                        active_tab = "plans";
+                    }
+                }
                 snapshot = payload;
                 notice = payload["message"] or ("Checked " + payload["checked_at"]);
             }

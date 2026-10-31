@@ -10,6 +10,7 @@ import from models.events { ShoppingWorkspace }
 import from models.graph { owned, items_of }
 import from server.workflows { mode_of, workspace_view, workflow }
 import from server.shopping { shopping_operation }
+import from planning.schedule { conversation_clock }
 
 
 def conversation_context(p: UserProfile) -> dict {
@@ -20,7 +21,7 @@ def conversation_context(p: UserProfile) -> dict {
         "address_pending": state.chat_address_pending,
         "address_candidates": [{"address": c["address"]} for c in state.address_candidates],
         "current_question": state.chat_question, "planning_requested": state.chat_planning,
-        "local_time": stamp(), "timezone": get_settings()["timezone"],
+        **conversation_clock(p.location),
         "nearby_stores": [{"id": s["id"], "name": s["name"], "source": s.get("source")} for s in state.nearby_stores],
         "needs": [n.product_spec for n in items_of(p) if n.plannable()]};
 }
@@ -38,7 +39,7 @@ def continue_plan(p: UserProfile, prefix: str) -> str {
     try { result = shopping_operation(p, "plan", {}, str(stamp())); }
     except ValueError as err {
         state.chat_question = str(err);
-        return prefix + ("信息已保存，但生成计划失败：" if state.chat_language == "zh" else "Your information is saved, but planning failed: ") + str(err);
+        return prefix + ("Your information is saved, but planning failed: ") + str(err);
     }
     state.chat_question = "";
     view = result["workspace"];
@@ -65,12 +66,12 @@ def handle_request(p: UserProfile, text: str, history: list) -> str {
     if proposal["intent"] == "stop" {
         state.chat_planning = False; state.chat_question = ""; state.chat_address_pending = False;
         state.pending_intent = {}; state.pending_id = "";
-        return "已暂停对话规划，已保存信息和已接受计划保持不变。" if lang == "zh" else "Paused conversational planning. Saved information and accepted plans are unchanged.";
+        return "Paused conversational planning. Saved information and accepted plans are unchanged.";
     }
     # Feedback can archive needs; keep its explicit review action.
     if proposal.get("feedback") or proposal["intent"] == "feedback" {
         state.pending_intent = proposal; state.pending_id = str(uuid.uuid4());
-        return ("请在上方 Confirm changes 确认购买反馈：" if lang == "zh" else "Please review the purchase feedback using Confirm changes in the shopping panel: ") + json.dumps(proposal.get("feedback", {}), ensure_ascii=False);
+        return ("Please review the purchase feedback using Confirm changes in the shopping panel: ") + json.dumps(proposal.get("feedback", {}), ensure_ascii=False);
     }
     if proposal["intent"] == "explain" and not proposal["needs"] and not proposal["profile"] and not proposal["address"] and not proposal.get("address_choice") {
         view = workspace_view(p);
@@ -79,7 +80,7 @@ def handle_request(p: UserProfile, text: str, history: list) -> str {
             return "\n\n".join([str(v["explanation"]) + "\n" + "\n".join(list(v["warnings"]) + list(v["blockers"]) + list(v["route_notices"])) for v in active_visits]);
         }
         if view["plans"] { return str(explain_plans(text, view["plans"])); }
-        return question(context, list(missing_fields(context))[0], lang) if missing_fields(context) else ("请告诉我生成购物计划。" if lang == "zh" else "Ask me to generate a shopping plan.");
+        return question(context, list(missing_fields(context))[0], lang) if missing_fields(context) else ("Ask me to generate a shopping plan.");
     }
     # A new conversational turn supersedes old draft-only requests, never accepts a plan.
     state.pending_intent = {}; state.pending_id = "";
@@ -88,7 +89,11 @@ def handle_request(p: UserProfile, text: str, history: list) -> str {
     if proposal["intent"] == "plan" or proposal["needs"] { state.chat_planning = True; }
     if proposal["profile"] { shopping_operation(p, "update_profile", proposal["profile"], now); }
     for spec in proposal["needs"] {
-        shopping_operation(p, "save_interest", {"category": spec["type"], "qty": spec["qty"], "brand": spec["brand"], "size": spec["size"], "kind": "NEED"}, now);
+        changes = dict(spec);
+        changes["category"] = spec["type"]; changes["kind"] = "NEED";
+        shopping_operation(p, "save_interest", changes, now);
+        saved = [n for n in items_of(p) if n.product_spec.get("type") == spec["type"] and n.plannable()];
+        if saved { spec["qty"] = saved[0].product_spec["qty"]; }
     }
     prefix = str(saved_message(proposal, lang));
     if proposal["address"] {
@@ -100,7 +105,7 @@ def handle_request(p: UserProfile, text: str, history: list) -> str {
             if len(found) == 1 and found[0].get("precision") in ["building", "amenity"] and (found[0].get("confidence") or 0) >= 0.9 {
                 workflow(p, "confirm_address", {"id": found[0]["id"]}, now);
                 state.chat_address_pending = False;
-                prefix += ("已保存出发地址：" if lang == "zh" else "Saved starting address: ") + p.home_address + "\n";
+                prefix += ("Saved starting address: ") + p.home_address + "\n";
             }
         } except ValueError as err {
             state.chat_question = question(conversation_context(p), "address", lang);
@@ -111,7 +116,7 @@ def handle_request(p: UserProfile, text: str, history: list) -> str {
         if not state.chat_address_pending or idx >= len(state.address_candidates) { raise ValueError("This address selection is no longer available. Please type the address again."); }
         workflow(p, "confirm_address", {"id": state.address_candidates[idx]["id"]}, now);
         state.chat_address_pending = False;
-        prefix += ("已保存出发地址：" if lang == "zh" else "Saved starting address: ") + p.home_address + "\n";
+        prefix += ("Saved starting address: ") + p.home_address + "\n";
     }
     if state.chat_address_pending {
         state.chat_question = question(conversation_context(p), "address", lang);
@@ -123,5 +128,5 @@ def handle_request(p: UserProfile, text: str, history: list) -> str {
         result = shopping_operation(p, action, {"store": proposal.get("store_id", "")}, now);
         return prefix + str(result["message"]);
     }
-    return prefix + (str(proposal["question"]) or ("你可以继续告诉我购物需求，或让我生成计划。" if lang == "zh" else "Tell me your shopping needs, or ask me to generate a plan."));
+    return prefix + (str(proposal["question"]) or ("Tell me your shopping needs, or ask me to generate a plan."));
 }

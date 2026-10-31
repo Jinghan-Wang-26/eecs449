@@ -49,6 +49,8 @@ node SyncState {
 }
 
 node ShoppingWorkspace {
+    has visit_history: list = [], new_plan_request_ids: list = [];
+    has chat_messages: list = [];
     has chat_planning: bool = False, chat_address_pending: bool = False,
         chat_question: str = "", chat_language: str = "en";
     has historical_prices: dict = {};

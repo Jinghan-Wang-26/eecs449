@@ -1,6 +1,7 @@
 """Offline contract tests: all response objects here are SYNTHETIC, not live evidence."""
 import io
 import json
+import jaclang  # Enable direct imports of the migrated .jac modules.
 import unittest
 from unittest.mock import patch
 from urllib.error import HTTPError, URLError
@@ -127,3 +128,33 @@ class MatchingTests(unittest.TestCase):
         self.assertTrue(satisfies_requested_spec({'size':'1 gal'},'','1.0 gal'))
 
 if __name__=='__main__':unittest.main()
+
+class StoreHoursTests(unittest.TestCase):
+    def setUp(self): p._CACHE.clear()
+
+    def test_details_match_exact_osm_identity_even_when_place_ids_differ(self):
+        store = {'place_id':'search-id', 'osm_id':123, 'osm_type':'NODE'}
+        props = {'place_id':'details-id','opening_hours':'Mo-Su 08:00-22:00',
+                 'timezone':{'name':'America/Los_Angeles'},
+                 'datasource':{'raw':{'osm_id':123,'osm_type':'n'}}}
+        with patch.object(p,'required',return_value='synthetic'), patch.object(p,'request_json',return_value={'features':[{'properties':props}]}) as req:
+            result = p.store_details(store)
+            self.assertEqual(result['opening_hours'],'Mo-Su 08:00-22:00')
+            self.assertEqual(result['timezone'],'America/Los_Angeles')
+            p.store_details(store)
+            self.assertEqual(req.call_count,1)
+
+    def test_different_store_or_osm_type_never_supplies_hours(self):
+        for osm_id, kind in [(124,'n'),(123,'w'),(None,None)]:
+            p._CACHE.clear()
+            props = {'place_id':'different','name':'Same name','opening_hours':'24/7',
+                     'datasource':{'raw':{'osm_id':osm_id,'osm_type':kind}}}
+            with patch.object(p,'required',return_value='synthetic'), patch.object(p,'request_json',return_value={'features':[{'properties':props}]}):
+                with self.assertRaises(p.ProviderError): p.store_details({'place_id':'search','osm_id':123,'osm_type':'n'})
+
+    def test_geocoding_and_directional_minutes_preserve_timezone_and_round_up(self):
+        with patch.object(p,'required',return_value='synthetic'), patch.object(p,'request_json',return_value={'results':[{'lat':37,'lon':-122,'timezone':{'name':'America/Los_Angeles'}}]}):
+            self.assertEqual(p.geocode('Public address')[0]['timezone'],'America/Los_Angeles')
+        with patch.object(p,'required',return_value='synthetic'), patch.object(p,'request_json',side_effect=[{'features':[{'properties':{'time':61,'distance':100}}]},{'features':[{'properties':{'time':121,'distance':150}}]}]):
+            result=p.route([42,-83],[42.01,-83],'WALK')
+            self.assertEqual((result['outbound_min'],result['return_min'],result['min']),(2,3,5))

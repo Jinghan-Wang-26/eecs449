@@ -150,3 +150,13 @@ test "validated chat needs save automatically and ask for missing time" {
     state = owned(p, ShoppingWorkspace);
     assert state.pending_id == "" and state.chat_planning;
 }
+
+test "spec changes require renewed product confirmation while quantity edits preserve it" {
+    p = live_user(); workflow(p, "confirm_product", {"id":"result"}, NOW);
+    assert len(plan_shopping(p, NOW)["plans"]) > 0;
+    save_need(p, {"category":"rice", "qty":3});
+    assert len(plan_shopping(p, NOW)["plans"]) > 0;
+    save_need(p, {"category":"rice", "brand":"Another brand"});
+    assert plan_shopping(p, NOW)["plans"] == [];
+    assert items_of(p)[0].product_spec["qty"] == 3;
+}

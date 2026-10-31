@@ -2,9 +2,20 @@
 
 > An agent that remembers where you live, how you travel, and what you need—helping you decide **what to buy, where to buy it, when to buy it, and whether to shop in person or use delivery.**
 
-CartCompass is a proposed shopping assistant built around **Jac**, with three connected modules: **User Profile, Interest Pool, and Shopping Plan**. It combines everyday needs, product information, and practical transportation constraints to produce shopping plans that are explainable, adjustable, and responsive to change.
+CartCompass is a shopping-assistant prototype built around **Jac**, with three connected modules: **User Profile, Interest Pool, and Shopping Plan**. It combines everyday needs, product information, and practical transportation constraints to produce shopping plans that are explainable, adjustable, and responsive to change.
 
-**Status: Design proposal v0.1.** This README describes planned functionality and architecture, not a completed implementation. Stores, prices, availability, and routes in the examples are simulated. Implementation milestones are listed in the [roadmap](#roadmap).
+**Status: Working local prototype (2026-10-26).** The design sections below describe the broader product vision. Current implementation and verification are tracked in [Issue #8 status](docs/ISSUE8_STATUS.md); remaining work is listed in [product gaps](docs/PRODUCT_GAPS.md).
+
+| Mode | What works | Limits |
+|---|---|---|
+| Demo data | Basket costs, constraints, in-store/delivery/mixed comparisons, feedback and manual reminders | Fictional catalog, prices and routes |
+| Real stores | Conversational setup, actual address/nearby-store search, Open Prices historical evidence, dated single-store visits, regular-hours checks where supported, partial purchase outcomes and saved chat | No current inventory/price guarantee, public-transit schedules, real delivery optimization or multi-store itinerary |
+
+**Using the workspace:** **My list** contains current needs and optional reminders; **Plans & stores** contains recommendations, address lookup and purchase tracking; **Preferences** contains saved budget, transport and availability. The assistant stays beside these tabs on desktop and below them on mobile. Answers in chat update the workspace automatically. **New shopping plan** starts a fresh trip while retaining your profile and purchase history.
+
+**Why keep Demo data?** Its simulated catalog supports repeatable classroom demonstrations and offline checks of basket arithmetic, delivery/mixed strategies and purchase feedback. Structured demo controls need no provider credentials; conversational input still needs a configured model. Real stores is a separate, explicitly selected mode: limited historical coverage never silently falls back to fictional offers. The interface and newly generated assistant replies use English; existing user-entered history is preserved.
+
+New scheduling and purchase-validation rules are implemented in Jac. External adapters and parts of the real-store recommender remain Python. This is a local single-user application; a hosted multi-user release needs additional work.
 
 ## Table of Contents
 
@@ -554,3 +565,7 @@ Choose **Real stores**, confirm a typed address or browser location, save your n
 ### Conversational setup and planning
 
 In **Real stores**, tell chat what you want to buy and ask for a plan. It saves your stated needs/profile values, asks for missing address/transport/free-time information, and updates the shopping panel after each answer. Reply with an address result's number when asked. Once required information is available, the plan appears both in chat and in the panel; no **Confirm changes** step is needed for routine setup. Purchase feedback and accepting a visit still require confirmation. See [the conversational walkthrough](docs/REAL_STORE_VISITS.md#conversational-setup).
+
+### Jac business-rule migration
+
+Missing-information questions and plan summaries (`ai/conversation.jac`), profile/need validation (`integrations/validation.jac`), and package/unit pricing (`pricing.jac`) are implemented directly in Jac. Their previous Python implementations have been removed. External integrations and the real-store ranking module remain Python for now. See the [migration evidence](docs/ISSUE8_STATUS.md#initial-jac-migration-2026-10-23) for test coverage and remaining scope.

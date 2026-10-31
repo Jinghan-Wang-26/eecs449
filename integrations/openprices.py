@@ -102,6 +102,13 @@ def nearby_with_history(lat, lon, radius_m=5000, include_kroger=True):
         kind={'N':'NODE','W':'WAY','R':'RELATION'}.get(kind,kind)
         return str(store.get('osm_id')),kind
     known={osm_identity(s) for s in stores if s.get('osm_id') is not None}
+    metadata = {osm_identity(s): s for s in maps if s.get('osm_id') is not None}
+    # Preserve map metadata when deduplicating the exact same OSM branch.
+    stores = [dict(s) for s in stores]
+    for store in stores:
+        mapped = metadata.get(osm_identity(store), {}) if store.get('osm_id') is not None else {}
+        for field in ('place_id', 'opening_hours', 'timezone', 'hours_source', 'hours_retrieved_at'):
+            if mapped.get(field): store[field] = mapped[field]
     maps=[s for s in maps if osm_identity(s) not in known]
     flags=credential_status()
     if include_kroger and flags['KROGER_CLIENT_ID'] and flags['KROGER_CLIENT_SECRET']:
