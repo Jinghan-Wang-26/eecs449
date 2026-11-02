@@ -47,3 +47,23 @@ class CodexTransportTests(unittest.TestCase):
         for value in ({}, {"choices": []}, {"choices": [{"message": {"content": "[]"}}]}, {"choices": [{"message": {"content": "invalid"}}]}):
             with patch("ai.intents.credentials", return_value={"LLM_API_KEY": "test"}), patch("ai.intents.request_json", return_value=value):
                 with self.assertRaises(ProviderError): parse_request("buy rice")
+
+
+class APITransportTests(unittest.TestCase):
+    def test_deepseek_uses_short_json_mode_and_model_timeout(self):
+        settings = {"LLM_API_KEY": "test", "LLM_BASE_URL": "https://api.deepseek.com",
+                    "LLM_MODEL": "deepseek-flash"}
+        response = {"choices": [{"message": {"content": '{"intent":"explain"}'}}]}
+        with patch("ai.intents.credentials", return_value=settings), patch("ai.intents.request_json", return_value=response) as request:
+            self.assertEqual(complete_json([]), {"intent": "explain"})
+        self.assertEqual(request.call_args.kwargs["timeout"], 60)
+        self.assertEqual(request.call_args.kwargs["body"]["thinking"], {"type": "disabled"})
+        self.assertEqual(request.call_args.kwargs["body"]["model"], "deepseek-flash")
+
+    def test_provider_specific_fields_do_not_leak_to_other_endpoints(self):
+        for base in ("https://example.org/v1", "https://api.deepseek.com.example.org"):
+            settings = {"LLM_API_KEY": "test", "LLM_BASE_URL": base, "LLM_MODEL": "example"}
+            response = {"choices": [{"message": {"content": '{"intent":"explain"}'}}]}
+            with patch("ai.intents.credentials", return_value=settings), patch("ai.intents.request_json", return_value=response) as request:
+                complete_json([])
+            self.assertNotIn("thinking", request.call_args.kwargs["body"])

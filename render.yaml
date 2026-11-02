@@ -1,0 +1,38 @@
+# Single shared course-demo workspace; HTTP Basic auth protects all app routes.
+# Review the paid compute/disk estimate in Render before creating the service.
+services:
+  - type: web
+    name: cartcompass
+    runtime: docker
+    plan: standard
+    region: ohio
+    numInstances: 1
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    healthCheckPath: /healthz
+    autoDeployTrigger: 'off'
+    disk:
+      name: cartcompass-data
+      mountPath: /var/data
+      sizeGB: 1
+    envVars:
+      - key: PORT
+        value: '10000'
+      - key: JAC_DATA_PATH
+        value: /var/data
+      - key: CARTCOMPASS_DEMO_PASSWORD
+        generateValue: true
+      - key: LLM_BACKEND
+        value: api
+      - key: LLM_BASE_URL
+        value: https://api.deepseek.com
+      - key: LLM_MODEL
+        value: deepseek-flash
+      - key: LLM_API_KEY
+        sync: false
+      - key: GEOAPIFY_API_KEY
+        sync: false
+      - key: KROGER_CLIENT_ID
+        sync: false
+      - key: KROGER_CLIENT_SECRET
+        sync: false

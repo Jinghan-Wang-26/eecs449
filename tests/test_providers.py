@@ -101,16 +101,16 @@ class ProviderTests(unittest.TestCase):
         with patch.object(p,'credentials',return_value={}):
             with self.assertRaisesRegex(p.ProviderError,'GEOAPIFY_API_KEY'):p.geocode('Address')
         error=HTTPError('https://test?apiKey=secret',401,'secret',{},io.BytesIO(b'secret'))
-        with patch('urllib.request.urlopen',side_effect=error):
+        with patch.object(p, 'urlopen',side_effect=error):
             with self.assertRaises(p.ProviderError) as ctx:p.request_json('https://test?apiKey=secret')
             self.assertNotIn('secret',str(ctx.exception)); self.assertIn('401',str(ctx.exception))
-        with patch('urllib.request.urlopen',side_effect=URLError('secret')):
+        with patch.object(p, 'urlopen',side_effect=URLError('secret')):
             with self.assertRaises(p.ProviderError) as ctx:p.request_json('https://test')
             self.assertNotIn('secret',str(ctx.exception))
 
     def test_bounded_retry(self):
         error=HTTPError('https://test',429,'rate limit',{},io.BytesIO())
-        with patch('urllib.request.urlopen',side_effect=error) as req,patch('time.sleep'):
+        with patch.object(p, 'urlopen',side_effect=error) as req,patch('time.sleep'):
             with self.assertRaises(p.ProviderError):p.request_json('https://test')
             self.assertEqual(req.call_count,2)
 

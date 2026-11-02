@@ -18,6 +18,7 @@ import urllib.error
 import urllib.parse
 import urllib.request
 from datetime import datetime, timedelta, timezone
+from integrations.http_transport import urlopen
 
 class ProviderError(ValueError):
     pass
@@ -61,7 +62,7 @@ def now_iso():
 def expiry(minutes=30):
     return (datetime.now(timezone.utc) + timedelta(minutes=minutes)).isoformat(timespec='seconds')
 
-def request_json(url, *, params=None, headers=None, body=None, form=False):
+def request_json(url, *, params=None, headers=None, body=None, form=False, timeout=12):
     if params:
         url += '?' + urllib.parse.urlencode(params)
     data = None
@@ -73,7 +74,7 @@ def request_json(url, *, params=None, headers=None, body=None, form=False):
     for attempt in range(2):
         req = urllib.request.Request(url, data=data, headers=hdr)
         try:
-            with urllib.request.urlopen(req, timeout=12) as response:
+            with urlopen(req, timeout=timeout) as response:
                 raw = response.read(2_000_001)
                 if len(raw) > 2_000_000:
                     raise ProviderError('Provider response exceeded the size limit.')

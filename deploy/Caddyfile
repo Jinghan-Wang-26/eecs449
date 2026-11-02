@@ -1,0 +1,27 @@
+{
+	admin off
+	auto_https off
+}
+
+:{$PORT:10000} {
+	# Render terminates HTTPS. This endpoint is process liveness only: no data.
+	handle /healthz {
+		respond "ok" 200
+	}
+	handle {
+		basic_auth {
+			cartcompass {env.CARTCOMPASS_DEMO_PASSWORD_HASH}
+		}
+		@cross_site header Sec-Fetch-Site cross-site
+		respond @cross_site "Cross-site requests are not allowed." 403
+		reverse_proxy 127.0.0.1:8081 {
+			header_up -Authorization
+			header_down -Access-Control-Allow-Origin
+			header_down -Access-Control-Allow-Methods
+			header_down -Access-Control-Allow-Headers
+			transport http {
+				response_header_timeout 180s
+			}
+		}
+	}
+}
