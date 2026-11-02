@@ -301,6 +301,7 @@ def normalize_products(data, store_id, term, observed=None):
                 continue
             out.append({'key': f'kroger:{product_id}:{item_id}', 'external_id': product_id, 'item_id': item_id,
                         'name': str(p.get('description') or ''), 'brand': str(p.get('brand') or ''), 'upc': str(p.get('upc') or ''),
+                        'categories': [c for c in (p.get('categories') or []) if isinstance(c, str)][:5],
                         'size_label': size, 'weight_kg': weight_from_size(size),
                         'store_id': store_id, 'search_term': term,
                         'price': value if sold_by == 'unit' else None, 'reported_price': value, 'sold_by': sold_by or 'unknown',

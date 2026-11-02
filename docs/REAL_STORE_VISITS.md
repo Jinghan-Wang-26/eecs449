@@ -24,7 +24,7 @@ jac start main.jac
 
 Open http://localhost:8000. Restart an already-running server after updating code.
 
-1. Select **Real stores**. Use **Use my current location** (browser permission required), or enter an address and click **Look up address**. Review the result and click **Use this address**. Device location retains the reported coordinates and displays accuracy; denied/unavailable location falls back to typed addresses. Browser geolocation requires localhost or HTTPS.
+1. Open **Preferences**. Use **Use my current location** (browser permission required), or enter an address and click **Look up address**. Review the result and click **Use this address**. Device location retains the reported coordinates and displays accuracy; denied/unavailable location falls back to typed addresses. Browser geolocation requires localhost or HTTPS.
 2. Expand **Your shopping profile**. For the public demonstration use budget `50`, carrying limit `6`, maximum walking minutes `45`, transport `WALK`, and free time `SAT 14:00-17:00`. Save the profile.
 3. Save `rice` and `milk` as **Need**, one package each. Use English product categories; the assistant normalizes conversational input.
 4. In **Real-store shopping visits**, choose a radius and click **Compare store options**. The public address `150 E McKinley Avenue, Sunnyvale, CA 94086` with a 1 km radius has verified contributed data. Other locations may have little or no coverage.
@@ -60,7 +60,7 @@ Browser acceptance used a separate temporary graph: permitted device location an
 
 ## Conversational setup
 
-With **Real stores** selected, you can complete setup entirely in chat:
+You can complete setup entirely in chat:
 
 1. “Make a shopping plan for two packages of rice.” — needs save immediately; missing starting address is requested.
 2. Supply your address and any preferences, such as budget, walking limit and transport. They appear in the profile automatically. If geocoding returns several possible places, reply “the first address” or the appropriate number.

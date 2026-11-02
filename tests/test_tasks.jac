@@ -15,7 +15,7 @@ import from server.shopping { shopping_operation, ShoppingAction }
 glob NOW: str = "2026-10-12T10:00:00-04:00";
 
 def user() -> UserProfile {
-    p = UserProfile(transport=["WALK", "BUS"], free_windows=["SAT 14:00-17:00"], weekly_budget=100);
+    p = UserProfile(data_mode="mock", transport=["WALK", "BUS"], free_windows=["SAT 14:00-17:00"], weekly_budget=100);
     p +>:Owns:+> InterestPool();
     load_mock(catalog_of(p));
     return p;

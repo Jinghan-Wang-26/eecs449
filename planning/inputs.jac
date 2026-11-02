@@ -108,7 +108,7 @@ def products_for(item: InterestItem, cat: Catalog) -> list {
         return [prod for prod in usable_products(item) if prod in relevant];
     }
     if cat.mode == "live" { return []; }
-    return [prod for prod in [cat ->:Has:->][?:Product] if prod.category == need_key(item) and satisfies_requested_spec(item.product_spec, prod.brand, prod.size_label or (str(prod.size) + " " + prod.unit))];
+    return [prod for prod in [cat ->:Has:->][?:Product] if prod.category == need_key(item) and satisfies_requested_spec(item.product_spec, prod.brand, prod.size_label or (str(prod.size) + " " + prod.unit), prod.name)];
 }
 
 """Quotes for every plannable need. Expired offers are dropped. Offers without a price are

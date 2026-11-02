@@ -1,5 +1,5 @@
 # Settings used by planning, discovery, reminders, and synchronization.
-data_mode = "mock"
+data_mode = "live"
 timezone = "America/New_York"
 max_fulfillment_channels = 2
 max_plan_options = 3

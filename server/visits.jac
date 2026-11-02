@@ -140,10 +140,11 @@ def visit_action(p: UserProfile, data: dict, now: str) -> str {
                 "type": "feedback", "target": item["category"], "reason": "PURCHASED"}], now, {"data_mode": "live"});
         }
         item.update(result);
+        item["recorded_at"] = now;
         if result["actual_paid"] is not None and result["actual_paid"] > 0 {
             add_expense(p, {"id": f"visit:{plan['key']}:{item['category']}", "amount": result["actual_paid"],
                 "store": item.get("store_name") or plan["store"]["name"], "category": item["category"],
-                "spent_at": now, "note": "Reported when recording this store visit."}, now, "visit");
+                "spent_at": now, "note": "Estimated from the listed price and tax; correct it here if your receipt differs." if result["paid_estimated"] else "Reported when recording this store visit."}, now, "visit");
         }
         paid_items = [it for it in plan["items"] if it.get("actual_paid") is not None];
         plan["reported_paid_usd"] = round(sum([it["actual_paid"] for it in paid_items]), 2) if paid_items else None;

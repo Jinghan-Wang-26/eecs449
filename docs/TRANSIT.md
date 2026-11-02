@@ -5,10 +5,10 @@ CartCompass can plan a dated **Ann Arbor/Ypsilanti TheRide** round trip from a c
 ## Use it locally
 
 1. Keep `GEOAPIFY_API_KEY` in your local `.env`; it verifies address and pedestrian routes. No new transit account or key is required for the public schedule file. Conversation still requires the existing model configuration; structured controls do not.
-2. Choose **Real stores** and confirm an address in the service area. Add shopping needs under **My list**.
-3. Under **Preferences**, set **Transport** to `BUS`, save your available hours, maximum walking minutes and maximum bus transfers per travel segment. The search supports at most two transfers; a saved limit of zero or one is respected. If the saved limit is larger, only journeys with at most two transfers are searched.
-4. Under **Plans & stores**, click **Compare store options**, or ask the assistant to plan the trip. For example: `Plan a bus shopping trip for milk and rice. I can shop Saturday from 2 pm to 6 pm, walk up to 15 minutes per leg, and make at most one transfer each way.`
-5. Review scheduled departure/return times and the separate **To the store** and **Back to your starting address** directions. Each direction lists walking, waiting, bus numbers, headsigns, boarding/alighting stops and transfer counts. Review uncertainties before accepting.
+2. Confirm an address in the service area. Add shopping needs on the **List** step.
+3. Under **Preferences**, select **Bus** under **How you travel**, save your available hours, maximum walking minutes and maximum bus transfers per travel segment. The search supports at most two transfers; a saved limit of zero or one is respected. If the saved limit is larger, only journeys with at most two transfers are searched.
+4. On the **Options** step, click **Compare store options**, or ask the assistant to plan the trip. For example: `Plan a bus shopping trip for milk and rice. I can shop Saturday from 2 pm to 6 pm, walk up to 15 minutes per leg, and make at most one transfer each way.`
+5. Choose **Review route** to see the trip drawn in time order with its key departure and return times; **Show all steps** lists the separate **To the store** and **Back to your starting address** directions. Each direction lists walking, waiting, bus numbers, headsigns, boarding/alighting stops and transfer counts. Review uncertainties before accepting.
 
 The first bus lookup downloads and parses the official timetable. Map requests can make this slower than walking-only planning. A schedule with no valid return is blocked; a missing service, failed walking lookup or expired feed never becomes a fictional bus trip or silently changes BUS-only travel to another mode.
 

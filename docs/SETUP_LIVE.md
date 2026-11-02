@@ -72,7 +72,7 @@ If a key was shared in chat, replace it in the provider console and update only 
 
 ## Real-address demonstration
 
-1. In **Shopping workspace**, choose **Real stores**.
+1. Open **Preferences** (the app always uses real stores).
 2. Enter the public demonstration address `150 E McKinley Avenue, Sunnyvale, CA 94086`, click **Look up address**, and confirm the intended result with **Use this address**.
 3. Click **Find nearby supermarkets**. A store can have historical prices, optional Kroger product access, or location information only.
 4. Click **View historical products** on Whole Foods or another Open Prices location. Each record displays observation date, currency, discount conditions, source and supporting evidence. Pagination browses up to 100 pages, 20 records each; the text filter filters the current page only.
@@ -102,7 +102,7 @@ Raw `data/mock/catalog.json` timestamps stay fixed for reproducible historical t
 
 Choose a category, then expand **Compare package and unit prices**. USD package prices and normalized prices appear together: mass per kg, volume per L, count per piece. US gallons/fluid ounces are used; ordinary ounces mean mass. Only eligible memberships affect the displayed price. Unknown price/size, unsupported units and ambiguous multipacks stay unavailable; the application never converts mass to volume. Taxes, transport and fees remain in the basket total. Plan item prices use their planning-time snapshots.
 
-To demo without external services: select **Demo data**, save budget `80`, carrying limit `20`, transport `WALK,BUS` and free time `SAT 14:00-17:00`; add one package of rice, expand unit-price comparison and click **Compare plans**. Accept a plan, then mark its item bought. The default maximum walking segment is 15 minutes: the mock rice store has an 18-minute walk, so allow BUS or explicitly ask chat to set a larger walking limit.
+There is no demo mode in the app. To check the planner without external services, run `scripts/verify_e2e.py`; it starts an isolated server on the offline fixture catalog (`data_mode = "mock"` in its own settings file).
 
 ## Model acceptance and CI
 
@@ -129,7 +129,7 @@ Conversation follow-up rules, profile/need validation and unit pricing now live 
 
 ## Scheduled buses
 
-No new transit API credentials are required. With the existing Geoapify key configured, choose Real stores, confirm an Ann Arbor/Ypsilanti address, set transport to `BUS`, and save availability and walking/transfer limits. TheRide GTFS downloads on demand. See [scheduled bus setup and verification](TRANSIT.md); schedules are not live arrival predictions.
+No new transit API credentials are required. With the existing Geoapify key configured, confirm an Ann Arbor/Ypsilanti address, set transport to `BUS`, and save availability and walking/transfer limits. TheRide GTFS downloads on demand. See [scheduled bus setup and verification](TRANSIT.md); schedules are not live arrival predictions.
 
 
 ## Multi-store and delivery comparisons

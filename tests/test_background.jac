@@ -8,7 +8,7 @@ import from server.background { background_tick, run_background_reminders }
 glob NOW: str = "2026-10-12T10:00:00-04:00";
 
 def user() -> UserProfile {
-    p = UserProfile(transport=["WALK", "BUS"], free_windows=["SAT 14:00-17:00"], weekly_budget=100);
+    p = UserProfile(data_mode="mock", transport=["WALK", "BUS"], free_windows=["SAT 14:00-17:00"], weekly_budget=100);
     p +>:Owns:+> InterestPool();
     shopping_operation(p, "save_interest", {"category": "milk", "kind": "REPLENISH",
         "replenishment_days": "7", "last_purchased_at": "2026-10-01"}, NOW);
@@ -42,7 +42,7 @@ test "enabling runs on the next tick and then waits for the interval" {
 }
 
 test "an unattended run creates a reminder that becomes due later" {
-    p = UserProfile(transport=["WALK"], free_windows=["SAT 14:00-17:00"], weekly_budget=100);
+    p = UserProfile(data_mode="mock", transport=["WALK"], free_windows=["SAT 14:00-17:00"], weekly_budget=100);
     p +>:Owns:+> InterestPool();
     shopping_operation(p, "save_interest", {"category": "eggs", "kind": "REPLENISH",
         "replenishment_days": "7", "last_purchased_at": "2026-10-08"}, NOW);

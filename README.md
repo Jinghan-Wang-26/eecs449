@@ -6,14 +6,13 @@ CartCompass is a shopping-assistant prototype built around **Jac**, with three c
 
 **Status: Working local prototype (2026-10-27).** The design sections below describe the broader product vision. Current implementation and verification are tracked in [Issue #8 status](docs/ISSUE8_STATUS.md); remaining work is listed in [product gaps](docs/PRODUCT_GAPS.md).
 
-| Mode | What works | Limits |
+| Data | What works | Limits |
 |---|---|---|
-| Demo data | Basket costs, constraints, in-store/delivery/mixed comparisons, feedback and manual reminders | Fictional catalog, prices and routes |
-| Real stores | Conversational setup, actual address/nearby-store search, Open Prices historical evidence, dated single-store visits, regular-hours checks where supported, scheduled TheRide bus round trips, partial purchase outcomes and saved chat | No current inventory/price guarantee, live transit predictions, real delivery optimization or multi-store itinerary |
+| Real stores (the app) | Conversational setup, actual address/nearby-store search, Open Prices historical evidence, dated single-store visits, regular-hours checks where supported, scheduled TheRide bus round trips, partial purchase outcomes and saved chat | No current inventory/price guarantee, live transit predictions, real delivery optimization or multi-store itinerary |
 
-**Using the workspace:** **My list** contains current needs and optional reminders; **Plans & stores** contains recommendations, address lookup and purchase tracking; **Preferences** contains saved budget, transport and availability. The assistant stays beside these tabs on desktop and below them on mobile. Answers in chat update the workspace automatically. **New shopping plan** starts a fresh trip while retaining your profile and purchase history.
+**Using the workspace:** a trip summary shows the key numbers for the current step, and the workspace follows the trip: **List** (current needs and items from your interests), **Options** (one recommended plan, alternatives, address lookup and delivery quotes), **Route** (the trip in time order, carrying check and acceptance) and **Shop** (tick items into your basket, then record what you paid). **Budget** and **Preferences** open from the top bar. The assistant stays beside the workspace on desktop and behind a Plan / Assistant switch on mobile; when a reply changes your plan, a change card shows what changed. **New trip** starts a fresh trip while retaining your profile and purchase history. Design notes: [UI redesign plan](docs/UI_REDESIGN_PLAN.md).
 
-**Why keep Demo data?** Its simulated catalog supports repeatable classroom demonstrations and offline checks of basket arithmetic, delivery/mixed strategies and purchase feedback. Structured demo controls need no provider credentials; conversational input still needs a configured model. Real stores is a separate, explicitly selected mode: limited historical coverage never silently falls back to fictional offers. The interface and newly generated assistant replies use English; existing user-entered history is preserved.
+**No demo mode in the app.** CartCompass always plans with real stores near your confirmed address; there is no Demo data switch. The fictional catalog in `data/mock/` remains only as an offline fixture for tests and `scripts/verify_e2e.py` (they set `data_mode = "mock"` explicitly), and limited real coverage never falls back to fictional offers. Profiles saved in the old demo mode switch to real stores the next time the page opens. The interface and newly generated assistant replies use English; existing user-entered history is preserved.
 
 Scheduled bus journeys are available for Ann Arbor/Ypsilanti through TheRide GTFS, with Geoapify-verified walking connections and no additional transit API key. See [bus setup and limits](docs/TRANSIT.md).
 
@@ -237,7 +236,7 @@ Updates are triggered by user actions, refreshes when the app opens, and schedul
 | A relevant new product is found | Connection to existing preferences | Place it in the discovery area |
 | An accepted plan's conditions change | Stockout, price increase, or unavailable delivery window | Show the change and alternatives |
 
-Discovery operates on the available product catalog or connected sources. Label a product as newly released only when supported by reliable release or listing evidence; otherwise describe it as something the user has not tried.
+In real-store mode, suggestions come from the shopper's own purchases (`interests/live.jac`, `interests/suggest.py`): an item bought on two or more different days is suggested again once its usual gap has passed, and current Kroger promotions on things the shopper has bought or saved are shown as sale cards for two days. They are checked on page load, Check for updates and background checks, at most every six hours unless forced, and nothing is added to the list until the shopper taps Add to list. Discovery operates on the available product catalog or connected sources. Label a product as newly released only when supported by reliable release or listing evidence; otherwise describe it as something the user has not tried.
 
 Limit discovery recommendations, support quiet hours and snoozing, and deduplicate notifications about the same event. Repeatedly ignored reminders reduce notification frequency. Explicit negative feedback updates preferences. A single purchase does not automatically imply lasting interest.
 
@@ -418,7 +417,7 @@ Application settings live in `app.toml` and are validated by `app_settings.py`. 
 
 | Setting | Initial Default | Purpose |
 |---|---|---|
-| `data_mode` | `mock` | Distinguish demonstration data from live data |
+| `data_mode` | `live` | Real stores; `mock` is only for offline tests with the fixture catalog |
 | `timezone` | `America/New_York` | User-editable time zone for trips and reminders |
 | `max_fulfillment_channels` | 2 | Bound the initial search space |
 | `max_plan_options` | 3 | Limit the number of presented plans |
@@ -507,11 +506,11 @@ Use Python 3.13 and the project virtual environment. `requirements.txt` pins the
 
 The shopping panel works without an LLM key:
 
-1. Open **Shopping workspace**, choose **Demo data**, and save your profile (transport, budget and available time).
+1. Open **Preferences**, confirm where you start from, and save your profile (transport, budget and available time).
 2. Save a need, a price watch with a target, or a replenishment interest with the last purchase date and interval.
 3. Accept or dismiss discoveries. Accepting an alternative merges it into an existing need for that category; recommendations never become shopping needs without confirmation.
 4. Refresh to check reminders. Add a reminded item to shopping needs, snooze it, dismiss it, or choose **Show less often**. Paused interests, snoozed items, stale offers, and quiet hours suppress reminders.
-5. Click **Compare plans**, accept one, then record individual purchases. One-time needs are archived; replenishment interests retain their history and are deferred until their next cycle.
+5. Click **Find shopping options**, accept one, then record individual purchases. One-time needs are archived; replenishment interests retain their history and are deferred until their next cycle.
 
 The fixture is fictional and its prices expire on October 17, 2026. Refresh reloads its offer observations through the event pipeline but never pretends that an expired fixture is current. For a later demo, update the fixture observation/expiry timestamps intentionally. Catalog membership, routes, and delivery rules are loaded initially; refresh currently updates existing offers only.
 
@@ -528,7 +527,7 @@ For integrations, `ShoppingAction(action="sync", data={"events": [...]})` accept
 
 ### Background reminders, notifications and budget
 
-- **Background checks:** under **My list → Discoveries & reminders**, turn on **Check for reminders in the background**. While `jac start` runs, `server/background.jac` (Jac `@schedule`, every minute) refreshes each opted-in user every `background_check_minutes` (default 30) outside quiet hours. New reminders show as a banner and, if allowed, a browser notification.
+- **Background checks:** under **Preferences → Reminders**, turn on **Check for reminders in the background**. While `jac start` runs, `server/background.jac` (Jac `@schedule`, every minute) refreshes each opted-in user every `background_check_minutes` (default 30) outside quiet hours. New reminders show as a notification card and, if allowed, a browser notification.
 - **Email reminders:** the same section emails new reminders through your SMTP account: one digest per check, once per reminder, nothing in quiet hours, exponential retry on failure. A phone's mail app shows them as notifications. Setup: [docs/NOTIFICATIONS.md](docs/NOTIFICATIONS.md).
 - **Budget tab:** a spending ledger with this week's spent and remaining budget (Monday to Sunday), category totals and four weeks of history. Entries come from manual records and from actual amounts paid on store visits; corrections keep history and removal only voids. Plans whose known cost exceeds the remaining budget show an advisory note; acceptance is not blocked and the planners' weekly-budget checks are unchanged.
 - **End-to-end check:** `python scripts/verify_e2e.py` runs these features against an isolated server and a local fake SMTP server (about two minutes, offline). `--copy-data` runs it on a copy of your local graph.
@@ -569,11 +568,11 @@ jac run scripts/verify_chat.jac
 
 ### Real-address shopping visits
 
-Choose **Real stores**, confirm a typed address or browser location, save your needs and travel/free-time constraints, then select **Compare store options**. Review up to three nearby store visits with Open Prices historical evidence, routes and per-item purchase feedback. Geoapify is required; Kroger and an LLM are not required for these controls. Current prices, stock and opening hours remain unknown. Follow the [real-store walkthrough](docs/REAL_STORE_VISITS.md).
+Confirm a typed address or browser location, save your needs and travel/free-time constraints, then select **Compare store options**. Review up to three nearby store visits with Open Prices historical evidence, routes and per-item purchase feedback. Geoapify is required; Kroger and an LLM are not required for these controls. Current prices, stock and opening hours remain unknown. Follow the [real-store walkthrough](docs/REAL_STORE_VISITS.md).
 
 ### Conversational setup and planning
 
-In **Real stores**, tell chat what you want to buy and ask for a plan. It saves your stated needs/profile values, asks for missing address/transport/free-time information, and updates the shopping panel after each answer. Reply with an address result's number when asked. Once required information is available, the plan appears both in chat and in the panel; no **Confirm changes** step is needed for routine setup. Purchase feedback and accepting a visit still require confirmation. See [the conversational walkthrough](docs/REAL_STORE_VISITS.md#conversational-setup).
+Tell chat what you want to buy and ask for a plan. It saves your stated needs/profile values, asks for missing address/transport/free-time information, and updates the shopping panel after each answer. Reply with an address result's number when asked. Once required information is available, the plan appears both in chat and in the panel; no **Confirm changes** step is needed for routine setup. Purchase feedback and accepting a visit still require confirmation. See [the conversational walkthrough](docs/REAL_STORE_VISITS.md#conversational-setup). When a newly added item comes in many brands and flavors (chips, cereal, coffee, detergent and similar), the assistant asks once for a brand, flavor or package size; "any" lets it pick the cheapest suitable in-stock product. A stated flavor must appear in the product name and a brand must match, so CartCompass never substitutes a different product on its own.
 
 ### Jac business-rule migration
 

@@ -6,7 +6,8 @@ from app_settings import instant
 def rebase_fixture(data, now=""):
     if not now:
         return data  # Explicit low-level fixture mode for historical regression tests.
-    anchor = instant(now).replace(hour=0, minute=0, second=0, microsecond=0)
+    # Local midnight takes its own UTC offset, which differs from now's on DST change days.
+    anchor = instant(instant(now).date().isoformat() + "T00:00:00")
     original = instant(data["observed_at"])
     for offer in data["offers"]:
         observed = instant(offer.get("observed_at", data["observed_at"]))

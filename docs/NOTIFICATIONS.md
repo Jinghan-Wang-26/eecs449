@@ -29,7 +29,7 @@ SMTP_FROM=your.address@gmail.com
 
 Port 587 uses STARTTLS and port 465 uses SSL. Only a loopback test server (`127.0.0.1` or `localhost`) is contacted without TLS.
 
-Then, in CartCompass, open **My list → Discoveries & reminders**, enter the address that should receive reminders, tick **Email me new reminders**, click **Save email settings**, and click **Send test email**. The receiving address can be any inbox, not only the sending account.
+Then, in CartCompass, open **Preferences → Reminders**, enter the address that should receive reminders, tick **Email me new reminders**, click **Save email settings**, and click **Send test email**. The receiving address can be any inbox, not only the sending account.
 
 ## Limits
 

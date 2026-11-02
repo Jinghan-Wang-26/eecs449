@@ -120,7 +120,7 @@ def need_spec(data: any) -> dict {
     if (qty != int(qty)) {
         raise ValueError('Quantity must be a whole number of packages.');
     }
-    for field in ['brand', 'size'] {
+    for field in ['brand', 'size', 'variant'] {
         if field in data and (not isinstance(data[field], str) or len(data[field]) > 100) {
             raise ValueError(f'{field} must be text of at most 100 characters.');
         }
@@ -130,17 +130,18 @@ def need_spec(data: any) -> dict {
         'qty': int(qty),
         'brand': str(data.get('brand', ''))[:100],
         'size': str(data.get('size', ''))[:100],
+        'variant': str(data.get('variant', '')).strip()[:100],
         'substitutes': 'ask'
     };
 }
 
 def need_patch(data: any) -> dict {
-    if not isinstance(data, `dict) or (`set(data) - {'type', 'category', 'qty', 'brand', 'size'}) {
+    if not isinstance(data, `dict) or (`set(data) - {'type', 'category', 'qty', 'brand', 'size', 'variant'}) {
         raise ValueError('Unsupported shopping need fields.');
     }
     validated = need_spec(data);
     out = {'type': validated['type']};
-    for field in ['qty', 'brand', 'size'] {
+    for field in ['qty', 'brand', 'size', 'variant'] {
         if field in data { out[field] = validated[field]; }
     }
     return out;
@@ -162,5 +163,7 @@ def purchase_result(data: dict, item: dict) -> dict {
         if qty == 0 { raise ValueError('Only purchased items can have an actual amount paid.'); }
         paid = round(number(data['actual_paid'], 0, 100000, 'actual amount paid'), 2);
     }
-    return {'outcome': outcome, 'bought_qty': int(qty), 'remaining_qty': item['qty'] - int(qty), 'actual_paid': paid};
+    # True when the shopper kept the listed price plus estimated tax instead of a receipt amount.
+    estimated = paid is not None and data.get('paid_estimated') is True;
+    return {'outcome': outcome, 'bought_qty': int(qty), 'remaining_qty': item['qty'] - int(qty), 'actual_paid': paid, 'paid_estimated': estimated};
 }

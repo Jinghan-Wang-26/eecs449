@@ -14,7 +14,7 @@ glob NOW: str = "2026-10-15T10:00:00-04:00",
 
 """Two replenishment reminders become due at NOW."""
 def shopper() -> UserProfile {
-    p = UserProfile(transport=["WALK"], free_windows=["SAT 14:00-17:00"], weekly_budget=100);
+    p = UserProfile(data_mode="mock", transport=["WALK"], free_windows=["SAT 14:00-17:00"], weekly_budget=100);
     p +>:Owns:+> InterestPool();
     for item in ["milk", "eggs"] {
         shopping_operation(p, "save_interest", {"category": item, "kind": "REPLENISH",

@@ -29,6 +29,8 @@ def:pub BudgetPanel(budget: dict, busy: bool, operate: any) -> JsxElement {
         if w["spent"] > peak { peak = w["spent"]; }
     }
     categories = Object.entries(budget["by_category"]);
+    # The four-week chart only adds something once an earlier week has spending.
+    history = len([w for w in budget["recent_weeks"].slice(0, -1) if w["spent"] > 0]) > 0;
 
     return <section className="budget-panel">
         <div className="budget-summary">
@@ -40,7 +42,7 @@ def:pub BudgetPanel(budget: dict, busy: bool, operate: any) -> JsxElement {
             </div>
             {if has_budget { <div className="budget-meter" role="progressbar" aria-label="Share of weekly budget spent" aria-valuemin="0" aria-valuemax="100" aria-valuenow={used}><span className={"over" if budget["over_budget"] else ""} style={{"width": str(used) + "%"}}></span></div> }}
             {if not has_budget { <p>Set a weekly budget under Preferences to see what is left.</p> }}
-            <p>Totals include only amounts you reported: entries below and actual amounts paid on store visits. Plan estimates and quotes are not counted.</p>
+            <p>Counts what you recorded after shopping and expenses you add here. Plan estimates are not counted.</p>
         </div>
 
         {if len(categories) > 0 {
@@ -49,25 +51,27 @@ def:pub BudgetPanel(budget: dict, busy: bool, operate: any) -> JsxElement {
             </div>
         }}
 
-        <div className="budget-weeks" aria-label="Spending in the last four weeks"><h3>Last four weeks</h3>
-            <div className="week-bars">
-                {[<div key={w["week"]} className="week-bar"><span className="bar" style={{"height": str(Math.round(w["spent"] / peak * 100)) + "%"}}></span><strong>{money(w["spent"])}</strong><small>{"Week of " + w["start"].slice(5)}</small></div> for w in budget["recent_weeks"]]}
+        {if history {
+            <div className="budget-weeks" aria-label="Spending in the last four weeks"><h3>Last four weeks</h3>
+                <div className="week-bars">
+                    {[<div key={w["week"]} className="week-bar"><span className="bar" style={{"height": str(Math.round(w["spent"] / peak * 100)) + "%"}}></span><strong>{money(w["spent"])}</strong><small>{"Week of " + w["start"].slice(5)}</small></div> for w in budget["recent_weeks"]]}
+                </div>
             </div>
-        </div>
+        }}
 
-        <details className="quick-add" open><summary>Record an expense</summary>
+        <details className="quick-add"><summary>+ Record an expense</summary>
             <form onSubmit={add} className="profile-grid">
                 <label>Amount paid ($)<input aria-label="Amount paid" type="number" min="0.01" max="10000" step="0.01" required value={amount} onChange={lambda e: ChangeEvent { amount = e.target.value; }} /></label>
                 <label>Date<input aria-label="Purchase date" type="date" value={spent_at} onChange={lambda e: ChangeEvent { spent_at = e.target.value; }} /></label>
-                <label>Store<input aria-label="Store" maxLength="80" value={store} placeholder="Kroger - Westgate" onChange={lambda e: ChangeEvent { store = e.target.value; }} /></label>
-                <label>Category<input aria-label="Expense category" maxLength="40" value={category} placeholder="milk" onChange={lambda e: ChangeEvent { category = e.target.value; }} /></label>
+                <label>Store<input aria-label="Store" maxLength="80" value={store} placeholder="Optional" onChange={lambda e: ChangeEvent { store = e.target.value; }} /></label>
+                <label>Item<input aria-label="Expense category" maxLength="40" value={category} placeholder="Optional" onChange={lambda e: ChangeEvent { category = e.target.value; }} /></label>
                 <label>Note<input aria-label="Note" maxLength="200" value={note} onChange={lambda e: ChangeEvent { note = e.target.value; }} /></label>
                 <button type="submit" disabled={busy}>Add expense</button>
             </form>
         </details>
 
         <h3>Ledger</h3>
-        {if len(budget["entries"]) == 0 { <p>No expenses recorded yet.</p> }}
+        {if len(budget["entries"]) == 0 { <p>Nothing recorded yet. After a trip, record what you paid on the Shop step.</p> }}
         {[<div key={row["id"]} className={"ledger-row" + (" voided" if row["voided"] else "")}>
             <div>
                 <span className="item-name">{money(row["amount"]) + " · " + (row["category"] or "uncategorized")}</span>

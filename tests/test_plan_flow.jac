@@ -16,7 +16,7 @@ glob NOW: str = "2026-10-10T09:00";
 
 """The README errand: no car, 6 kg, $60, free Saturday afternoon. Off root, so tests do not share state."""
 def errand(keys: list = ["milk", "eggs", "rice", "laundry detergent"]) -> UserProfile {
-    p = UserProfile(transport=["WALK", "BUS"], carry_limit_kg=6.0, weekly_budget=60.0,
+    p = UserProfile(data_mode="mock", transport=["WALK", "BUS"], carry_limit_kg=6.0, weekly_budget=60.0,
                     free_windows=["SAT 14:00-17:00"]);
     p +>:Owns:+> InterestPool();
     load_mock(catalog_of(p));

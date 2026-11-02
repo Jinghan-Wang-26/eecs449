@@ -53,7 +53,7 @@ def match_record(need: dict, record: dict, dietary: list, now: str) -> bool {
     tagged = CATEGORY_TAGS.get(query) in record.get("categories", []);
     if not terms or (not terms.issubset(words(name)) and not tagged) { return False; }
     if words(name) & set(EXCLUSIONS.get(query, [])) { return False; }
-    if not satisfies_requested_spec(need, record.get("brand", ""), record.get("size_label", "")) { return False; }
+    if not satisfies_requested_spec(need, record.get("brand", ""), record.get("size_label", ""), record.get("name", "")) { return False; }
     labels = {str(x).removeprefix("en:") for x in record.get("labels", [])};
     if any([str(tag).removeprefix("en:") not in labels for tag in dietary]) { return False; }
     try {

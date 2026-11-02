@@ -78,6 +78,12 @@ def check_reminders(p: UserProfile, now: str, settings: dict = {}) -> list {
     return added;
 }
 
+"""Category named in a USUAL or SALE reminder key ("usual|milk|…", "sale|chips|…")."""
+def suggestion_category(key: str) -> str {
+    parts = key.split("|");
+    return parts[1] if len(parts) > 2 and parts[0] in ["usual", "sale"] else "";
+}
+
 def actionable(r: any, now: str) -> bool {
     for n in about_of(r) {
         if isinstance(n, ShoppingPlan) and r.kind == "PLAN_CHANGE" and n.status != PlanStatus.NEEDS_REVIEW { return False; }
@@ -98,10 +104,13 @@ def inbox(p: UserProfile, now: str, settings: dict = {}) -> list {
     cfg = get_settings(settings);
     if quiet(now, cfg) { return []; }
     out = [];
+    listed = [n.product_spec.get("type", "") for n in items_of(p) if n.plannable()];
     for r in reminders_of(p) {
         if r.status not in [ReminderStatus.PENDING, ReminderStatus.SNOOZED, ReminderStatus.SENT] or not due(r.fire_at, now, cfg) or not actionable(r, now) {
             continue;
         }
+        # Suggestions lapse once the item is on the list; a sale claim lapses after two days.
+        if suggestion_category(r.dedup_key) in listed or (r.kind == "SALE" and elapsed_hours(r.created_at, now, cfg) > 48) { continue; }
         # Do not display a stale target-price claim after the offer changes.
         if r.kind == "PRICE_DROP" {
             needs = [n for n in about_of(r) if isinstance(n, InterestItem)];

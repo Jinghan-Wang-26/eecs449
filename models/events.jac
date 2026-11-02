@@ -79,6 +79,7 @@ node ShoppingWorkspace {
         chat_question: str = "", chat_language: str = "en";
     has historical_prices: dict = {};
     has visit_plans: list = [], visit_search: dict = {}, search_radius_m: int = 5000;
+    has interest_checked_at: str = "";
     has address_candidates: list = [],
         nearby_stores: list = [],
         product_results: list = [],

@@ -156,7 +156,8 @@ def main():
     if args.copy_data and (ROOT / '.jac' / 'data').is_dir():
         shutil.copytree(ROOT / '.jac' / 'data', work / '.jac' / 'data')
     settings = tomllib.loads((ROOT / 'app.toml').read_text())
-    settings.update({'quiet_hours_start': 0, 'quiet_hours_end': 0, 'background_check_minutes': 5})
+    # The app plans with real stores; this offline run uses the bundled fixture catalog instead.
+    settings.update({'data_mode': 'mock', 'quiet_hours_start': 0, 'quiet_hours_end': 0, 'background_check_minutes': 5})
     (work / 'app.toml').write_text(''.join(
         f'{k} = {json.dumps(v) if not isinstance(v, bool) else str(v).lower()}\n' for k, v in settings.items()))
 

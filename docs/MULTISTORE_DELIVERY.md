@@ -7,10 +7,10 @@ ranking rules live in Jac. Python handles provider requests and orchestration.
 ## Try it locally
 
 1. Start the app with the pinned project environment (`jac start main.jac`).
-   Select **Real stores**, confirm an address, add shopping needs, and save travel
+   Confirm an address, add shopping needs, and save travel
    modes, free time, carrying limit and budget in **Preferences**. Save tax and
    whole-trip driving cost estimates if you want complete driving totals.
-2. Open **Plans & stores → Compare store options**. With Kroger and
+2. Open the **Options** step → **Compare store options**. With Kroger and
    Geoapify configured, the app checks up to three retailer branches and assigns
    each need to one branch. Two-store options show home → first store → second
    store → home, including 20 minutes of shopping at each store.

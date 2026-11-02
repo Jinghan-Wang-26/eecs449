@@ -14,7 +14,7 @@ import from tests.test_visits { STORE, TRAVEL, evidence }
 glob NOW: str = "2026-10-31T15:00:00-04:00";
 
 def shopper(budget: float = 60.0) -> UserProfile {
-    p = UserProfile(transport=["WALK"], free_windows=["SAT 14:00-17:00"], weekly_budget=budget);
+    p = UserProfile(data_mode="mock", transport=["WALK"], free_windows=["SAT 14:00-17:00"], weekly_budget=budget);
     p +>:Owns:+> InterestPool();
     return p;
 }
@@ -142,7 +142,7 @@ test "open plans get advisory notes against the remaining budget" {
 }
 
 test "demo plans in the panel response carry budget notes" {
-    p = UserProfile(transport=["WALK", "BUS"], free_windows=["SAT 14:00-17:00"], weekly_budget=100);
+    p = UserProfile(data_mode="mock", transport=["WALK", "BUS"], free_windows=["SAT 14:00-17:00"], weekly_budget=100);
     p +>:Owns:+> InterestPool();
     add_expense(p, {"id": "spent", "amount": 95, "spent_at": "2026-10-27"}, NOW);
     shopping_operation(p, "save_interest", {"category": "rice", "qty": 1}, NOW);

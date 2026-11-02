@@ -51,7 +51,10 @@ def get_settings(overrides: dict | None = None) -> dict:
 def instant(value: str, settings: dict | None = None) -> datetime:
     zone = ZoneInfo((settings or get_settings())["timezone"])
     dt = datetime.fromisoformat(value) if value else datetime.now(zone)
-    return dt.replace(tzinfo=zone) if dt.tzinfo is None else dt.astimezone(zone)
+    local = dt.replace(tzinfo=zone) if dt.tzinfo is None else dt.astimezone(zone)
+    # A fixed offset keeps the local wall clock but compares and subtracts by real time.
+    # Datetimes sharing one ZoneInfo compare by wall clock, wrong in the repeated DST hour.
+    return local.astimezone(timezone(local.utcoffset()))
 
 
 def stamp(value: str = "", settings: dict | None = None) -> str:
@@ -68,7 +71,7 @@ def due(value: str, now: str, settings: dict | None = None) -> bool:
 
 
 def later(value: str, hours: float, settings: dict | None = None) -> str:
-    return (instant(value, settings) + timedelta(hours=hours)).isoformat(timespec="seconds")
+    return stamp((instant(value, settings) + timedelta(hours=hours)).isoformat(), settings)
 
 
 def week_key(now: str, settings: dict | None = None) -> str:
