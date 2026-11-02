@@ -1,8 +1,8 @@
 # Deploy CartCompass to Render
 
-This deployment is a **password-protected, shared course demo**. Everyone using
-the demo password sees the same shopping workspace. It does not introduce
-separate shopper accounts. Use public/example addresses when sharing the demo.
+This deployment is a **public shared course demo**. Visitors need no password
+and see the same shopping workspace. Anyone with the URL can read/change shared
+data and trigger configured API calls. Use public/example addresses only.
 The local `.env`, databases and Codex login are excluded from the Docker image.
 
 ## 1. Accounts and costs
@@ -45,11 +45,9 @@ The local `.env`, databases and Codex login are excluded from the Docker image.
    unavailable; historical records never become current stock or prices.
 3. Review the service and cost details, then create the Blueprint. Render builds
    the Docker image and provides an HTTPS `onrender.com` URL.
-4. In the service's **Environment** settings, reveal the generated
-   `CARTCOMPASS_DEMO_PASSWORD`. The browser's login username is `cartcompass`;
-   the password is this generated value. Do not publish it in repository files
-   or screenshots. You may replace it with a unique password of at least
-   16 characters and redeploy.
+4. Open the service's HTTPS URL directly; no website login is required.
+   Existing `CARTCOMPASS_DEMO_PASSWORD` environment values are unused and may
+   be removed after deploying this version.
 5. Automatic deployments are disabled. After reviewing later changes, use
    **Manual Deploy → Deploy latest commit**. Once the PR is merged, update the
    Blueprint/service branch to `main` if it still points to the feature branch.
@@ -59,26 +57,22 @@ proxy starts only after Jac serves the homepage; if either service process
 exits, the container exits. This endpoint does not validate external API
 availability or prove that a planning request is making progress.
 
-Render terminates HTTPS. Caddy checks the demo password before forwarding to
+Render terminates HTTPS. Caddy forwards requests to
 Jac on internal port 8081. Only the proxy's `PORT` is exposed. Do not expose
-port 8081 as a second public service. All application/API paths require the
-password. The two services run as uid 10001 after the entrypoint prepares the
+port 8081 as a second public service. Application/API paths are publicly accessible. The two services run as uid 10001 after the entrypoint prepares the
 dedicated data directory. Do not change `LLM_BACKEND` to `codex` on Render.
 
 ### Troubleshooting startup
 
 Creating a Web Service manually does not apply `render.yaml`. In that case,
 copy its environment settings, configure `/healthz` as the health check path,
-and set `CARTCOMPASS_DEMO_PASSWORD` to a unique password of at least 16
-characters. This is the website login password, not the model API key.
-A `Set CARTCOMPASS_DEMO_PASSWORD...` log means the entrypoint stopped before
-starting Jac. Set the variable in Render's Environment page and redeploy.
+and keep the other settings from the Blueprint. No demo password is needed.
 
 An `Operation not permitted` error when executing Caddy can result from the
 upstream binary's Linux file capability being preserved by BuildKit. The
 Dockerfile removes that capability because this deployment only binds high
 ports. Deploy the updated Dockerfile; do not grant the container extra
-privileges or disable authentication.
+privileges or expose the internal backend port.
 
 A Free service has no persistent disk. Shopping data stored locally will be
 lost on restart/redeploy, and its memory limit may be too low for planning.
@@ -98,7 +92,7 @@ briefly interrupt service during redeploys. Keep a verified backup before
 changing database schemas. Render disk snapshots do not replace a tested,
 SQLite-aware backup/restore procedure.
 
-Read-only deployment probe (the password is prompted, never echoed):
+Read-only deployment probe (no password required):
 
 ```bash
 python scripts/verify_cloud.py https://YOUR-SERVICE.onrender.com
@@ -106,7 +100,7 @@ python scripts/verify_cloud.py https://YOUR-SERVICE.onrender.com
 
 Then verify in the browser:
 
-1. Open a private window: the demo password is required before viewing the app.
+1. Open a private window: the app must load without a password prompt.
 2. Start a new trip. Request milk and rice; answer missing-information questions
    and use a public address such as Michigan Union in Ann Arbor.
 3. Select transport/time constraints and generate a real-store plan. Check
@@ -129,18 +123,15 @@ addresses or shopping history. Email reminders remain optional; configure the
 ```bash
 docker build -t cartcompass:render-test .
 docker volume create cartcompass-demo-data
-read -rsp 'Demo password (at least 16 characters): ' CARTCOMPASS_DEMO_PASSWORD
-export CARTCOMPASS_DEMO_PASSWORD
 # Secrets are optional for an initial UI/persistence rehearsal. Pass separately
 # configured API variables with -e NAME when testing actual external calls.
 docker run --rm --name cartcompass-render-demo \
   -p 127.0.0.1:18000:10000 \
-  -e CARTCOMPASS_DEMO_PASSWORD \
   -v cartcompass-demo-data:/var/data \
   cartcompass:render-test
 ```
 
-Open `http://localhost:18000` and use username `cartcompass`. HTTP is allowed
+Open `http://localhost:18000` without a login. HTTP is allowed
 only for this loopback rehearsal; always use HTTPS for the cloud URL. Stop the
 container with Ctrl+C. Recreating it with the same volume preserves data.
 Do not delete the volume if you need that demo data.
@@ -149,5 +140,4 @@ Sources: [Render Docker](https://render.com/docs/docker),
 [Blueprint fields](https://render.com/docs/blueprint-spec),
 [persistent disks](https://render.com/docs/disks),
 [compute plans](https://render.com/docs/compute-plans),
-[DeepSeek API](https://api-docs.deepseek.com/),
-[Caddy basic authentication](https://caddyserver.com/docs/caddyfile/directives/basic_auth).
+[DeepSeek API](https://api-docs.deepseek.com/).

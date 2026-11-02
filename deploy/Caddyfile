@@ -9,9 +9,6 @@
 		respond "ok" 200
 	}
 	handle {
-		basic_auth {
-			cartcompass {env.CARTCOMPASS_DEMO_PASSWORD_HASH}
-		}
 		@cross_site header Sec-Fetch-Site cross-site
 		respond @cross_site "Cross-site requests are not allowed." 403
 		reverse_proxy 127.0.0.1:8081 {

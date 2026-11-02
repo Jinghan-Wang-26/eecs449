@@ -17,16 +17,7 @@ if [[ "${LLM_BACKEND:-api}" != api ]]; then
     echo 'Cloud deployment requires LLM_BACKEND=api; the local Codex login is not included.' >&2
     exit 1
 fi
-demo_password=${CARTCOMPASS_DEMO_PASSWORD:-}
-if [[ ${#demo_password} -lt 16 ]]; then
-    echo 'Set CARTCOMPASS_DEMO_PASSWORD to at least 16 characters in the service environment.' >&2
-    exit 1
-fi
-# Read the password via stdin so it never appears in process arguments or logs.
-export CARTCOMPASS_DEMO_PASSWORD_HASH
-CARTCOMPASS_DEMO_PASSWORD_HASH=$(printf '%s\n' "$CARTCOMPASS_DEMO_PASSWORD" | caddy hash-password)
-unset CARTCOMPASS_DEMO_PASSWORD demo_password
-
+# Public shared demo: no website password is required.
 jac_pid=''
 proxy_pid=''
 cleanup() {

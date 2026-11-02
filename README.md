@@ -18,7 +18,7 @@ Scheduled bus journeys are available for Ann Arbor/Ypsilanti through TheRide GTF
 
 New scheduling, bus routing and purchase-validation rules are implemented in Jac. External adapters and parts of the real-store recommender remain Python. This is a local single-user application; a hosted multi-user release needs additional work.
 
-For a password-protected cloud course demo, see [Deploy to Render](docs/DEPLOY_RENDER.md). The deployment keeps the pinned Jac runtime, uses a model API, and persists the shared workspace on a disk.
+For a public cloud course demo, see [Deploy to Render](docs/DEPLOY_RENDER.md). The deployment keeps the pinned Jac runtime, uses a model API, and persists the shared workspace on a disk.
 
 ## Table of Contents
 

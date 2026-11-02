@@ -1,9 +1,6 @@
 """Read-only cloud deployment probe; never submits a plan or invokes the LLM."""
 import argparse
-import base64
-import getpass
 import json
-import os
 import urllib.error
 import urllib.parse
 import urllib.request
@@ -20,17 +17,14 @@ def main():
         or not (parsed.scheme == 'https' or
                 parsed.scheme == 'http' and parsed.hostname in ('localhost', '127.0.0.1', '::1'))):
         parser.error('Use a bare HTTPS service URL (HTTP is allowed only for loopback).')
-    password = os.environ.get('CARTCOMPASS_DEMO_PASSWORD') or getpass.getpass('Demo password: ')
-    auth = 'Basic ' + base64.b64encode(('cartcompass:' + password).encode()).decode()
-
-    # Never forward the demo credentials to a redirected host or HTTP URL.
+    # Keep probes on the requested origin.
     class NoRedirect(urllib.request.HTTPRedirectHandler):
         def redirect_request(self, req, fp, code, msg, headers, newurl):
             return None
     opener = urllib.request.build_opener(NoRedirect())
 
-    def request(path, authenticated=False, body=None):
-        headers = {'Authorization': auth} if authenticated else {}
+    def request(path, body=None):
+        headers = {}
         if body is not None:
             headers['Content-Type'] = 'application/json'
         req = urllib.request.Request(base + path, headers=headers,
@@ -44,13 +38,11 @@ def main():
     checks = {}
     try:
         checks['health'] = request('/healthz')[0] == 200
-        checks['anonymous_page_blocked'] = request('/')[0] == 401
-        checks['anonymous_api_blocked'] = request('/walker/ChatHistory', body={})[0] == 401
-        code, page = request('/', True)
-        checks['authenticated_page'] = code == 200 and b'<html' in page.lower()
-        code, payload = request('/walker/ChatHistory', True, {})
+        code, page = request('/')
+        checks['public_page'] = code == 200 and b'<html' in page.lower()
+        code, payload = request('/walker/ChatHistory', body={})
         history = json.loads(payload) if code == 200 else {}
-        checks['authenticated_history'] = code == 200 and history.get('ok') is True and isinstance(history.get('data', {}).get('reports'), list)
+        checks['public_history'] = code == 200 and history.get('ok') is True and isinstance(history.get('data', {}).get('reports'), list)
     except (OSError, ValueError):
         print('Deployment probe failed to connect or received an invalid response. No credentials were printed.')
         return 1

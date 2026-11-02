@@ -1,4 +1,4 @@
-# Single shared course-demo workspace; HTTP Basic auth protects all app routes.
+# Public shared course-demo workspace; visitors do not need a password.
 # Review the paid compute/disk estimate in Render before creating the service.
 services:
   - type: web
@@ -20,8 +20,6 @@ services:
         value: '10000'
       - key: JAC_DATA_PATH
         value: /var/data
-      - key: CARTCOMPASS_DEMO_PASSWORD
-        generateValue: true
       - key: LLM_BACKEND
         value: api
       - key: LLM_BASE_URL
