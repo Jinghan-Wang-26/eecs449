@@ -18,6 +18,7 @@ import urllib.request
 import zipfile
 
 from integrations.providers import ProviderError, distance_m, route
+from integrations.http_transport import urlopen
 
 FEED_URL = 'https://www.theride.org/sites/default/files/google/google_transit.zip'
 SOURCE_URL = 'https://www.theride.org/business/software-developers'
@@ -112,7 +113,7 @@ def read_feed(raw, fetched_at):
 def _download():
     request = urllib.request.Request(FEED_URL, headers={'User-Agent':'CartCompass/1.0 (course shopping planner)'})
     try:
-        with urllib.request.urlopen(request, timeout=25) as response:
+        with urlopen(request, timeout=25) as response:
             raw = response.read(15_000_001)
         if len(raw) > 15_000_000:
             raise ValueError('File exceeds download limit')

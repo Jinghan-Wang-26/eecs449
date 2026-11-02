@@ -1,6 +1,7 @@
 """LLM only proposes structured intents; it cannot call tools or invent quotes."""
 import jaclang  # Enable direct imports of the migrated .jac modules.
 import json
+from urllib.parse import urlsplit
 from integrations.providers import credentials, request_json, ProviderError
 from integrations.validation import profile_patch, need_patch
 
@@ -108,9 +109,16 @@ def complete_json(messages):
     base = (cfg.get('LLM_BASE_URL') or 'https://api.deepseek.com').rstrip('/')
     if not base.startswith('https://'):
         raise ProviderError('LLM_BASE_URL must use HTTPS.')
-    data = request_json(base + '/chat/completions', headers={'Authorization': 'Bearer ' + cfg['LLM_API_KEY']}, body={
-        'model': (cfg.get('LLM_MODEL') or 'deepseek-chat'), 'messages': messages,
-        'temperature': 0, 'response_format': {'type':'json_object'}, 'max_tokens': 1200})
+    body = {'model': (cfg.get('LLM_MODEL') or 'deepseek-chat'), 'messages': messages,
+            'temperature': 0, 'response_format': {'type':'json_object'}, 'max_tokens': 1200}
+    # Current DeepSeek models think by default. Intent extraction needs a short
+    # JSON answer; do not spend the output budget on reasoning or send this
+    # provider-specific field to other compatible endpoints.
+    if urlsplit(base).hostname == 'api.deepseek.com':
+        body['thinking'] = {'type': 'disabled'}
+    data = request_json(base + '/chat/completions',
+                        headers={'Authorization': 'Bearer ' + cfg['LLM_API_KEY']},
+                        body=body, timeout=60)
     try:
         value = json.loads(data['choices'][0]['message']['content'])
         if not isinstance(value, dict):
