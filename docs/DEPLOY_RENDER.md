@@ -65,6 +65,25 @@ port 8081 as a second public service. All application/API paths require the
 password. The two services run as uid 10001 after the entrypoint prepares the
 dedicated data directory. Do not change `LLM_BACKEND` to `codex` on Render.
 
+### Troubleshooting startup
+
+Creating a Web Service manually does not apply `render.yaml`. In that case,
+copy its environment settings, configure `/healthz` as the health check path,
+and set `CARTCOMPASS_DEMO_PASSWORD` to a unique password of at least 16
+characters. This is the website login password, not the model API key.
+A `Set CARTCOMPASS_DEMO_PASSWORD...` log means the entrypoint stopped before
+starting Jac. Set the variable in Render's Environment page and redeploy.
+
+An `Operation not permitted` error when executing Caddy can result from the
+upstream binary's Linux file capability being preserved by BuildKit. The
+Dockerfile removes that capability because this deployment only binds high
+ports. Deploy the updated Dockerfile; do not grant the container extra
+privileges or disable authentication.
+
+A Free service has no persistent disk. Shopping data stored locally will be
+lost on restart/redeploy, and its memory limit may be too low for planning.
+Use the Blueprint's paid compute and disk configuration for persistent use.
+
 ## 3. Data and validation
 
 The disk mounts at `/var/data`, and `JAC_DATA_PATH=/var/data` makes Jac store

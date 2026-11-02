@@ -16,6 +16,11 @@ RUN sed -i s,http://deb.debian.org,https://deb.debian.org,g /etc/apt/sources.lis
     && useradd --create-home --uid 10001 cartcompass
 COPY --from=bun /usr/local/bin/bun /usr/local/bin/bun
 COPY --from=caddy /usr/bin/caddy /usr/local/bin/caddy
+# BuildKit preserves Caddy's privileged-port capability. Render restricts it,
+# causing exec to fail with EPERM even for `caddy hash-password`. We use PORT
+# >= 1024, so remove the unnecessary capability before dropping privileges.
+RUN python -c 'import os; p="/usr/local/bin/caddy"; os.removexattr(p, "security.capability") if "security.capability" in os.listxattr(p) else None' \
+    && gosu cartcompass caddy version
 COPY requirements.txt ./
 # Prefer IPv4 inside this container; retain IPv6 fallback and TLS verification.
 RUN printf 'precedence ::ffff:0:0/96 100\n' >> /etc/gai.conf \
