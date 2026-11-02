@@ -13,7 +13,11 @@ import from models.catalog { Product, Offer }
 import from models.graph { Has, profile_of, catalog_of, items_of, add_need, find_in }
 import from providers.mock { load_mock, mock_updates }
 import from interests.discovery { discover_products, discovery_action }
-import from notify.reminders { inbox, reminder_action }
+import from notify.reminders { inbox, reminder_action, suggestion_category }
+import from interests.live { live_suggestions }
+import from notify.background { set_background, background_view }
+import from budget.ledger { add_expense, correct_expense, void_expense, budget_view, plan_budget_notes }
+import from notify.delivery { set_delivery, test_delivery, delivery_view }
 import from sync.engine { sync_events }
 
 def shopping_operation(p: UserProfile, action: str, data: dict, now: str) -> dict {
@@ -62,9 +66,32 @@ def shopping_operation(p: UserProfile, action: str, data: dict, now: str) -> dic
     } elif action == "discovery" {
         if not discovery_action(p, data.get("key", ""), data.get("action", "")) { raise ValueError("Recommendation is no longer active"); }
         message = "Recommendation updated.";
+    } elif action == "reminder" and data.get("action") == "add" and suggestion_category(data.get("key", "")) != "" {
+        key = data.get("key", "");
+        if key not in [card["key"] for card in inbox(p, now, cfg)] { raise ValueError("This suggestion is no longer current."); }
+        spec = {"category": suggestion_category(key), "qty": 1};
+        # A sale is on one brand; keep it so the plan looks for the discounted product.
+        if key.startswith("sale|") and key.split("|")[2].strip() != "" { spec["brand"] = key.split("|")[2].strip(); }
+        item = save_need(p, spec);
+        if item.kind == InterestKind.WATCH { item.kind = InterestKind.NEED; }
+        invalidate_plans(p, "Shopping needs changed.");
+        reminder_action(p, key, "dismiss", now, cfg);
+        message = "Added " + spec["category"] + " to your list.";
     } elif action == "reminder" {
         if not reminder_action(p, data.get("key", ""), data.get("action", ""), now, cfg) { raise ValueError("Reminder is no longer actionable"); }
         message = "Reminder updated.";
+    } elif action == "expense_add" {
+        message = add_expense(p, data, now, "manual", cfg);
+    } elif action == "expense_correct" {
+        message = correct_expense(p, data, now, cfg);
+    } elif action == "expense_void" {
+        message = void_expense(p, data, now, cfg);
+    } elif action == "notify_settings" {
+        message = set_delivery(p, data);
+    } elif action == "notify_test" {
+        message = test_delivery(p);
+    } elif action == "background" {
+        message = set_background(p, data.get("enabled", False) == True);
     } elif action == "feedback" {
         sync_events(p, [data], now, cfg);
         message = "Feedback recorded.";
@@ -114,13 +141,13 @@ def shopping_operation(p: UserProfile, action: str, data: dict, now: str) -> dic
         state = owned(p, ShoppingWorkspace);
         state.pending_intent = {}; state.pending_id = "";
         message = "Chat proposal discarded.";
-    } elif action not in ["refresh", "view", "discover"] {
+    } elif action not in ["refresh", "view", "discover", "background", "expense_add", "expense_correct", "expense_void", "notify_settings", "notify_test"] {
         message = workflow(p, action, data, now);
         cfg["data_mode"] = mode_of(p);
         cat = catalog_of(p);
         if cat.mode == "mock" and not [cat ->:Has:->][?:Product] { load_mock(cat, now=now); }
     }
-    if action != "view" {
+    if action not in ["view", "background", "expense_add", "expense_correct", "expense_void", "notify_settings", "notify_test"] {
         if refresh_requested and cfg["data_mode"] == "live" { refresh_live(p); }
         updates = [];
         if refresh_requested and cfg["data_mode"] == "mock" {
@@ -132,6 +159,7 @@ def shopping_operation(p: UserProfile, action: str, data: dict, now: str) -> dic
         sync_events(p, updates, now, cfg);
         discover_products(p, now, cfg);
     }
+    if cfg["data_mode"] == "live" and action in ["view", "refresh"] { live_suggestions(p, now, refresh_requested); }
     discoveries = [];
     for item in items_of(p) {
         if item.kind == InterestKind.DISCOVER and item.status == InterestStatus.ACTIVE {
@@ -141,12 +169,14 @@ def shopping_operation(p: UserProfile, action: str, data: dict, now: str) -> dic
         }
     }
     needs = [{"category": n.product_spec.get("type", ""), "kind": n.kind.name, "status": n.status.name,
-              "qty": n.product_spec.get("qty", 1), "brand": n.product_spec.get("brand", ""), "size": n.product_spec.get("size", ""),
+              "qty": n.product_spec.get("qty", 1), "brand": n.product_spec.get("brand", ""), "variant": n.product_spec.get("variant", ""), "size": n.product_spec.get("size", ""),
               "in_current_list": getattr(n, "in_current_list", True)}
              for n in items_of(p) if n.kind != InterestKind.DISCOVER and n.status != InterestStatus.ARCHIVED];
+    workspace = workspace_view(p, now);
+    workspace["budget_notes"] = plan_budget_notes(p, workspace["plans"] + workspace["visit_plans"], now, cfg);
     return {"message": message, "discoveries": discoveries, "reminders": inbox(p, now, cfg),
             "interests": needs, "categories": sorted(set([prod.category for prod in [cat ->:Has:->][?:Product]])),
-            "quiet": quiet(now, cfg), "data_mode": cfg["data_mode"], "checked_at": now, "workspace": workspace_view(p, now)};
+            "quiet": quiet(now, cfg), "background": background_view(p, now, cfg), "budget": budget_view(p, now, cfg), "delivery": delivery_view(p), "data_mode": cfg["data_mode"], "checked_at": now, "workspace": workspace};
 }
 
 walker:pub ShoppingAction {

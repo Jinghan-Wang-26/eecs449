@@ -176,3 +176,30 @@ test "complete bus preferences trigger recommendations without requesting anothe
     }
     assert "No scheduled return" in reply and p.transport == ["BUS"];
 }
+
+test "a many-variety item is asked about once, staples are not, and any reply continues planning" {
+    p = chat_user(); p.location = {"id":"a","lat":42,"lon":-83}; p.free_windows = ["SAT 14:00-17:00"];
+    state = owned(p, ShoppingWorkspace);
+    with patch("server.visits.recommend") as search {
+        reply = turn(p, "I need milk and chips", {"intent":"update","needs":[{"category":"milk"},{"category":"chips"}]});
+        assert search.call_count == 0;
+    }
+    assert "brand, flavor or size you want for chips" in reply and "milk?" not in reply;
+    assert state.chat_question == reply.split("\n")[-1] and state.chat_planning;
+    turn(p, "Lay's classic, 8 oz", {"intent":"update","needs":[{"category":"chips","brand":"Lay's","variant":"classic","size":"8 oz"}]});
+    chips = [n for n in items_of(p) if n.product_spec["type"] == "chips"][0];
+    assert chips.product_spec["brand"] == "Lay's" and chips.product_spec["variant"] == "classic" and chips.product_spec["size"] == "8 oz";
+    p2 = chat_user(); p2.location = {"id":"a","lat":42,"lon":-83}; p2.free_windows = ["SAT 14:00-17:00"];
+    turn(p2, "I need cereal", {"intent":"update","needs":[{"category":"cereal"}]});
+    with patch("server.visits.recommend", side_effect=lambda ctx: dict, now: str: result_fixture(p2)) as search {
+        reply = turn(p2, "any", {"intent":"update"});
+        assert search.call_count == 1;
+    }
+    assert "flavor" not in reply;
+}
+
+test "a stated preference or a staple item skips the variety question" {
+    p = chat_user();
+    reply = turn(p, "Pringles original chips and two rice", {"intent":"update","needs":[{"category":"chips","brand":"Pringles","variant":"original"},{"category":"rice","qty":2}]});
+    assert "flavor or size" not in reply;
+}

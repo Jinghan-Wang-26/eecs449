@@ -17,9 +17,13 @@ profile: optional object containing explicitly requested transport as an ARRAY o
 weekly_budget, carry_limit_kg, max_walk_min, max_transfers, time_value_per_hour,
 free_windows as an ARRAY of strings (e.g. ["SAT 14:00-17:00"]), dietary (array), memberships (array);
 needs: array of {category: English product search term, qty: optional positive whole package count,
-brand: optional, size: optional}. Normalize product categories into English.
-Omit qty, brand and size unless the latest message explicitly changes them. A new need defaults
-to one package; an existing need preserves omitted fields. Use an empty string for brand/size
+brand: optional, variant: optional flavor or type words, size: optional}. Normalize product categories into English.
+brand is the maker only ("Lay's"). variant holds flavor or type words as they appear on packages
+("classic", "sour cream onion", "unscented"). size is ONLY an explicit package size with a
+unit ("8 oz", "1 gal"). Leave vague sizes such as "big bag" or "small" out of every field.
+If the user answers "any", "no preference" or similar to a brand/flavor question, leave brand, variant and size out.
+Omit qty, brand, variant and size unless the latest message explicitly changes them. A new need defaults
+to one package; an existing need preserves omitted fields. Use an empty string for brand/variant/size
 ONLY if the user explicitly removes that constraint. Never fill omitted fields with empty strings.
 feedback: optional {target: category, reason: PURCHASED/BOUGHT_ELSEWHERE/OUT_OF_STOCK/BUSY/
 HAVE_AT_HOME/DISLIKED/TOO_EXPENSIVE/INCONVENIENT, until: optional ISO timestamp,

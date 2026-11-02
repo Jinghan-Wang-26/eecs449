@@ -55,9 +55,9 @@ That field means the store sells the product, not that it is in stock. Only
 ## Local walkthrough
 
 1. Start the project using the existing [setup instructions](SETUP_LIVE.md).
-2. Select **Real stores**, confirm an address near a Kroger-family store, and save
+2. Confirm an address near a Kroger-family store, and save
    needs, package quantities, travel mode, free time and optional budget/tax.
-3. Open **Plans & stores** and choose **Recommend stores for my list**. With
+3. Open the **Options** step and choose **Compare store options**. With
    credentials configured, retailer branches are checked alongside historical
    and location-only options. Review the selected product, brand, package size,
    source store, query timestamp, refresh deadline and available/unknown status.
@@ -98,8 +98,14 @@ That field means the store sells the product, not that it is in stock. Only
   basket cost when available and travel time. Partial subtotals never rank as
   complete cheap baskets. Known costs over budget and known weight over the
   carrying limit block acceptance. Unknown full weight remains visible.
-- Estimated trip totals require all item prices, a saved tax estimate and a
-  transport cost. Tax is an estimate, not product-specific tax advice. TheRide
+- Estimated trip totals require all item prices, a tax estimate and a
+  transport cost. Tax comes from the store address (`planning/tax.py`): Michigan
+  stores use built-in rules (groceries exempt, non-food goods 6%, decided from the
+  item name and Kroger's product category). Other states use the sales-tax rate
+  saved in Preferences; without one, tax and the total stay Unknown. Prepared food,
+  bottle deposits and local exceptions are not modelled. When recording a purchase,
+  amounts start as listed price plus estimated tax and are saved as estimates unless
+  typed over; Budget lets you correct them. TheRide
   fares remain unknown, so bus options show an item subtotal and unknown trip
   total. Timetables do not predict delays or future inventory.
 - Opening hours, final checkout prices and future stock must still be checked.

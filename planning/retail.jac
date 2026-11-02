@@ -4,6 +4,7 @@ import json;
 import math;
 import from app_settings { instant }
 import from ai.matching { tokens, satisfies_requested_spec }
+import from planning.tax { estimate as estimate_tax }
 
 def fresh_quote(row: dict, now: str) -> bool {
     try { return instant(row['observed_at']) <= instant(now) < instant(row['valid_until']); }
@@ -22,7 +23,7 @@ def suitable(need: dict, row: dict, store: dict, dietary: list, now: str) -> boo
     if not tokens(query).issubset(name) { return False; }
     exclusions = {'milk': ['chocolate','powder','soap','tea','coconut','almond','soy','soya','oat','oats','cashew','rice','condensed','evaporated'], 'rice': ['cake','cakes','cracker','crackers','noodles','cereal'], 'eggs': ['chocolate']};
     if name.intersection(exclusions.get(query, [])) { return False; }
-    if not satisfies_requested_spec(need, row.get('brand', ''), row.get('size_label', '')) { return False; }
+    if not satisfies_requested_spec(need, row.get('brand', ''), row.get('size_label', ''), row.get('name', '')) { return False; }
     # This adapter has no verified dietary certification. Do not assume suitability.
     if dietary { return False; }
     return True;
@@ -72,7 +73,8 @@ def apply_quotes(plan: dict, lookup: dict, context: dict, now: str) -> dict {
     transport = route.get('cost') if route else None;
     if route and route['mode'] == 'CAR' and profile['transport_cost'] >= 0 { transport = profile['transport_cost']; }
     tax_rate = profile.get('tax_rate', -1);
-    total = round(subtotal * (1 + tax_rate) + transport, 2) if priced == len(items) and tax_rate >= 0 and money(transport) else None;
+    tax = estimate_tax(items, [plan['store'].get('address', ''), context['origin'].get('address', '')], tax_rate);
+    total = round(subtotal + tax['tax'] + transport, 2) if priced == len(items) and tax['tax'] is not None and money(transport) else None;
     if profile['weekly_budget'] > 0 and max(subtotal + (transport if money(transport) else 0), total or 0) > profile['weekly_budget'] {
         blockers.append('Known item costs plus available cost estimates exceed your saved budget. Adjust your list, budget or store.');
     }
@@ -90,6 +92,7 @@ def apply_quotes(plan: dict, lookup: dict, context: dict, now: str) -> dict {
     plan.update({'kind':'CURRENT_STORE_VISIT', 'items':items, 'matched':matched, 'current_available':available,
         'current_subtotal':subtotal if priced else None, 'current_priced':priced, 'current_complete':priced == len(items) and available == len(items),
         'estimated_total':total, 'transport_estimate':transport, 'tax_rate':tax_rate,
+        'tax_estimate':tax['tax'], 'tax_basis':tax['basis'], 'tax_note':tax['note'],
         'reference_subtotal':None, 'priced_needs':0, 'quote_checked_at':now,
         'known_net_weight_kg':round(mass, 2) if weighed else None, 'weight_complete':weighed == len(items),
         'quote_blockers':blockers, 'warnings':warnings});

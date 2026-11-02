@@ -81,6 +81,17 @@ class ProviderTests(unittest.TestCase):
         place['address']='100 Test St'
         self.assertEqual(p.merge_stores([place],[store])[0]['map_id'],'geo:2')
 
+    def test_geoapify_name_prefixed_addresses_link_to_the_branch(self):
+        # Real formats from the 2026-10-31 Ann Arbor coverage run.
+        store={'id':'kroger:01800361','name':'Kroger - Westgate','address':'400 S Maple Rd, Ann Arbor, MI, 48103','lat':42.27757,'lon':-83.78208,'product_access':True}
+        place={'id':'geo:w','name':'Kroger','address':'Kroger, 400 South Maple Road, Ann Arbor, MI 48103, United States of America','lat':42.2775223,'lon':-83.7821358,'product_access':False}
+        merged=p.merge_stores([place],[store])
+        self.assertEqual(len(merged),1); self.assertEqual(merged[0]['map_id'],'geo:w')
+        place['address']='Kroger, 402 South Maple Road, Ann Arbor, MI 48103, United States of America'
+        self.assertEqual(len(p.merge_stores([place],[store])),2)
+        self.assertEqual(p.street_number('Kroger, 2641 Plymouth Road, Ann Arbor, MI 48105'),'2641')
+        self.assertEqual(p.street_number('Some Market, Ann Arbor, MI 48105'),'')
+
     def test_partial_failure_preserves_location_only(self):
         with patch.object(p,'nearby_places',return_value=[{'id':'map','product_access':False}]),patch.object(p,'nearby_kroger',side_effect=p.ProviderError('missing credentials')):
             result=p.nearby(42,-83)
@@ -135,6 +146,23 @@ class MatchingTests(unittest.TestCase):
         self.assertFalse(satisfies_requested_spec({'brand':'Preferred'},'Other',''))
         self.assertFalse(satisfies_requested_spec({'size':'2 lb'},'','1 lb'))
         self.assertTrue(satisfies_requested_spec({'size':'1 gal'},'','1.0 gal'))
+
+    def test_flavor_must_appear_in_the_name_and_brand_ignores_punctuation(self):
+        from ai.matching import satisfies_requested_spec, rank_products
+        self.assertTrue(satisfies_requested_spec({'brand':'lays','variant':'sour cream & onion'},"Lay's",'',"Lay's Sour Cream & Onion Potato Chips"))
+        self.assertFalse(satisfies_requested_spec({'variant':'classic'},"Lay's",'',"Lay's Barbecue Potato Chips"))
+        self.assertTrue(satisfies_requested_spec({'variant':'classic family size'},"Lay's",'',"Lay's Classic Potato Chips Party Size"))
+        self.assertTrue(satisfies_requested_spec({'brand':'',},'Any','','Whatever'))
+        rows=[{'key':'a','name':"Lay's Barbecue Potato Chips",'brand':"Lay's",'size_label':'8 oz'},
+              {'key':'b','name':"Lay's Classic Potato Chips",'brand':"Lay's",'size_label':'8 oz'}]
+        self.assertEqual(rank_products({'type':'chips','variant':'classic'},rows)[0]['key'],'b')
+
+    def test_retailer_search_uses_brand_and_flavor(self):
+        from unittest.mock import patch
+        from integrations import retail
+        with patch.object(retail,'products',return_value=[]) as search:
+            retail.quotes_for({'external_id':'1'},[{'type':'chips','brand':"Lay's",'variant':'classic'},{'type':'milk'}])
+        self.assertEqual([c.args[1] for c in search.call_args_list],["Lay's classic chips",'milk'])
 
 if __name__=='__main__':unittest.main()
 

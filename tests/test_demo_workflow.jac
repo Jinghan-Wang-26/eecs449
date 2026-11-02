@@ -12,7 +12,7 @@ import from server.workflows { workspace_view }
 import from planning.lifecycle { plan_shopping }
 
 def demo_user() -> UserProfile {
-    p = UserProfile(weekly_budget=80, carry_limit_kg=20, transport=["WALK", "BUS"], free_windows=["SAT 14:00-17:00"]);
+    p = UserProfile(data_mode="mock", weekly_budget=80, carry_limit_kg=20, transport=["WALK", "BUS"], free_windows=["SAT 14:00-17:00"]);
     p +>:Owns:+> InterestPool();
     return p;
 }

@@ -10,7 +10,7 @@ import from providers.mock { load_mock }
 
 """A profile off root, so tests do not share state."""
 def fresh() -> UserProfile {
-    p = UserProfile();
+    p = UserProfile(data_mode="mock");
     p +>:Owns:+> InterestPool();
     return p;
 }

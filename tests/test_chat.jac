@@ -30,7 +30,7 @@ test "saved chat survives reloading and clearing does not remove shopping prefer
     import from models.profile { UserProfile }
     import from models.events { ShoppingWorkspace }
     import from models.graph { owned }
-    p = UserProfile(weekly_budget=75);
+    p = UserProfile(data_mode="mock", weekly_budget=75);
     delattr(owned(p, ShoppingWorkspace), "chat_messages");
     assert saved_history(p) == [];
     with patch("server.chat.handle_request", return_value="What time are you free?") as handler {
@@ -41,7 +41,7 @@ test "saved chat survives reloading and clearing does not remove shopping prefer
     assert len(saved_history(p)) == 4;
     history = saved_history(p); history[0]["content"] = "tampered";
     assert saved_history(p)[0]["content"] == "Plan rice";
-    other = UserProfile(); assert saved_history(other) == [];
+    other = UserProfile(data_mode="mock"); assert saved_history(other) == [];
     owned(p, ShoppingWorkspace).chat_question = "What time?";
     assert saved_history(p, True) == [] and p.weekly_budget == 75;
     assert owned(p, ShoppingWorkspace).chat_question == "What time?";
@@ -51,7 +51,7 @@ test "chat storage is bounded and provider failures remain visible after reload"
     import from unittest.mock { patch }
     import from server.chat { send_message, saved_history }
     import from models.profile { UserProfile }
-    p = UserProfile();
+    p = UserProfile(data_mode="mock");
     with patch("server.chat.handle_request", return_value="Saved") {
         for i in range(42) { send_message(p, str(i)); }
     }

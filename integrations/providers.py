@@ -38,7 +38,8 @@ def credentials():
             key, value = line.removeprefix('export ').split('=', 1)
             values[key.strip()] = value.strip().strip('\"\'')
     for key in ('KROGER_CLIENT_ID', 'KROGER_CLIENT_SECRET', 'GEOAPIFY_API_KEY',
-                'LLM_API_KEY', 'LLM_BASE_URL', 'LLM_MODEL', 'LLM_BACKEND'):
+                'LLM_API_KEY', 'LLM_BASE_URL', 'LLM_MODEL', 'LLM_BACKEND',
+                'SMTP_HOST', 'SMTP_PORT', 'SMTP_USER', 'SMTP_PASSWORD', 'SMTP_FROM'):
         if key in os.environ:
             values[key] = os.environ[key]
     return values
@@ -232,14 +233,23 @@ def nearby_kroger(lat, lon, radius_m=5000):
                     'distance_m': round(dist), 'observed_at': now_iso()})
     return sorted(out, key=lambda s: s['distance_m'])
 
+def street_number(address):
+    # Geoapify formats addresses as "<name>, <number> <street>, ..."; retailers omit
+    # the name. Take the first comma-separated part that starts with a house number.
+    for part in (address or '').split(','):
+        match = re.match(r'\s*(\d+[A-Za-z]?)\s+\S', part)
+        if match:
+            return match[1].upper()
+    return ''
+
 def merge_stores(places, retailer):
     # Retailer locations are authoritative. Associate POIs only with spatial AND
     # street-number evidence; uncertain matches remain independent, unsupported POIs.
     merged = copy.deepcopy(retailer)
     for place in places:
+        number = street_number(place['address'])
         candidates = [s for s in merged if distance_m((s['lat'], s['lon']), (place['lat'], place['lon'])) < 100
-                      and re.findall(r'^\d+', s['address']) and
-                      re.findall(r'^\d+', s['address']) == re.findall(r'^\d+', place['address'])
+                      and number and street_number(s['address']) == number
                       and ('kroger' in place['name'].lower() or s['name'].lower() == place['name'].lower())]
         if len(candidates) == 1:
             candidates[0]['map_id'] = place['id']
@@ -291,6 +301,7 @@ def normalize_products(data, store_id, term, observed=None):
                 continue
             out.append({'key': f'kroger:{product_id}:{item_id}', 'external_id': product_id, 'item_id': item_id,
                         'name': str(p.get('description') or ''), 'brand': str(p.get('brand') or ''), 'upc': str(p.get('upc') or ''),
+                        'categories': [c for c in (p.get('categories') or []) if isinstance(c, str)][:5],
                         'size_label': size, 'weight_kg': weight_from_size(size),
                         'store_id': store_id, 'search_term': term,
                         'price': value if sold_by == 'unit' else None, 'reported_price': value, 'sold_by': sold_by or 'unknown',

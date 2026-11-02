@@ -7,6 +7,7 @@ import from itertools { product }
 import from app_settings { instant }
 import from planning.retail { money, fresh_quote }
 import from planning.delivery { delivery_issues }
+import from planning.tax { estimate as estimate_tax }
 
 def comparison_kind(plan: dict) -> bool { return plan.get('kind') in ['CURRENT_MULTI_VISIT','DELIVERY_VISIT','MIXED_VISIT']; }
 
@@ -71,7 +72,8 @@ def compose(items: list, delivery: any, stores: list, route: any, context: dict,
         }
     } else { transport = 0; }
     subtotal = round(subtotal,2); tax_rate = profile.get('tax_rate',-1);
-    retail_total = round(subtotal*(1+tax_rate)+transport,2) if priced==retail_count and (tax_rate>=0 or retail_count==0) and money(transport) else None;
+    tax = estimate_tax(items, [context['origin'].get('address','')], tax_rate);
+    retail_total = round(subtotal+tax['tax']+transport,2) if priced==retail_count and (tax['tax'] is not None or retail_count==0) and money(transport) else None;
     total = round(retail_total + delivery_total,2) if retail_total is not None and delivery_total is not None else None;
     lower = subtotal + (transport if money(transport) else 0) + (delivery_total if money(delivery_total) else 0);
     if profile['weekly_budget']>0 and max(lower,total or 0)>profile['weekly_budget'] { blockers.append('Known costs exceed your saved budget.'); }
@@ -91,7 +93,7 @@ def compose(items: list, delivery: any, stores: list, route: any, context: dict,
         'need_count':len(context['needs']),'matched':len(items),'current_available':available,'covered_needs':available+delivery_count,
         'current_priced':priced+delivery_count if delivery_total is not None else priced,'current_complete':not blockers,
         'current_subtotal':round(subtotal+delivery['fees']['merchandise']-delivery['fees']['discount'],2) if delivery is not None and delivery['fees']['merchandise'] is not None and delivery['fees']['discount'] is not None else (subtotal if delivery is None else None),
-        'retail_subtotal':subtotal,'delivery_total':delivery_total if delivery is not None else None,'estimated_total':total,'transport_estimate':transport,'tax_rate':tax_rate,
+        'retail_subtotal':subtotal,'delivery_total':delivery_total if delivery is not None else None,'estimated_total':total,'transport_estimate':transport,'tax_rate':tax_rate,'tax_estimate':tax['tax'],'tax_basis':tax['basis'],'tax_note':tax['note'],
         'active_min':active,'effective_total':round(total+active/60*profile.get('time_value_per_hour',0),2) if total is not None else None,
         'known_net_weight_kg':round(mass,2) if weighed or not retail_count else None,'weight_complete':weighed==retail_count,
         'reference_subtotal':None,'priced_needs':0,'checked_records':0,'quote_checked_at':now,

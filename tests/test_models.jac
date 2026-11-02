@@ -17,14 +17,14 @@ test "profile, pool, and plan connect" {
 }
 
 test "trip constraints override without touching the profile" {
-    p = UserProfile(weekly_budget=60.0, transport=["BUS"]);
+    p = UserProfile(data_mode="mock", weekly_budget=60.0, transport=["BUS"]);
     p +>:Owns:+> TripConstraints(transport=["RIDESHARE"]);
     c = effective_constraints(p, trip_of(p));
     assert c["transport"] == ["RIDESHARE"] and c["budget"] == 60.0 and p.transport == ["BUS"];
 }
 
 test "locked fields reject learned updates" {
-    p = UserProfile(locked=["carry_limit_kg"]);
+    p = UserProfile(data_mode="mock", locked=["carry_limit_kg"]);
     assert not p.learn("carry_limit_kg", 10.0);
     assert p.carry_limit_kg == 6.0;
 }

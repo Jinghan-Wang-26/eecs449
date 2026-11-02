@@ -2,7 +2,7 @@
 import uuid;
 import json;
 import from ai.intents { parse_request }
-import from ai.conversation { language, missing_fields, question, saved_message, plan_summary }
+import from ai.conversation { language, missing_fields, question, saved_message, plan_summary, needs_variety, variety_question }
 import from ai.explanations { explain_plans }
 import from app_settings { stamp, get_settings }
 import from models.profile { UserProfile }
@@ -117,6 +117,13 @@ def handle_request(p: UserProfile, text: str, history: list) -> str {
         workflow(p, "confirm_address", {"id": state.address_candidates[idx]["id"]}, now);
         state.chat_address_pending = False;
         prefix += ("Saved starting address: ") + p.home_address + "\n";
+    }
+    # Ask once, when a many-variety item first joins the list. Any reply (or "any")
+    # continues planning, and the item is no longer new, so it is not asked again.
+    varied = [spec["type"] for spec in proposal["needs"] if spec["type"] not in current and needs_variety(spec)];
+    if varied {
+        state.chat_question = variety_question(varied);
+        return prefix + state.chat_question;
     }
     if state.chat_address_pending {
         state.chat_question = question(conversation_context(p), "address", lang);

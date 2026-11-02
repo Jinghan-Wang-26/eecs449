@@ -17,7 +17,9 @@ def quotes_for(store, needs, previous=None, refresh=False):
             selected = previous.get(category)
             # Recheck the exact selected product before discovering alternatives.
             exact = product_at(store['external_id'], selected['external_id'], category) if refresh and selected else []
-            found = products(store['external_id'], category, refresh=refresh)
+            # Brand and flavor narrow the retailer's search; matching still checks every field.
+            term = ' '.join(part for part in (need.get('brand', ''), need.get('variant', ''), category) if part)[:80]
+            found = products(store['external_id'], term, refresh=refresh)
             by_key = {row['key']: row for row in found}
             # An exact response is authoritative for all variants of this product.
             if refresh and selected:

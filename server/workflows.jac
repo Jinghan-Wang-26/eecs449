@@ -46,10 +46,10 @@ def save_need(p: UserProfile, data: dict) -> any {
     if found {
         fresh_list = not getattr(item, "in_current_list", True);
         merged = dict(spec) if fresh_list else dict(item.product_spec);
-        for field in ["qty", "brand", "size"] {
+        for field in ["qty", "brand", "size", "variant"] {
             if field in data { merged[field] = spec[field]; }
         }
-        if fresh_list or any([merged.get(field, "") != item.product_spec.get(field, "") for field in ["brand", "size"]]) {
+        if fresh_list or any([merged.get(field, "") != item.product_spec.get(field, "") for field in ["brand", "size", "variant"]]) {
             for link in [edge item ->:Wants:->] { link.confirmed = False; }
         }
         item.product_spec = merged;

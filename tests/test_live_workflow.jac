@@ -83,7 +83,7 @@ test "live public sync cannot spoof provider quotes" {
 }
 
 test "chat confirmation applies needs and profile exactly once" {
-    p = UserProfile(); p +>:Owns:+> InterestPool(); state = owned(p, ShoppingWorkspace);
+    p = UserProfile(data_mode="mock"); p +>:Owns:+> InterestPool(); state = owned(p, ShoppingWorkspace);
     state.pending_id = "proposal-1";
     state.pending_intent = validate_intent({"intent": "update", "profile": {"weekly_budget": 80}, "needs": [{"category": "rice", "qty": 2}]});
     shopping_operation(p, "confirm_chat", {"id": "proposal-1"}, NOW);
@@ -97,7 +97,7 @@ test "chat confirmation applies needs and profile exactly once" {
 }
 
 test "profile edit invalidates proposals and full mock UI lifecycle completes" {
-    p = UserProfile(); p +>:Owns:+> InterestPool();
+    p = UserProfile(data_mode="mock"); p +>:Owns:+> InterestPool();
     shopping_operation(p, "update_profile", {"weekly_budget": 80, "free_windows": ["SAT 14:00-17:00"], "transport": ["WALK", "BUS"]}, NOW);
     shopping_operation(p, "save_interest", {"category": "rice", "qty": 2}, NOW);
     view = shopping_operation(p, "plan", {}, NOW);
@@ -110,7 +110,7 @@ test "profile edit invalidates proposals and full mock UI lifecycle completes" {
 }
 
 test "switching mode hides discoveries from the other catalog" {
-    p = UserProfile(); p +>:Owns:+> InterestPool();
+    p = UserProfile(data_mode="mock"); p +>:Owns:+> InterestPool();
     shopping_operation(p, "save_interest", {"category": "yogurt"}, NOW);
     view = shopping_operation(p, "set_mode", {"mode": "live"}, NOW);
     assert view["data_mode"] == "live";
@@ -139,7 +139,7 @@ test "expired proposals cannot be accepted" {
 test "validated chat needs save automatically and ask for missing time" {
     import from unittest.mock { patch }
     import from harness.agent { handle_request }
-    p = UserProfile(); p +>:Owns:+> InterestPool();
+    p = UserProfile(data_mode="mock"); p +>:Owns:+> InterestPool();
     proposal = validate_intent({"intent": "update", "needs": [{"category": "milk", "qty": 2}]});
     with patch("harness.agent.parse_request", return_value=proposal) {
         message = handle_request(p, "I need two packages of milk", []);
