@@ -115,7 +115,7 @@ test "clearing chat is distinct from starting a new plan and other users are iso
 }
 
 test "mock plans and replenishment are paused but watch interests and completed plans remain" {
-    p = UserProfile(); p +>:Owns:+> InterestPool();
+    p = UserProfile(data_mode="mock"); p +>:Owns:+> InterestPool();
     shopping_operation(p,"save_interest",{"category":"rice","qty":2},WHEN);
     shopping_operation(p,"save_interest",{"category":"milk","kind":"WATCH","target_price":4},WHEN);
     shopping_operation(p,"save_interest",{"category":"eggs","kind":"REPLENISH","replenishment_days":7,"last_purchased_at":"2029-12-20"},WHEN);

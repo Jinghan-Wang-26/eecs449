@@ -38,7 +38,7 @@ def demo_quotes() -> list {
 }
 
 def demo_profile() -> UserProfile {
-    p = UserProfile(transport=["WALK", "BUS"], carry_limit_kg=6.0, weekly_budget=60.0,
+    p = UserProfile(data_mode="mock", transport=["WALK", "BUS"], carry_limit_kg=6.0, weekly_budget=60.0,
                     free_windows=["SAT 14:00-17:00"]);
     p +>:Owns:+> InterestPool();
     for key in ["milk", "eggs", "rice", "detergent"] {
@@ -151,7 +151,7 @@ test "with free time, options are distinct, feasible, and cost-first is the chea
 }
 
 test "time value defaults to $25/h and a trip can override it" {
-    p = UserProfile();
+    p = UserProfile(data_mode="mock");
     assert effective_constraints(p, None)["time_value"] == 25.0;
     assert effective_constraints(p, TripConstraints(time_value_per_hour=0.0))["time_value"] == 0.0;
     assert p.time_value_per_hour == 25.0;
@@ -177,7 +177,7 @@ def balanced_kind(time_value: float) -> str {
         Quote(need="milk", channel="store", price=3.49, weight_kg=2.0),
         Quote(need="milk", channel="delivery", price=4.29, weight_kg=2.0)
     ];
-    p = UserProfile(transport=["BUS"], weekly_budget=60.0, free_windows=["SAT 14:00-17:00"],
+    p = UserProfile(data_mode="mock", transport=["BUS"], weekly_budget=60.0, free_windows=["SAT 14:00-17:00"],
                     time_value_per_hour=time_value);
     ctx = effective_constraints(p, None);
     needs = [Need(key="milk")];

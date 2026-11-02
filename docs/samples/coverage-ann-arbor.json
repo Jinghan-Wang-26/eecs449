@@ -1,0 +1,1097 @@
+{
+  "kind": "Issue #2 coverage summary",
+  "checked_at": "2026-10-31T22:01:16+00:00",
+  "origin": {
+    "label": "Michigan Union, 530 South State Street, Ann Arbor, MI 48109",
+    "lat": 42.2751698,
+    "lon": -83.7415127
+  },
+  "radius_m": 8000,
+  "needs": [
+    "milk",
+    "eggs",
+    "rice",
+    "laundry detergent",
+    "dish soap",
+    "paper towels",
+    "yogurt",
+    "coffee",
+    "tofu",
+    "soy sauce"
+  ],
+  "sources": {
+    "kroger": {
+      "status": "ok",
+      "detail": "4 branch(es) within radius queried."
+    },
+    "openprices": {
+      "status": "ok",
+      "detail": "0 contributed location(s) within radius; 0 with price records queried."
+    },
+    "map": {
+      "status": "ok",
+      "detail": "20 supermarket POI(s); 18 without a product source."
+    }
+  },
+  "stores": [
+    {
+      "id": "kroger:01800688",
+      "name": "Kroger - Westgate",
+      "address": "400 S Maple Rd, Ann Arbor, MI, 48103",
+      "source": "kroger",
+      "kind": "current",
+      "distance_m": 3351
+    },
+    {
+      "id": "kroger:01800605",
+      "name": "Kroger - Plymouth Nixon",
+      "address": "2641 Plymouth Rd, Ann Arbor, MI, 48105",
+      "source": "kroger",
+      "kind": "current",
+      "distance_m": 4246
+    },
+    {
+      "id": "kroger:01800365",
+      "name": "Kroger - Washtenaw",
+      "address": "3615 Washtenaw Ave, Ann Arbor, MI, 48104",
+      "source": "kroger",
+      "kind": "current",
+      "distance_m": 4726
+    },
+    {
+      "id": "kroger:01800689",
+      "name": "Kroger - Carpenter Packard",
+      "address": "3200 Carpenter Rd, Ypsilanti, MI, 48197",
+      "source": "kroger",
+      "kind": "current",
+      "distance_m": 6070
+    },
+    {
+      "id": "geoapify:51e54b039a63ef54c0590554933bc7234540f00103f9011572a9180300000092030e5461726765742047726f63657279",
+      "name": "Target Grocery",
+      "address": "Target Grocery, 231 South State Street, Ann Arbor, MI 48104, United States of America",
+      "source": "geoapify",
+      "kind": "map_only",
+      "distance_m": 491
+    },
+    {
+      "id": "geoapify:51a76ed344c4ef54c059b0a5ec99ca234540f00103f901f9db5a74020000009203104b616e627520417369616e204d617274",
+      "name": "Kanbu Asian Mart",
+      "address": "Kanbu Asian Mart, 249 East Liberty Street, Ann Arbor, MI 48104, United States of America",
+      "source": "geoapify",
+      "kind": "map_only",
+      "distance_m": 635
+    },
+    {
+      "id": "geoapify:51d2ce1f89cdef54c0599734eb3136244540f00103f90192c483a40000000092031350656f706c65277320466f6f6420436f2d6f70",
+      "name": "People's Food Co-op",
+      "address": "People's Food Co-op, 216 North Fourth Avenue, Ann Arbor, MI 48104, United States of America",
+      "source": "geoapify",
+      "kind": "map_only",
+      "distance_m": 968
+    },
+    {
+      "id": "geoapify:5130bf2e1e39ef54c05906f7031e18214540f00103f901d85bc21d0100000092030c42792054686520506f756e64",
+      "name": "By The Pound",
+      "address": "By The Pound, 1952 South Industrial Highway, Ann Arbor, MI 48104, United States of America",
+      "source": "geoapify",
+      "kind": "map_only",
+      "distance_m": 1872
+    },
+    {
+      "id": "geoapify:51dd38735916f054c0596fb7c94d79204540f00103f901c60c36e7000000009203194275736368277320467265736820466f6f64204d61726b6574",
+      "name": "Busch's Fresh Food Market",
+      "address": "Busch's Fresh Food Market, 2240 South Main Street, Ann Arbor, MI 48103, United States of America",
+      "source": "geoapify",
+      "kind": "map_only",
+      "distance_m": 2521
+    },
+    {
+      "id": "geoapify:51371ac05ba0f154c059756feaa80f234540f00103f9018c8ca20601000000920313476f72646f6e20466f6f642053657276696365",
+      "name": "Gordon Food Service",
+      "address": "Gordon Food Service, 2151 West Liberty Street, Ann Arbor, MI 48103, United States of America",
+      "source": "geoapify",
+      "kind": "map_only",
+      "distance_m": 2793
+    },
+    {
+      "id": "geoapify:517b7203f4b1f154c059d0d38041d2224540f00103f9012c5d1006010000009203134172626f72c2a04661726d73204d61726b6574",
+      "name": "Arbor\u00a0Farms Market",
+      "address": "Arbor\u00a0Farms Market, 2103 West Stadium Boulevard, Ann Arbor, MI 48103, United States of America",
+      "source": "geoapify",
+      "kind": "map_only",
+      "distance_m": 2899
+    },
+    {
+      "id": "geoapify:510d6d0036a0ed54c05931f8ea9914214540f00103f901ebae9f790000000092030c547261646572204a6f652773",
+      "name": "Trader Joe's",
+      "address": "Trader Joe's, 2398 East Stadium Boulevard, Ann Arbor, MI 48104, United States of America",
+      "source": "geoapify",
+      "kind": "map_only",
+      "distance_m": 3000
+    },
+    {
+      "id": "geoapify:5160a5cc1745ef54c059dbdc989eb01f4540f00103f901b9009b3f03000000920318566572746963616c204d6564696120536f6c7574696f6e73",
+      "name": "Vertical Media Solutions",
+      "address": "Vertical Media Solutions, 2723 South State Street, Ann Arbor, MI 48104, United States of America",
+      "source": "geoapify",
+      "kind": "map_only",
+      "distance_m": 3078
+    },
+    {
+      "id": "geoapify:51cc2c3d9ed8f154c0596690c8fe88244540f00102f9019e57181800000000920304414c4449",
+      "name": "ALDI",
+      "address": "ALDI, 2340 Dexter Avenue, Ann Arbor, MI 48103, United States of America",
+      "source": "geoapify",
+      "kind": "map_only",
+      "distance_m": 3277
+    },
+    {
+      "id": "geoapify:5107cf842689f054c059bc81b861ca1f4540f00103f901db26d8a80000000092031257686f6c6520466f6f6473204d61726b6574",
+      "name": "Whole Foods Market",
+      "address": "Whole Foods Market, 990 West Eisenhower Parkway, Ann Arbor, MI 48103, United States of America",
+      "source": "geoapify",
+      "kind": "map_only",
+      "distance_m": 3288
+    },
+    {
+      "id": "geoapify:51419d2ced04f254c0598b690e5176244540f00102f9017686d90c0000000092030b506c756d204d61726b6574",
+      "name": "Plum Market",
+      "address": "Plum Market, 375 North Maple Road, Ann Arbor, MI 48103, United States of America",
+      "source": "geoapify",
+      "kind": "map_only",
+      "distance_m": 3466
+    },
+    {
+      "id": "geoapify:5152920fae9cef54c05906e695cbbe1e4540f00102f901ebfa73560000000092030e48617276657374204d61726b6574",
+      "name": "Harvest Market",
+      "address": "Harvest Market, 910 Briarwood Circle, Ann Arbor, MI 48108, United States of America",
+      "source": "geoapify",
+      "kind": "map_only",
+      "distance_m": 3890
+    },
+    {
+      "id": "geoapify:5197396109afec54c059f6dfb62e06214540f00102f9018996810b0000000092031257686f6c6520466f6f6473204d61726b6574",
+      "name": "Whole Foods Market",
+      "address": "Whole Foods Market, 3135 Washtenaw Avenue, Ann Arbor, MI 48104, United States of America",
+      "source": "geoapify",
+      "kind": "map_only",
+      "distance_m": 4040
+    },
+    {
+      "id": "geoapify:512a7b01ac44f154c0596a3af18b011f4540f00103f901690e202b0100000092030c547361692047726f63657279",
+      "name": "Tsai Grocery",
+      "address": "Tsai Grocery, 3115 Oak Valley Drive, Ann Arbor, MI 48103, United States of America",
+      "source": "geoapify",
+      "kind": "map_only",
+      "distance_m": 4340
+    },
+    {
+      "id": "geoapify:515a3222ac21ed54c05992eba694d7264540f00103f901017815c80000000092031157617920312053757065726d61726b6574",
+      "name": "Way 1 Supermarket",
+      "address": "Way 1 Supermarket, 2789 Plymouth Road, Ann Arbor, MI 48105, United States of America",
+      "source": "geoapify",
+      "kind": "map_only",
+      "distance_m": 4339
+    },
+    {
+      "id": "geoapify:51c060d2b307f154c059a7c90432a31e4540f00102f90103d51912000000009203064d65696a6572",
+      "name": "Meijer",
+      "address": "Meijer, 3145 Ann Arbor-Saline Road, Ann Arbor, MI 48103, United States of America",
+      "source": "geoapify",
+      "kind": "map_only",
+      "distance_m": 4459
+    },
+    {
+      "id": "geoapify:5179aeefc341ec54c0590ab7216bb2204540f00103f9011ee449380300000092030e506174656c2042726f7468657273",
+      "name": "Patel Brothers",
+      "address": "Patel Brothers, 3426 Washtenaw Avenue, Ann Arbor, MI 48104, United States of America",
+      "source": "geoapify",
+      "kind": "map_only",
+      "distance_m": 4662
+    }
+  ],
+  "matrix": {
+    "kroger:01800688": {
+      "milk": {
+        "code": "C",
+        "returned": 10,
+        "matched": 8
+      },
+      "eggs": {
+        "code": "C",
+        "returned": 10,
+        "matched": 10
+      },
+      "rice": {
+        "code": "C",
+        "returned": 10,
+        "matched": 10
+      },
+      "laundry detergent": {
+        "code": "C",
+        "returned": 10,
+        "matched": 9
+      },
+      "dish soap": {
+        "code": "C",
+        "returned": 10,
+        "matched": 10
+      },
+      "paper towels": {
+        "code": "C",
+        "returned": 10,
+        "matched": 7
+      },
+      "yogurt": {
+        "code": "C",
+        "returned": 10,
+        "matched": 10
+      },
+      "coffee": {
+        "code": "C",
+        "returned": 10,
+        "matched": 10
+      },
+      "tofu": {
+        "code": "C",
+        "returned": 10,
+        "matched": 10
+      },
+      "soy sauce": {
+        "code": "C",
+        "returned": 10,
+        "matched": 10
+      }
+    },
+    "kroger:01800605": {
+      "milk": {
+        "code": "C",
+        "returned": 10,
+        "matched": 8
+      },
+      "eggs": {
+        "code": "C",
+        "returned": 10,
+        "matched": 10
+      },
+      "rice": {
+        "code": "C",
+        "returned": 10,
+        "matched": 10
+      },
+      "laundry detergent": {
+        "code": "C",
+        "returned": 10,
+        "matched": 9
+      },
+      "dish soap": {
+        "code": "C",
+        "returned": 10,
+        "matched": 10
+      },
+      "paper towels": {
+        "code": "C",
+        "returned": 10,
+        "matched": 7
+      },
+      "yogurt": {
+        "code": "C",
+        "returned": 10,
+        "matched": 10
+      },
+      "coffee": {
+        "code": "C",
+        "returned": 10,
+        "matched": 10
+      },
+      "tofu": {
+        "code": "C",
+        "returned": 10,
+        "matched": 10
+      },
+      "soy sauce": {
+        "code": "C",
+        "returned": 10,
+        "matched": 10
+      }
+    },
+    "kroger:01800365": {
+      "milk": {
+        "code": "C",
+        "returned": 10,
+        "matched": 9
+      },
+      "eggs": {
+        "code": "C",
+        "returned": 10,
+        "matched": 10
+      },
+      "rice": {
+        "code": "C",
+        "returned": 10,
+        "matched": 10
+      },
+      "laundry detergent": {
+        "code": "C",
+        "returned": 10,
+        "matched": 9
+      },
+      "dish soap": {
+        "code": "C",
+        "returned": 10,
+        "matched": 10
+      },
+      "paper towels": {
+        "code": "C",
+        "returned": 10,
+        "matched": 7
+      },
+      "yogurt": {
+        "code": "C",
+        "returned": 10,
+        "matched": 10
+      },
+      "coffee": {
+        "code": "C",
+        "returned": 10,
+        "matched": 10
+      },
+      "tofu": {
+        "code": "C",
+        "returned": 10,
+        "matched": 10
+      },
+      "soy sauce": {
+        "code": "C",
+        "returned": 10,
+        "matched": 10
+      }
+    },
+    "kroger:01800689": {
+      "milk": {
+        "code": "C",
+        "returned": 10,
+        "matched": 8
+      },
+      "eggs": {
+        "code": "C",
+        "returned": 10,
+        "matched": 10
+      },
+      "rice": {
+        "code": "C",
+        "returned": 10,
+        "matched": 10
+      },
+      "laundry detergent": {
+        "code": "C",
+        "returned": 10,
+        "matched": 9
+      },
+      "dish soap": {
+        "code": "C",
+        "returned": 10,
+        "matched": 10
+      },
+      "paper towels": {
+        "code": "C",
+        "returned": 10,
+        "matched": 7
+      },
+      "yogurt": {
+        "code": "C",
+        "returned": 10,
+        "matched": 10
+      },
+      "coffee": {
+        "code": "C",
+        "returned": 10,
+        "matched": 10
+      },
+      "tofu": {
+        "code": "C",
+        "returned": 10,
+        "matched": 10
+      },
+      "soy sauce": {
+        "code": "C",
+        "returned": 10,
+        "matched": 10
+      }
+    }
+  },
+  "by_need": {
+    "milk": {
+      "current_in_stock": 4,
+      "current_priced": 4,
+      "current_unpriced": 0,
+      "historical": 0,
+      "unmatched": 0,
+      "errors": 0
+    },
+    "eggs": {
+      "current_in_stock": 4,
+      "current_priced": 4,
+      "current_unpriced": 0,
+      "historical": 0,
+      "unmatched": 0,
+      "errors": 0
+    },
+    "rice": {
+      "current_in_stock": 4,
+      "current_priced": 4,
+      "current_unpriced": 0,
+      "historical": 0,
+      "unmatched": 0,
+      "errors": 0
+    },
+    "laundry detergent": {
+      "current_in_stock": 4,
+      "current_priced": 4,
+      "current_unpriced": 0,
+      "historical": 0,
+      "unmatched": 0,
+      "errors": 0
+    },
+    "dish soap": {
+      "current_in_stock": 4,
+      "current_priced": 4,
+      "current_unpriced": 0,
+      "historical": 0,
+      "unmatched": 0,
+      "errors": 0
+    },
+    "paper towels": {
+      "current_in_stock": 4,
+      "current_priced": 4,
+      "current_unpriced": 0,
+      "historical": 0,
+      "unmatched": 0,
+      "errors": 0
+    },
+    "yogurt": {
+      "current_in_stock": 4,
+      "current_priced": 4,
+      "current_unpriced": 0,
+      "historical": 0,
+      "unmatched": 0,
+      "errors": 0
+    },
+    "coffee": {
+      "current_in_stock": 4,
+      "current_priced": 4,
+      "current_unpriced": 0,
+      "historical": 0,
+      "unmatched": 0,
+      "errors": 0
+    },
+    "tofu": {
+      "current_in_stock": 4,
+      "current_priced": 4,
+      "current_unpriced": 0,
+      "historical": 0,
+      "unmatched": 0,
+      "errors": 0
+    },
+    "soy sauce": {
+      "current_in_stock": 4,
+      "current_priced": 4,
+      "current_unpriced": 0,
+      "historical": 0,
+      "unmatched": 0,
+      "errors": 0
+    }
+  },
+  "field_completeness": {
+    "kroger": {
+      "rows": 377,
+      "package_size": 377,
+      "weight": 114,
+      "price": 369,
+      "availability": 363,
+      "fulfillment": 377,
+      "timestamp": 377
+    }
+  },
+  "fulfillment_flags": {
+    "curbside": 377,
+    "delivery": 377,
+    "inStore": 377
+  },
+  "examples": {
+    "milk": [
+      {
+        "store": "Kroger - Westgate",
+        "source": "kroger",
+        "name": "Kroger\u00ae 2% Reduced Fat Milk Gallon",
+        "size": "1 gal",
+        "price": 3.09,
+        "availability": "IN_STOCK",
+        "date": "2026-10-31T22:01:18+00:00"
+      },
+      {
+        "store": "Kroger - Westgate",
+        "source": "kroger",
+        "name": "Kroger\u00ae 2% Reduced Fat Milk Half Gallon",
+        "size": "1/2 gal",
+        "price": 2.29,
+        "availability": "IN_STOCK",
+        "date": "2026-10-31T22:01:18+00:00"
+      },
+      {
+        "store": "Kroger - Plymouth Nixon",
+        "source": "kroger",
+        "name": "Kroger\u00ae 2% Reduced Fat Milk Gallon",
+        "size": "1 gal",
+        "price": 3.39,
+        "availability": "IN_STOCK",
+        "date": "2026-10-31T22:01:28+00:00"
+      },
+      {
+        "store": "Kroger - Plymouth Nixon",
+        "source": "kroger",
+        "name": "Kroger\u00ae 2% Reduced Fat Milk Half Gallon",
+        "size": "1/2 gal",
+        "price": 2.39,
+        "availability": "IN_STOCK",
+        "date": "2026-10-31T22:01:28+00:00"
+      },
+      {
+        "store": "Kroger - Washtenaw",
+        "source": "kroger",
+        "name": "Kroger\u00ae 2% Reduced Fat Milk Gallon",
+        "size": "1 gal",
+        "price": 3.09,
+        "availability": "IN_STOCK",
+        "date": "2026-10-31T22:01:36+00:00"
+      },
+      {
+        "store": "Kroger - Washtenaw",
+        "source": "kroger",
+        "name": "Kroger\u00ae 2% Reduced Fat Milk Half Gallon",
+        "size": "1/2 gal",
+        "price": 2.29,
+        "availability": "IN_STOCK",
+        "date": "2026-10-31T22:01:36+00:00"
+      }
+    ],
+    "eggs": [
+      {
+        "store": "Kroger - Westgate",
+        "source": "kroger",
+        "name": "Kroger\u00ae Grade A Large White Eggs",
+        "size": "18 ct",
+        "price": null,
+        "availability": "OUT",
+        "date": "2026-10-31T22:01:19+00:00"
+      },
+      {
+        "store": "Kroger - Westgate",
+        "source": "kroger",
+        "name": "Simple Truth\u2122 Natural Cage Free Grade A Large Brown Eggs",
+        "size": "12 ct / 24 oz",
+        "price": 3.99,
+        "availability": "IN_STOCK",
+        "date": "2026-10-31T22:01:19+00:00"
+      },
+      {
+        "store": "Kroger - Plymouth Nixon",
+        "source": "kroger",
+        "name": "Kroger\u00ae Grade A Large White Eggs",
+        "size": "18 ct",
+        "price": null,
+        "availability": "OUT",
+        "date": "2026-10-31T22:01:29+00:00"
+      },
+      {
+        "store": "Kroger - Plymouth Nixon",
+        "source": "kroger",
+        "name": "Simple Truth\u2122 Natural Cage Free Grade A Large Brown Eggs",
+        "size": "12 ct / 24 oz",
+        "price": 3.99,
+        "availability": "IN_STOCK",
+        "date": "2026-10-31T22:01:29+00:00"
+      },
+      {
+        "store": "Kroger - Washtenaw",
+        "source": "kroger",
+        "name": "Kroger\u00ae Grade A Large White Eggs",
+        "size": "12 ct",
+        "price": null,
+        "availability": "OUT",
+        "date": "2026-10-31T22:01:37+00:00"
+      },
+      {
+        "store": "Kroger - Washtenaw",
+        "source": "kroger",
+        "name": "Kroger\u00ae Grade A Large White Eggs",
+        "size": "18 ct",
+        "price": null,
+        "availability": "OUT",
+        "date": "2026-10-31T22:01:37+00:00"
+      }
+    ],
+    "rice": [
+      {
+        "store": "Kroger - Westgate",
+        "source": "kroger",
+        "name": "Kroger\u00ae Enriched Long Grain White Rice",
+        "size": "32 oz",
+        "price": 1.89,
+        "availability": "IN_STOCK",
+        "date": "2026-10-31T22:01:20+00:00"
+      },
+      {
+        "store": "Kroger - Westgate",
+        "source": "kroger",
+        "name": "Minute Instant White Rice, Gluten-Free",
+        "size": "14 onz",
+        "price": 2.99,
+        "availability": "IN_STOCK",
+        "date": "2026-10-31T22:01:20+00:00"
+      },
+      {
+        "store": "Kroger - Plymouth Nixon",
+        "source": "kroger",
+        "name": "Kroger\u00ae Enriched Long Grain White Rice",
+        "size": "32 oz",
+        "price": 1.89,
+        "availability": "IN_STOCK",
+        "date": "2026-10-31T22:01:30+00:00"
+      },
+      {
+        "store": "Kroger - Plymouth Nixon",
+        "source": "kroger",
+        "name": "Minute Instant White Rice, Gluten-Free",
+        "size": "14 onz",
+        "price": 2.99,
+        "availability": "IN_STOCK",
+        "date": "2026-10-31T22:01:30+00:00"
+      },
+      {
+        "store": "Kroger - Washtenaw",
+        "source": "kroger",
+        "name": "Kroger\u00ae Enriched Long Grain White Rice",
+        "size": "32 oz",
+        "price": 1.89,
+        "availability": "IN_STOCK",
+        "date": "2026-10-31T22:01:38+00:00"
+      },
+      {
+        "store": "Kroger - Washtenaw",
+        "source": "kroger",
+        "name": "Minute Instant White Rice, Gluten-Free",
+        "size": "14 onz",
+        "price": 2.99,
+        "availability": "IN_STOCK",
+        "date": "2026-10-31T22:01:38+00:00"
+      }
+    ],
+    "laundry detergent": [
+      {
+        "store": "Kroger - Westgate",
+        "source": "kroger",
+        "name": "ARM & HAMMER Sensitive Skin Plus Fresh Scent Liquid Laundry Detergent",
+        "size": "105 fl oz",
+        "price": 9.79,
+        "availability": "IN_STOCK",
+        "date": "2026-10-31T22:01:21+00:00"
+      },
+      {
+        "store": "Kroger - Westgate",
+        "source": "kroger",
+        "name": "Gain Original Liquid Laundry Detergent",
+        "size": "132 fl oz",
+        "price": 16.99,
+        "availability": "OUT",
+        "date": "2026-10-31T22:01:21+00:00"
+      },
+      {
+        "store": "Kroger - Plymouth Nixon",
+        "source": "kroger",
+        "name": "ARM & HAMMER Sensitive Skin Plus Fresh Scent Liquid Laundry Detergent",
+        "size": "105 fl oz",
+        "price": 9.79,
+        "availability": "IN_STOCK",
+        "date": "2026-10-31T22:01:31+00:00"
+      },
+      {
+        "store": "Kroger - Plymouth Nixon",
+        "source": "kroger",
+        "name": "Tide Evo Spring Blast Scent Laundry Detergent Tiles",
+        "size": "8 ct",
+        "price": 4.99,
+        "availability": "IN_STOCK",
+        "date": "2026-10-31T22:01:31+00:00"
+      },
+      {
+        "store": "Kroger - Washtenaw",
+        "source": "kroger",
+        "name": "ARM & HAMMER Sensitive Skin Plus Fresh Scent Liquid Laundry Detergent",
+        "size": "105 fl oz",
+        "price": 9.79,
+        "availability": "IN_STOCK",
+        "date": "2026-10-31T22:01:39+00:00"
+      },
+      {
+        "store": "Kroger - Washtenaw",
+        "source": "kroger",
+        "name": "Gain Original Liquid Laundry Detergent",
+        "size": "132 fl oz",
+        "price": 16.99,
+        "availability": "IN_STOCK",
+        "date": "2026-10-31T22:01:39+00:00"
+      }
+    ],
+    "dish soap": [
+      {
+        "store": "Kroger - Westgate",
+        "source": "kroger",
+        "name": "Dawn Ultra Refill Jug Dish Soap Dishwashing Liquid Apple Blossom",
+        "size": "67 fl oz",
+        "price": 10.49,
+        "availability": "IN_STOCK",
+        "date": "2026-10-31T22:01:22+00:00"
+      },
+      {
+        "store": "Kroger - Westgate",
+        "source": "kroger",
+        "name": "Kroger\u00ae Ultra Concentrated Liquid Dish Soap Clean Scent",
+        "size": "28 fl oz",
+        "price": 2.99,
+        "availability": "IN_STOCK",
+        "date": "2026-10-31T22:01:22+00:00"
+      },
+      {
+        "store": "Kroger - Plymouth Nixon",
+        "source": "kroger",
+        "name": "Dawn Ultra Refill Jug Dish Soap Dishwashing Liquid Apple Blossom",
+        "size": "67 fl oz",
+        "price": 10.49,
+        "availability": "IN_STOCK",
+        "date": "2026-10-31T22:01:31+00:00"
+      },
+      {
+        "store": "Kroger - Plymouth Nixon",
+        "source": "kroger",
+        "name": "Kroger\u00ae Ultra Concentrated Liquid Dish Soap Clean Scent",
+        "size": "28 fl oz",
+        "price": 2.99,
+        "availability": "IN_STOCK",
+        "date": "2026-10-31T22:01:31+00:00"
+      },
+      {
+        "store": "Kroger - Washtenaw",
+        "source": "kroger",
+        "name": "Kroger\u00ae Ultra Concentrated Liquid Dish Soap Clean Scent",
+        "size": "28 fl oz",
+        "price": 2.99,
+        "availability": "IN_STOCK",
+        "date": "2026-10-31T22:01:40+00:00"
+      },
+      {
+        "store": "Kroger - Washtenaw",
+        "source": "kroger",
+        "name": "Seventh Generation Dish Liquid Soap Free & Clear Dish Liquid Soap Dish Soap for sensitive skin",
+        "size": "19 fl oz",
+        "price": 3.99,
+        "availability": "IN_STOCK",
+        "date": "2026-10-31T22:01:40+00:00"
+      }
+    ],
+    "paper towels": [
+      {
+        "store": "Kroger - Westgate",
+        "source": "kroger",
+        "name": "Kroger\u00ae Ultra Paper Towels With Absorbing Power Double Rolls",
+        "size": "6 rolls",
+        "price": 10.99,
+        "availability": "IN_STOCK",
+        "date": "2026-10-31T22:01:22+00:00"
+      },
+      {
+        "store": "Kroger - Westgate",
+        "source": "kroger",
+        "name": "Kroger\u00ae Glimmer Select-A-Sheet Paper Towels Double Rolls",
+        "size": "2 rolls",
+        "price": 3,
+        "availability": "IN_STOCK",
+        "date": "2026-10-31T22:01:22+00:00"
+      },
+      {
+        "store": "Kroger - Plymouth Nixon",
+        "source": "kroger",
+        "name": "Kroger\u00ae Ultra Paper Towels With Absorbing Power Double Rolls",
+        "size": "6 rolls",
+        "price": 10.99,
+        "availability": "IN_STOCK",
+        "date": "2026-10-31T22:01:32+00:00"
+      },
+      {
+        "store": "Kroger - Plymouth Nixon",
+        "source": "kroger",
+        "name": "Kroger\u00ae Glimmer Select-A-Sheet Paper Towels Double Rolls",
+        "size": "2 rolls",
+        "price": 3,
+        "availability": "IN_STOCK",
+        "date": "2026-10-31T22:01:32+00:00"
+      },
+      {
+        "store": "Kroger - Washtenaw",
+        "source": "kroger",
+        "name": "Kroger\u00ae Ultra Paper Towels With Absorbing Power Double Rolls",
+        "size": "6 rolls",
+        "price": 10.99,
+        "availability": "IN_STOCK",
+        "date": "2026-10-31T22:01:41+00:00"
+      },
+      {
+        "store": "Kroger - Washtenaw",
+        "source": "kroger",
+        "name": "Kroger\u00ae Glimmer Select-A-Sheet Paper Towels Double Rolls",
+        "size": "2 rolls",
+        "price": 3,
+        "availability": "IN_STOCK",
+        "date": "2026-10-31T22:01:41+00:00"
+      }
+    ],
+    "yogurt": [
+      {
+        "store": "Kroger - Westgate",
+        "source": "kroger",
+        "name": "Yoplait\u2122 Original Low Fat Strawberry Yogurt Cup",
+        "size": "6 oz",
+        "price": 0.8,
+        "availability": "IN_STOCK",
+        "date": "2026-10-31T22:01:24+00:00"
+      },
+      {
+        "store": "Kroger - Westgate",
+        "source": "kroger",
+        "name": "Oikos Triple Zero Vanilla High Protein Nonfat Greek Yogurt Cups",
+        "size": "5.3 oz., 4 pack",
+        "price": 5.29,
+        "availability": "IN_STOCK",
+        "date": "2026-10-31T22:01:24+00:00"
+      },
+      {
+        "store": "Kroger - Plymouth Nixon",
+        "source": "kroger",
+        "name": "Yoplait\u2122 Original Low Fat Strawberry Yogurt Cup",
+        "size": "6 oz",
+        "price": 0.8,
+        "availability": "IN_STOCK",
+        "date": "2026-10-31T22:01:33+00:00"
+      },
+      {
+        "store": "Kroger - Plymouth Nixon",
+        "source": "kroger",
+        "name": "Oikos Triple Zero Vanilla High Protein Nonfat Greek Yogurt Cups",
+        "size": "5.3 oz., 4 pack",
+        "price": 5.29,
+        "availability": "IN_STOCK",
+        "date": "2026-10-31T22:01:33+00:00"
+      },
+      {
+        "store": "Kroger - Washtenaw",
+        "source": "kroger",
+        "name": "Yoplait\u2122 Original Low Fat Strawberry Yogurt Cup",
+        "size": "6 oz",
+        "price": 0.8,
+        "availability": "IN_STOCK",
+        "date": "2026-10-31T22:01:41+00:00"
+      },
+      {
+        "store": "Kroger - Washtenaw",
+        "source": "kroger",
+        "name": "Oikos Triple Zero Vanilla High Protein Nonfat Greek Yogurt Cups",
+        "size": "5.3 oz., 4 pack",
+        "price": 5.29,
+        "availability": "OUT",
+        "date": "2026-10-31T22:01:41+00:00"
+      }
+    ],
+    "coffee": [
+      {
+        "store": "Kroger - Westgate",
+        "source": "kroger",
+        "name": "Folgers Classic Roast Ground Coffee, Medium Roast",
+        "size": "25.9 ounces",
+        "price": 16.99,
+        "availability": "IN_STOCK",
+        "date": "2026-10-31T22:01:25+00:00"
+      },
+      {
+        "store": "Kroger - Westgate",
+        "source": "kroger",
+        "name": "Dunkin\u2019 Original Blend Medium Roast Ground Coffee",
+        "size": "12 ounces",
+        "price": 11.99,
+        "availability": "IN_STOCK",
+        "date": "2026-10-31T22:01:25+00:00"
+      },
+      {
+        "store": "Kroger - Plymouth Nixon",
+        "source": "kroger",
+        "name": "Folgers Classic Roast Ground Coffee, Medium Roast",
+        "size": "25.9 ounces",
+        "price": 16.99,
+        "availability": "IN_STOCK",
+        "date": "2026-10-31T22:01:34+00:00"
+      },
+      {
+        "store": "Kroger - Plymouth Nixon",
+        "source": "kroger",
+        "name": "Dunkin\u2019 Original Blend Medium Roast Ground Coffee",
+        "size": "12 ounces",
+        "price": 11.99,
+        "availability": "IN_STOCK",
+        "date": "2026-10-31T22:01:34+00:00"
+      },
+      {
+        "store": "Kroger - Washtenaw",
+        "source": "kroger",
+        "name": "Folgers Classic Roast Ground Coffee, Medium Roast",
+        "size": "25.9 ounces",
+        "price": 16.99,
+        "availability": "IN_STOCK",
+        "date": "2026-10-31T22:01:42+00:00"
+      },
+      {
+        "store": "Kroger - Washtenaw",
+        "source": "kroger",
+        "name": "Dunkin\u2019 Original Blend Medium Roast Ground Coffee",
+        "size": "12 ounces",
+        "price": 11.99,
+        "availability": "IN_STOCK",
+        "date": "2026-10-31T22:01:42+00:00"
+      }
+    ],
+    "tofu": [
+      {
+        "store": "Kroger - Westgate",
+        "source": "kroger",
+        "name": "Simple Truth Organic\u00ae Extra Firm Tofu",
+        "size": "14 oz",
+        "price": 2.19,
+        "availability": "IN_STOCK",
+        "date": "2026-10-31T22:01:26+00:00"
+      },
+      {
+        "store": "Kroger - Westgate",
+        "source": "kroger",
+        "name": "Simple Truth Organic\u00ae Extra Firm Tofu Twin Pack",
+        "size": "2 ct",
+        "price": 2.19,
+        "availability": "IN_STOCK",
+        "date": "2026-10-31T22:01:26+00:00"
+      },
+      {
+        "store": "Kroger - Plymouth Nixon",
+        "source": "kroger",
+        "name": "Simple Truth Organic\u00ae Extra Firm Tofu",
+        "size": "14 oz",
+        "price": 2.19,
+        "availability": "IN_STOCK",
+        "date": "2026-10-31T22:01:35+00:00"
+      },
+      {
+        "store": "Kroger - Plymouth Nixon",
+        "source": "kroger",
+        "name": "Simple Truth Organic\u00ae Extra Firm Tofu Twin Pack",
+        "size": "2 ct",
+        "price": 2.19,
+        "availability": "IN_STOCK",
+        "date": "2026-10-31T22:01:35+00:00"
+      },
+      {
+        "store": "Kroger - Washtenaw",
+        "source": "kroger",
+        "name": "Simple Truth Organic\u00ae Extra Firm Tofu",
+        "size": "14 oz",
+        "price": 2.19,
+        "availability": "IN_STOCK",
+        "date": "2026-10-31T22:01:43+00:00"
+      },
+      {
+        "store": "Kroger - Washtenaw",
+        "source": "kroger",
+        "name": "Simple Truth Organic\u00ae Extra Firm Tofu Twin Pack",
+        "size": "2 ct",
+        "price": 2.19,
+        "availability": "IN_STOCK",
+        "date": "2026-10-31T22:01:43+00:00"
+      }
+    ],
+    "soy sauce": [
+      {
+        "store": "Kroger - Westgate",
+        "source": "kroger",
+        "name": "Kikkoman\u00ae Less Sodium Soy Sauce",
+        "size": "10 fl oz",
+        "price": 2.99,
+        "availability": "LOW",
+        "date": "2026-10-31T22:01:27+00:00"
+      },
+      {
+        "store": "Kroger - Westgate",
+        "source": "kroger",
+        "name": "Kikkoman\u00ae Soy Sauce",
+        "size": "10 fl oz",
+        "price": 2.99,
+        "availability": "IN_STOCK",
+        "date": "2026-10-31T22:01:27+00:00"
+      },
+      {
+        "store": "Kroger - Plymouth Nixon",
+        "source": "kroger",
+        "name": "Kikkoman\u00ae Less Sodium Soy Sauce",
+        "size": "10 fl oz",
+        "price": 2.99,
+        "availability": "IN_STOCK",
+        "date": "2026-10-31T22:01:35+00:00"
+      },
+      {
+        "store": "Kroger - Plymouth Nixon",
+        "source": "kroger",
+        "name": "Kikkoman\u00ae Soy Sauce",
+        "size": "10 fl oz",
+        "price": 2.99,
+        "availability": "IN_STOCK",
+        "date": "2026-10-31T22:01:35+00:00"
+      },
+      {
+        "store": "Kroger - Washtenaw",
+        "source": "kroger",
+        "name": "Kikkoman\u00ae Less Sodium Soy Sauce",
+        "size": "10 fl oz",
+        "price": 2.99,
+        "availability": "IN_STOCK",
+        "date": "2026-10-31T22:01:44+00:00"
+      },
+      {
+        "store": "Kroger - Washtenaw",
+        "source": "kroger",
+        "name": "Kikkoman\u00ae Soy Sauce",
+        "size": "10 fl oz",
+        "price": 2.99,
+        "availability": "IN_STOCK",
+        "date": "2026-10-31T22:01:44+00:00"
+      }
+    ]
+  },
+  "gaps": [
+    "18 nearby store(s) have no product evidence; the app can offer them only as location-only visits."
+  ],
+  "legend": {
+    "C": "current branch unit price and an in-stock/low-stock indication",
+    "C?": "current branch unit price, but stock unknown or out",
+    "M": "current match without a unit price (sold by weight or price missing)",
+    "H": "historical contributed record only (latest record date shown)",
+    "U": "candidate products returned, but none pass the app matching rules",
+    "0": "no candidate products found",
+    "ERR": "lookup failed (see collection JSON)",
+    "-": "not queried"
+  }
+}

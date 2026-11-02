@@ -48,6 +48,29 @@ node SyncState {
         discovery_counts: dict = {};
 }
 
+"""Opted-in reminder email and its delivery receipts."""
+node DeliveryState {
+    has email: str = "",
+        email_enabled: bool = False,
+        delivered: dict = {},              # reminder key -> delivered_at
+        failure: dict = {},                # {count, next_retry_at, last_error} while retrying
+        last_delivery: dict = {};          # {at, count}
+}
+
+"""User-reported spending. Entries are corrected or voided, never deleted."""
+node SpendingLedger {
+    has entries: list = [];
+}
+
+"""Opt-in background reminder checks and the outcome of the latest run."""
+node BackgroundState {
+    has enabled: bool = False,
+        last_run_at: str = "",
+        last_error: str = "",
+        last_created: int = 0,
+        runs: int = 0;
+}
+
 node ShoppingWorkspace {
     has delivery_quotes: list = [];
     has visit_history: list = [], new_plan_request_ids: list = [];
@@ -56,6 +79,7 @@ node ShoppingWorkspace {
         chat_question: str = "", chat_language: str = "en";
     has historical_prices: dict = {};
     has visit_plans: list = [], visit_search: dict = {}, search_radius_m: int = 5000;
+    has interest_checked_at: str = "";
     has address_candidates: list = [],
         nearby_stores: list = [],
         product_results: list = [],

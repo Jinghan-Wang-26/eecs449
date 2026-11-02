@@ -11,7 +11,7 @@ import from providers.mock { load_mock }
 import from feedback.apply { record_feedback }
 
 def loaded() -> tuple {
-    p = UserProfile();
+    p = UserProfile(data_mode="mock");
     p +>:Owns:+> InterestPool();
     cat = catalog_of(p);
     load_mock(cat);
