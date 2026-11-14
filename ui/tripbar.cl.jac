@@ -25,9 +25,9 @@ def:pub Odometer(value: str) -> JsxElement {
 }
 
 """stats: [{"id", "label", "value", "unit", "tone"}]; prefs: [{"id", "text"}]."""
-def:pub TripBar(title: str, sub: str, pill: str, tone: str, stats: list, prefs: list, edit: any, first_use: bool = False) -> JsxElement {
+def:pub TripBar(title: str, sub: str, pill: str, tone: str, stats: list, prefs: list, edit: any, first_use: bool = False, compact: bool = False) -> JsxElement {
     words = ["Tell", "me", "what", "you", "need.", "I'll", "plan", "the", "trip."];
-    return <section className="trip-bar" aria-label="Trip summary">
+    return <section className={"trip-bar compact" if compact else "trip-bar"} aria-label="Trip summary">
         <div className="trip-top">
             <div>
                 {if first_use {
@@ -41,13 +41,13 @@ def:pub TripBar(title: str, sub: str, pill: str, tone: str, stats: list, prefs: 
                 <span className={"trip-pill " + tone}>{pill}</span>
             </div>
         </div>
-        {if len(stats) > 0 {
+        {if len(stats) > 0 and not compact {
             <div className="trip-stats">{[<div key={s["id"]} id={"chg-" + s["id"]} className={"trip-stat " + s.get("tone", "")}><small>{s["label"]}</small><span className="value"><Odometer value={s["value"]} />{if s.get("unit", None) { <span className="unit">{s["unit"]}</span> }}</span></div> for s in stats]}</div>
         }}
-        <div className="trip-prefs">
+        {if not compact { <div className="trip-prefs">
             {[<span key={p["id"]} id={"chg-" + p["id"]}>{p["text"]}</span> for p in prefs]}
             <button type="button" onClick={lambda e: MouseEvent { edit(); }}>Edit preferences</button>
-        </div>
+        </div> }}
     </section>;
 }
 

@@ -22,7 +22,9 @@ that deployment completes. Open its HTTPS URL directly in a browser:
 Launch CartCompass from its home-screen icon and sign in. The same account
 loads the same server-stored lists and plans on another device. The installed
 app may need a fresh login even if a browser is already signed in. On phones,
-use **Plan / Assistant** to switch views. **+ New trip** starts a fresh trip.
+use the bottom **Plan / Assistant** navigation to switch views. **+ New trip**
+opens a confirmation explaining which trip data is reset. Select **Start new
+trip** to continue or **Keep this trip** to cancel.
 The interface supports safe areas, 44px buttons and 16px form inputs.
 
 ## Offline behavior and updates
@@ -92,7 +94,8 @@ python scripts/verify_mobile.py
 
 Set `CHROMIUM_EXECUTABLE_PATH` only when using an existing Chromium binary.
 The check covers manifest/icons/installation criteria, install-help UI,
-mobile and desktop widths, login and account switching, shopping navigation,
+mobile and desktop widths, login and account switching, visible item entry,
+missing-detail shortcuts, preference saving, trip-reset confirmation, shopping navigation,
 service-worker scope, cache privacy, disabled offline actions, offline launch,
 reconnection and logout. It uses synthetic browser install events to test the
 UI; actual Android/iPhone installation still requires a physical-device test.

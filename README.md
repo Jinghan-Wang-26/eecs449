@@ -493,6 +493,13 @@ The course project prioritizes Phase 1, with selected Phase 2 features as time p
 
 Sign in or create an account before using the shopping workspace. Each account has separate lists, chat, preferences, plans, and budget history. See [account setup and isolation checks](docs/USER_ACCOUNTS.md).
 
+The **List** step keeps item entry visible and shows your saved starting point,
+shopping time and travel mode in **Trip details**. Select a detail to edit it,
+or follow the **Next step** button to fill what is missing. Saving preferences
+returns to the list. **Find shopping options** appears when the trip is ready.
+On phones, **Plan / Assistant** stays at the bottom of the screen. **+ New trip**
+explains what will be cleared and lets you keep the current trip instead.
+
 The app includes a persistent shopping workspace and chat. `main.jac` mounts `ui/mobile.cl.jac`, which gates `ui/chat.cl.jac` behind the account login. `harness/agent.jac` routes chat through the validated intent parser in `ai/intents.jac`; chat saves explicitly requested needs/profile fields, asks for missing planning information, and generates proposals automatically. Feedback and plan acceptance still require confirmation. Structured controls work without an LLM. `server/workflows.jac` implements profile, address, store, product and plan operations, and `server/walkers.jac` exposes the eleven named API walkers.
 
 Real locations use Geoapify. The default product source is **Open Prices historical store price records**, with dates, currency and proof links. Coverage is incomplete and current price/stock remain unknown. Kroger branch snapshots now feed the same visit workflow with uncached acceptance rechecks and explicit review of changes; production OAuth, retailer queries and a scheduled-bus visit with quote rechecking were verified on 2026-10-27 at a public Ann Arbor address ([evidence](docs/samples/current-prices-verification.json)). See [current prices and credentials](docs/CURRENT_PRICES.md). Real mode also compares up to two physical stores and clearly labeled user-entered delivery checkout quotes, with continuous routes and explicit acceptance review. See [multi-store and delivery walkthrough](docs/MULTISTORE_DELIVERY.md). See [live setup](docs/SETUP_LIVE.md), [API research and real samples](docs/ISSUE6_API_RESEARCH.md), and [issue #8 implementation status](docs/ISSUE8_STATUS.md).

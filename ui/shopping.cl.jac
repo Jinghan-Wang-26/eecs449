@@ -5,6 +5,7 @@ sv import from ..server.shopping { ShoppingAction }
 import from .workspace { WorkspacePanel }
 import from .budget { BudgetPanel }
 import from .tripbar { TripBar, StageNav }
+import from .setup { TripSetup }
 import from .interests { InterestStrip }
 import from .routeline { RouteStage }
 import from .instore { InStore, TripComplete }
@@ -30,7 +31,7 @@ def:pub ShoppingPanel -> JsxElement {
         toast: dict = {},
         category: str = "",
         quantity: str = "1",
-        busy: bool = False,
+        busy: bool = False, active_action: str = "",
         notice: str = "Loading your shopping workspace…",
         seen_reminders: list = [],
         reminders_primed: bool = False,
@@ -138,11 +139,32 @@ def:pub ShoppingPanel -> JsxElement {
         try { window.localStorage.setItem("cartcompass-picked", JSON.stringify(updated)); } except Exception { notice = ""; }
     }
 
+    def edit_preferences(target: str = "") -> None {
+        view = "profile";
+        setTimeout(lambda {
+            el = document.getElementById(target or "trip-start");
+            if el { el.scrollIntoView({"block": "start", "behavior": "smooth"}); el.focus({"preventScroll": True}); }
+        }, 80);
+    }
+
+    def planning_step() -> dict {
+        profile = snapshot.get("workspace", {}).get("profile", {});
+        if len([item for item in current_items() if item["status"] != "PAUSED"]) == 0 {
+            return {"target": "list", "label": "Add items to continue", "hint": "Add an item, or add a skipped item back to this trip."};
+        }
+        if not profile.get("address", "") { return {"target": "trip-start", "label": "Add starting point", "hint": "Choose an address to find stores near you."}; }
+        if len(profile.get("free_windows", [])) == 0 { return {"target": "trip-time", "label": "Set shopping time", "hint": "Add a free time so your route fits your day."}; }
+        if len(profile.get("transport", [])) == 0 { return {"target": "trip-transport", "label": "Choose how to travel", "hint": "Select walking, bus, bike or car."}; }
+        return {"target": "find", "label": "Find shopping options", "hint": "Compare nearby stores, routes and any delivery quotes you added."};
+    }
+
     async def find_options() -> None {
-        ws = snapshot.get("workspace", None);
-        if ws and ws["profile"]["address"] { await operate("recommend_visits", {}); }
-        else { locate_now = True; }
+        if busy { return; }
+        next_step = planning_step();
+        if next_step["target"] == "list" { go("list"); return; }
+        if next_step["target"] != "find" { edit_preferences(next_step["target"]); return; }
         go("options");
+        await operate("recommend_visits", {});
     }
 
     """The one or two things the user would most likely do next, shown as buttons in the chat."""
@@ -199,7 +221,7 @@ def:pub ShoppingPanel -> JsxElement {
         ws = snapshot.get("workspace", None);
         info = {"ready": bool(ws),
             "empty": len(current_items()) == 0 and len(all_plans()) == 0 and not recorded.get("store", None) and not (ws and ws["pending_id"] != ""),
-            "actions": next_actions()};
+            "actions": next_actions(), "busy": busy};
         window.dispatchEvent(new(CustomEvent, "workspace-summary", {"detail": info}));
     }
 
@@ -215,7 +237,13 @@ def:pub ShoppingPanel -> JsxElement {
     """After the start address is confirmed from the Options step, compare stores right away."""
     async def after_address() -> None {
         locate_now = False;
-        if len(current_items()) > 0 { await operate("recommend_visits", {}); }
+        if planning_step()["target"] == "list" { return; }
+        profile = snapshot.get("workspace", {}).get("profile", {});
+        # Address confirmation has just completed; this render still has the old address.
+        if len(profile.get("free_windows", [])) == 0 { edit_preferences("trip-time"); return; }
+        if len(profile.get("transport", [])) == 0 { edit_preferences("trip-transport"); return; }
+        go("options");
+        await operate("recommend_visits", {});
     }
 
     def delivery_status(saved: dict) -> str {
@@ -373,19 +401,20 @@ def:pub ShoppingPanel -> JsxElement {
     ws = snapshot.get("workspace", None);
     items = current_items();
     accepted = accepted_plans(snapshot);
+    next_step = planning_step();
 
     return <section className="shopping-panel" aria-label="Shopping workspace">
         {if toast.get("key", None) {
             <div className="toast" role="status"><span><small>New reminder</small>{toast["message"]}</span><span></span>
                 <div className="toast-actions"><button type="button" onClick={lambda e: MouseEvent { toast = {}; show_reminders(); }}>View</button><button type="button" className="ghost" onClick={lambda e: MouseEvent { toast = {}; }}>Dismiss</button></div></div>
         }}
-        <TripBar title={trip["title"]} sub={trip["sub"]} pill={trip["pill"]} tone={trip["tone"]} stats={trip["stats"]} prefs={trip["prefs"]} edit={lambda { view = "profile"; }} first_use={trip["first"]} />
+        <TripBar title={trip["title"]} sub={trip["sub"]} pill={trip["pill"]} tone={trip["tone"]} stats={trip["stats"]} prefs={trip["prefs"]} edit={lambda { edit_preferences(); }} first_use={trip["first"]} compact={view == "" and (stage or "list") == "list"} />
         {if view == "" {
             <StageNav stage={stage or "list"} progress={progress()} go={go} />
         } else {
-            <div className="view-head"><h2>{"Budget" if view == "budget" else "Preferences"}</h2><button type="button" onClick={lambda e: MouseEvent { view = ""; }}>← Back to trip</button></div>
+            <div className="view-head"><h2 id="workspace-view-title">{"Budget" if view == "budget" else "Preferences"}</h2><button type="button" onClick={lambda e: MouseEvent { view = ""; }}>← Back to trip</button></div>
         }}
-        <div className="workspace-content" role="tabpanel" id="stage-panel" aria-labelledby={("stage-" + (stage or "list")) if view == "" else ""} tabIndex={0} key={view or stage}>
+        <div className="workspace-content" role="tabpanel" id="stage-panel" aria-labelledby={("stage-" + (stage or "list")) if view == "" else "workspace-view-title"} tabIndex={0} key={view or stage}>
             {if error_notice != "" { <div className="error-banner" role="alert"><span>{error_notice}</span><button type="button" aria-label="Dismiss error" onClick={lambda e: MouseEvent { error_notice = ""; }}>×</button></div> }}
             {if ws and ws["pending_id"] != "" {
                 <div className="pending-request">
@@ -428,19 +457,20 @@ def:pub ShoppingPanel -> JsxElement {
             }}
             {if view == "" and (stage or "list") == "list" {
             <div>
-                <div className="list-intro"><div><h3 id="chg-list">Your shopping list</h3><p>Add items here or tell the assistant what you need.</p></div></div>
-                {if len(items) == 0 { <div className="empty-list"><span className="empty-symbol" aria-hidden="true">＋</span><h3>Room for your next essentials.</h3><p>Your list is empty. Tell the assistant what you need, or add your first item below.</p></div> }}
-                {[<div key={item["category"]} className="interest-row"><div><span className="item-name">{str(item.get("qty", 1)) + " × " + item["category"]}</span>{if spec_text(item) != "" or item["status"] == "PAUSED" { <span className="item-meta">{"Not this trip" if item["status"] == "PAUSED" else spec_text(item)}</span> }}</div><div className="row-actions">
+                <div className="list-intro"><div><span className="section-eyebrow">STEP 1 · YOUR ESSENTIALS</span><h3 id="chg-list">Your shopping list</h3><p>Add items here, or let the assistant build your list.</p></div><button type="button" className="text-button" onClick={lambda e: MouseEvent { window.dispatchEvent(new(CustomEvent, "cartcompass-assistant")); }}>Ask assistant ↗</button></div>
+                <div className="quick-add" aria-label="Add a shopping item">
+                    <form onSubmit={save}>
+                        <label>Item <input id="quick-item" aria-label="Item" list="categories" placeholder="e.g. milk, eggs or rice" required value={category} onChange={lambda e: ChangeEvent { category = e.target.value; }} /><datalist id="categories">{[<option key={name} value={name} /> for name in ["milk", "eggs", "rice", "laundry detergent", "paper towels", "yogurt", "dish soap", "tofu", "soy sauce", "coffee"]]}</datalist></label>
+                        <label>Packages <input aria-label="Packages" type="number" min="1" max="20" required value={quantity} onChange={lambda e: ChangeEvent { quantity = e.target.value; }} /></label>
+                        <button type="submit" className="go" disabled={busy or not category.strip()}>Add to list</button>
+                    </form>
+                </div>
+                {if len(items) == 0 { <div className="list-placeholder"><span aria-hidden="true">＋</span><p>Your list starts here. Add your first item above.</p></div> }}
+                <div className="shopping-items">{[<div key={item["category"]} className={"interest-row paused" if item["status"] == "PAUSED" else "interest-row"}><div className="item-copy"><span className="item-badge" aria-hidden="true">{str(item.get("qty", 1)) + "×"}</span><div><span className="item-name">{item["category"]}</span><span className="item-meta">{"Not this trip" if item["status"] == "PAUSED" else spec_text(item) or (str(item.get("qty", 1)) + (" package" if item.get("qty", 1) == 1 else " packages"))}</span></div></div><div className="row-actions">
                     <button type="button" disabled={busy} title={"Put it back on this trip" if item["status"] == "PAUSED" else "Keep it saved but leave it out of this trip"} onClick={lambda e: MouseEvent { operate("interest_status", {"category": item["category"], "status": "ACTIVE" if item["status"] == "PAUSED" else "PAUSED"}); }}>{"Add back" if item["status"] == "PAUSED" else "Not this trip"}</button>
                     <button type="button" disabled={busy} onClick={lambda e: MouseEvent { operate("feedback", {"id": crypto.randomUUID(), "type": "feedback", "target": item["category"], "reason": "PURCHASED"}); }}>Already have it</button>
-                </div></div> for item in items]}
-                <details className="quick-add" open={len(items) == 0}><summary>+ Add an item</summary>
-                    <form onSubmit={save}>
-                        <label>Item <input aria-label="Item" list="categories" placeholder="e.g. milk" required value={category} onChange={lambda e: ChangeEvent { category = e.target.value; }} /><datalist id="categories">{[<option key={name} value={name} /> for name in ["milk", "eggs", "rice", "laundry detergent", "paper towels", "yogurt", "dish soap", "tofu", "soy sauce", "coffee"]]}</datalist></label>
-                        <label>Packages <input aria-label="Packages" type="number" min="1" max="20" required value={quantity} onChange={lambda e: ChangeEvent { quantity = e.target.value; }} /></label>
-                        <button type="submit" className="go" disabled={busy}>Add to list</button>
-                    </form>
-                </details>
+                </div></div> for item in items]}</div>
+                {if ws { <TripSetup profile={ws["profile"]} busy={busy} edit={edit_preferences} /> }}
                 <InterestStrip snapshot={snapshot} busy={busy} operate={operate} />
                 {if len([item for item in snapshot["interests"] if not item.get("in_current_list", True)]) > 0 {
                     <details>
@@ -452,14 +482,17 @@ def:pub ShoppingPanel -> JsxElement {
                         </div> for item in snapshot["interests"] if not item.get("in_current_list", True)]}
                     </details>
                 }}
-                <div className="cta-row">
-                    <span>{("We'll use your current location as the starting point. You can change it in Preferences." if ws and not ws["profile"]["address"] else "Compare stores, routes and delivery for this list.") if len(items) > 0 else "Add at least one item to compare options."}</span>
-                    <button className="primary cta" disabled={busy or len(items) == 0} onClick={lambda e: MouseEvent { find_options(); }}>Find shopping options →</button>
+                <div className="plan-next">
+                    <span><small>NEXT STEP</small>{next_step["hint"]}</span>
+                    <button className="primary cta" disabled={busy or next_step["target"] == "list"} onClick={lambda e: MouseEvent { find_options(); }}>{("Updating…" if busy else next_step["label"] + " →")}</button>
                 </div>
             </div>
             }}
             {if view == "" and stage == "options" and ws {
+                <div>
+                {if busy and active_action == "recommend_visits" { <div className="search-progress" role="status"><span className="orb busy" aria-hidden="true"></span><div><b>Finding your shopping options</b><p>Checking nearby stores, product evidence and routes. You can keep chatting while this runs.</p></div></div> }}
                 <WorkspacePanel key={JSON.stringify(ws["profile"])} workspace={ws} busy={busy} operate={operate} category={category} view="plans" select={select} auto_locate={locate_now} on_address={after_address} />
+                </div>
             }}
             {if view == "" and stage == "route" and ws {
                 <RouteStage plan={route_plan()} workspace={ws} busy={busy} operate={operate} find={find_options} />

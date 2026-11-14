@@ -26,11 +26,12 @@ def:pub ChatApp(username: str = "", on_sign_out: any = None, signout_pending: bo
     }
 
     # The workspace reports whether it has anything to show and what the next steps are.
-    can with (summary) entry {
+    can with (summary, pane, manual) entry {
         listener = lambda e: any {
-            # When the first item appears, keep phone users in the conversation and flag the plan.
+            # Preserve the current pane: manual entry stays on the list; chat flags the plan.
             if summary.get("ready", False) and summary.get("empty", False) and not e.detail["empty"] {
-                pane = "assistant"; plan_updated = True;
+                if not manual { pane = "assistant"; plan_updated = True; }
+                else { plan_updated = pane == "assistant"; }
             }
             summary = e.detail;
         };
@@ -105,6 +106,20 @@ def:pub ChatApp(username: str = "", on_sign_out: any = None, signout_pending: bo
         window.dispatchEvent(new(CustomEvent, "cartcompass-action", {"detail": code}));
     }
 
+    def use_prompt(text: str) -> None {
+        draft = text; pane = "assistant"; unread = 0;
+        setTimeout(lambda { document.querySelector(".chat-composer input, .welcome-composer input")?.focus(); }, 80);
+    }
+
+    can with [] entry {
+        show_assistant = lambda e: any {
+            manual = True; pane = "assistant"; unread = 0;
+            setTimeout(lambda { document.querySelector(".chat-composer input")?.focus(); }, 80);
+        };
+        window.addEventListener("cartcompass-assistant", show_assistant);
+        return lambda { window.removeEventListener("cartcompass-assistant", show_assistant); };
+    }
+
     def start_myself() -> None {
         manual = True; pane = "plan";
     }
@@ -140,10 +155,10 @@ def:pub ChatApp(username: str = "", on_sign_out: any = None, signout_pending: bo
     return <div className="app-shell">
         <AppStyles />
         <header className="topbar">
-            <a className="brand" href="#" aria-label="CartCompass home"><span className="brand-icon" aria-hidden="true">↗</span>CartCompass</a>
+            <a className="brand" href="#" onClick={lambda e: any { e.preventDefault(); act("go:list"); }} aria-label="CartCompass home"><span className="brand-icon" aria-hidden="true">↗</span>CartCompass</a>
             <div className="trip-controls"><button type="button" onClick={lambda e: MouseEvent { open_view("budget"); }}>Budget</button>
             <button type="button" onClick={lambda e: MouseEvent { open_view("profile"); }}>Preferences</button>
-            <button type="button" className="new-trip" disabled={pending} title="Starts a fresh list and conversation. Your address, preferences and purchase history stay saved." onClick={lambda e: MouseEvent { manual = False; new_plan(); }}>+ New trip</button></div>
+            <button type="button" className="new-trip" disabled={pending or summary.get("busy", False)} title="Starts a fresh list and conversation. Your address, preferences and purchase history stay saved." onClick={lambda e: MouseEvent { history_notice = ""; document.getElementById("new-trip-dialog").showModal(); }}>+ New trip</button></div>
             {if not onboarding {
                 <div className="pane-switch" role="group" aria-label="Show">
                     <button type="button" aria-pressed={pane == "plan"} onClick={lambda e: MouseEvent { pane = "plan"; plan_updated = False; }}>Plan{if plan_updated { <em>new</em> }}</button>
@@ -168,7 +183,7 @@ def:pub ChatApp(username: str = "", on_sign_out: any = None, signout_pending: bo
                         <h1>What do you need to buy?</h1>
                         <p>Say it in your own words. I'll ask where you're starting from and when you're free, then compare stores, buses and delivery for you.</p>
                         <form onSubmit={send} className="welcome-composer"><input aria-label="Tell CartCompass what you need" type="text" value={draft} onChange={lambda e: ChangeEvent { draft = e.target.value; }} placeholder="Milk, eggs, rice…" /><button className="go" type="submit" disabled={pending or not draft.strip()}>Start ↗</button></form>
-                        <div className="examples">{[<button key={ex} type="button" onClick={lambda e: MouseEvent { draft = ex; }}>{ex}</button> for ex in examples]}</div>
+                        <div className="examples">{[<button key={ex} type="button" onClick={lambda e: MouseEvent { use_prompt(ex); }}>{ex}</button> for ex in examples]}</div>
                         <div className="welcome-links">
                             <button type="button" className="text-button" onClick={lambda e: MouseEvent { start_myself(); }}>I'd rather add items myself</button>
                         </div>
@@ -187,6 +202,7 @@ def:pub ChatApp(username: str = "", on_sign_out: any = None, signout_pending: bo
                 }}
                 {if not welcome {
                     <div className="composer-wrap">
+                        {if not onboarding { <div className="assistant-shortcuts" aria-label="Conversation starters"><button type="button" disabled={pending} onClick={lambda e: MouseEvent { use_prompt("Help me finish the details for this shopping trip."); }}>Help me plan</button><button type="button" disabled={pending} onClick={lambda e: MouseEvent { use_prompt("My weekly budget is $"); }}>Set my budget</button></div> }}
                         <form onSubmit={send} className="chat-composer"><input aria-label="Message your shopping assistant" type="text" value={draft} onChange={lambda e: ChangeEvent { draft = e.target.value; }} placeholder={"Tell me what you need…" if onboarding else "Tell me what to change…"} /><button className="primary" type="submit" disabled={pending or not draft.strip()}>{"Sending…" if pending else "Send ↗"}</button></form>
                         {if onboarding {
                             <p>{"Your list appears as soon as you mention an item · "}<button type="button" className="text-button" onClick={lambda e: MouseEvent { start_myself(); }}>Open the workspace</button></p>
@@ -197,6 +213,14 @@ def:pub ChatApp(username: str = "", on_sign_out: any = None, signout_pending: bo
                 }}
             </aside>
         </main>
+        <dialog id="new-trip-dialog" className="new-trip-dialog" aria-labelledby="new-trip-title">
+            <span className="section-eyebrow">A FRESH START</span>
+            <h2 id="new-trip-title">Start a new shopping trip?</h2>
+            <p>Your current list and conversation will be cleared for the new trip. Your address, preferences and purchase history stay saved.</p>
+            <p>Items from earlier trips can be added back from your shopping list.</p>
+            {if history_notice { <p className="inline-alert" role="alert">{history_notice}</p> }}
+            <div className="dialog-actions"><button type="button" autoFocus={True} disabled={pending} onClick={lambda e: MouseEvent { document.getElementById("new-trip-dialog").close(); }}>Keep this trip</button><button type="button" className="go" disabled={pending or summary.get("busy", False)} onClick={lambda e: MouseEvent { new_plan(); }}>{"Starting…" if pending else "Start new trip"}</button></div>
+        </dialog>
         <footer className="app-footer"><span>Thoughtful trips. Clearer choices.</span><span>Prices are snapshots or historical references, not guaranteed offers. Stock is never reserved.</span></footer>
     </div>;
 }

@@ -19,6 +19,7 @@ PASSWORD = 'Mobile browser test password!'
 
 
 def main():
+    Path('/tmp/cartcompass-ui').mkdir(exist_ok=True)
     with tempfile.TemporaryDirectory(prefix='cartcompass-mobile-') as directory:
         work = Path(directory)
         cfg = tomllib.loads((ROOT / 'app.toml').read_text())
@@ -86,6 +87,73 @@ def main():
                     expect(page.locator('.account-name')).to_have_text(name, timeout=30000)
 
                 signup('mobile-alice')
+                # Guided setup must work without a model or retailer credential.
+                page.get_by_role('button', name="I'd rather add items myself", exact=True).click()
+                expect(page.get_by_label('Item', exact=True)).to_be_visible()
+                expect(page.get_by_role('button', name='Add items to continue →')).to_be_disabled()
+                page.get_by_label('Item', exact=True).fill('milk')
+                page.get_by_label('Packages', exact=True).fill('2')
+                page.get_by_role('button', name='Add to list', exact=True).click()
+                expect(page.locator('.shopping-items .item-name')).to_have_text('milk')
+                expect(page.locator('.shopping-panel')).to_be_visible()
+                expect(page.get_by_label('Item', exact=True)).to_be_focused()
+                expect(page.get_by_role('button', name='Add starting point →')).to_be_enabled()
+                expect(page.get_by_label('Trip details', exact=True)).to_contain_text('2 details to add')
+                page.get_by_role('button', name='Add starting point →').click()
+                expect(page.get_by_label('Type a start address')).to_be_visible()
+                expect(page.locator('#trip-start')).to_be_focused()
+                expect(page.get_by_label('Carrying limit', exact=True)).not_to_be_visible()
+                page.get_by_role('button', name='← Back to trip', exact=True).click()
+                page.get_by_role('button', name='Edit shopping time', exact=True).click()
+                expect(page.locator('#trip-time')).to_be_focused()
+                page.get_by_role('button', name='+ Add a time', exact=True).click()
+                page.get_by_label('Budget', exact=True).fill('65')
+                page.get_by_role('button', name='Save preferences', exact=True).click()
+                expect(page.locator('.shopping-items .item-name')).to_have_text('milk')
+                expect(page.get_by_label('Trip details', exact=True)).to_contain_text('1 detail to add')
+                expect(page.get_by_role('button', name='Edit shopping time')).to_contain_text('Sat 14:00–17:00')
+                page.get_by_role('button', name='Not this trip', exact=True).click()
+                expect(page.get_by_role('button', name='Add items to continue →')).to_be_disabled()
+                page.get_by_role('button', name='Add back', exact=True).click()
+                expect(page.get_by_role('button', name='Add starting point →')).to_be_enabled()
+                page.get_by_role('button', name='Ask assistant ↗', exact=True).click()
+                expect(page.get_by_label('Message your shopping assistant')).to_be_focused()
+                page.get_by_role('button', name='Set my budget', exact=True).click()
+                expect(page.get_by_label('Message your shopping assistant')).to_have_value('My weekly budget is $')
+                page.get_by_label('Message your shopping assistant').fill('')
+                page.get_by_role('button', name='Plan', exact=True).click()
+                for width, height in [(320, 740), (390, 844), (1280, 900)]:
+                    page.set_viewport_size({'width': width, 'height': height})
+                    page.evaluate('window.scrollTo(0, 0)')
+                    assert page.evaluate('document.documentElement.scrollWidth <= window.innerWidth'), width
+                    if width < 861:
+                        nav = page.locator('.pane-switch').bounding_box()
+                        assert nav and nav['y'] + nav['height'] <= height
+                        assert nav['y'] >= height - 100
+                        page.screenshot(path=f'/tmp/cartcompass-ui/mobile-{width}.png', full_page=True, animations='disabled')
+                    else:
+                        page.screenshot(path='/tmp/cartcompass-ui/desktop.png', full_page=True, animations='disabled')
+                page.set_viewport_size({'width': 390, 'height': 844})
+                page.get_by_role('button', name='+ New trip', exact=True).click()
+                expect(page.get_by_role('dialog', name='Start a new shopping trip?')).to_be_visible()
+                page.get_by_role('button', name='Keep this trip', exact=True).click()
+                expect(page.locator('.shopping-items .item-name')).to_have_text('milk')
+                page.get_by_role('button', name='+ New trip', exact=True).click()
+                page.get_by_role('button', name='Start new trip', exact=True).click()
+                expect(page.get_by_role('dialog', name='Start a new shopping trip?')).not_to_be_visible(timeout=30000)
+                # New trips keep the saved profile, but start a separate list.
+                opener = page.get_by_role('button', name='Open the workspace', exact=True)
+                expect(opener).to_be_visible()
+                opener.click()
+                expect(page.locator('.shopping-items .item-name')).to_have_count(0)
+                expect(page.get_by_label('Trip details', exact=True)).to_contain_text('1 detail to add')
+                expect(page.get_by_role('button', name='Add to this trip', exact=True)).not_to_be_visible()
+                page.get_by_text('From earlier trips', exact=True).click()
+                expect(page.get_by_role('button', name='Add to this trip', exact=True)).to_be_visible()
+                page.get_by_role('button', name='Add to this trip', exact=True).click()
+                expect(page.locator('.shopping-items .item-name')).to_have_text('milk')
+                print('PASS guided list entry, missing-detail navigation, saved preferences, mobile dock and deliberate trip reset', flush=True)
+
                 token = page.evaluate('localStorage.getItem("jac_token")')
                 headers = {'Authorization': 'Bearer ' + token}
                 assert context.request.post(url + '/walker/SendMessage', headers=headers,
@@ -148,6 +216,14 @@ def main():
                 assert context.request.get(url + '/user/info', headers=headers).status == 401
                 signup('mobile-bob')
                 assert 'Alice private' not in page.content()
+                # Simulate a saved chat update without calling a paid language model.
+                bob_token = page.evaluate('localStorage.getItem("jac_token")')
+                assert context.request.post(url + '/walker/ShoppingAction', headers={'Authorization': 'Bearer ' + bob_token},
+                                            data={'action': 'save_interest', 'data': {'category': 'rice', 'qty': 1}}).ok
+                page.evaluate("window.dispatchEvent(new CustomEvent('shopping-chat-updated', {detail: 'chat'}))")
+                expect(page.locator('.pane-switch button').filter(has_text='Assistant')).to_have_attribute('aria-pressed', 'true')
+                expect(page.locator('.assistant-panel')).to_be_visible()
+                expect(page.locator('.shopping-panel')).not_to_be_visible()
                 print('PASS reconnect validates account, logout revokes session and second account stays isolated', flush=True)
 
                 # Chromium appinstalled is browser-owned; simulate only the UI event here.
