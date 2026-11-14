@@ -1,4 +1,5 @@
 """Structured operations for the shopping panel; no LLM/API key required."""
+import from server.accounts { account_profile }
 
 import math;
 import json;
@@ -10,7 +11,7 @@ import from app_settings { get_settings, stamp, instant, quiet }
 import from models.profile { UserProfile }
 import from models.interest { InterestKind, InterestStatus }
 import from models.catalog { Product, Offer }
-import from models.graph { Has, profile_of, catalog_of, items_of, add_need, find_in }
+import from models.graph { Has, catalog_of, items_of, add_need, find_in }
 import from providers.mock { load_mock, mock_updates }
 import from interests.discovery { discover_products, discovery_action }
 import from notify.reminders { inbox, reminder_action, suggestion_category }
@@ -179,11 +180,11 @@ def shopping_operation(p: UserProfile, action: str, data: dict, now: str) -> dic
             "quiet": quiet(now, cfg), "background": background_view(p, now, cfg), "budget": budget_view(p, now, cfg), "delivery": delivery_view(p), "data_mode": cfg["data_mode"], "checked_at": now, "workspace": workspace};
 }
 
-walker:pub ShoppingAction {
+walker ShoppingAction {
     has action: str = "view", data: dict = {};
     can run with Root entry {
         try {
-            report shopping_operation(profile_of(here), self.action, self.data, stamp());
+            report shopping_operation(account_profile(here), self.action, self.data, stamp());
         } except ValueError as err {
             report {"error": str(err)};
         }

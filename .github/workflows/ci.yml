@@ -34,5 +34,7 @@ jobs:
         run: python -m unittest discover -s tests -p 'test_*.py' -v
       - name: Graph and workflow regression tests
         run: jac test
+      - name: Account isolation over HTTP
+        run: python scripts/verify_accounts.py
       - name: Client build
         run: jac build main.jac

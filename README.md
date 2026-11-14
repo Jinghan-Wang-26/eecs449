@@ -18,7 +18,7 @@ Scheduled bus journeys are available for Ann Arbor/Ypsilanti through TheRide GTF
 
 New scheduling, bus routing and purchase-validation rules are implemented in Jac. External adapters and parts of the real-store recommender remain Python. This is a local single-user application; a hosted multi-user release needs additional work.
 
-For a public cloud course demo, see [Deploy to Render](docs/DEPLOY_RENDER.md). The deployment keeps the pinned Jac runtime, uses a model API, and persists the shared workspace on a disk.
+For a public cloud course demo, see [Deploy to Render](docs/DEPLOY_RENDER.md). The deployment keeps the pinned Jac runtime, uses a model API, and persists accounts and their separate workspaces on a disk.
 
 ## Table of Contents
 
@@ -488,6 +488,8 @@ Key acceptance scenarios include known budget overruns, excessive carrying weigh
 The course project prioritizes Phase 1, with selected Phase 2 features as time permits. Nationwide retailer coverage, comprehensive real-time inventory, and automatic payment are outside the initial delivery commitment.
 
 ## Getting Started
+
+Sign in or create an account before using the shopping workspace. Each account has separate lists, chat, preferences, plans, and budget history. See [account setup and isolation checks](docs/USER_ACCOUNTS.md).
 
 The app includes a persistent shopping workspace and chat. `main.jac` mounts `ui/chat.cl.jac`. `harness/agent.jac` routes chat through the validated intent parser in `ai/intents.py`; chat saves explicitly requested needs/profile fields, asks for missing planning information, and generates proposals automatically. Feedback and plan acceptance still require confirmation. Structured controls work without an LLM. `server/workflows.jac` implements profile, address, store, product and plan operations, and `server/walkers.jac` exposes the eleven named API walkers.
 

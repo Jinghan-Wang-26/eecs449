@@ -9,10 +9,10 @@
 		respond "ok" 200
 	}
 	handle {
+		header Cache-Control "no-store"
 		@cross_site header Sec-Fetch-Site cross-site
 		respond @cross_site "Cross-site requests are not allowed." 403
 		reverse_proxy 127.0.0.1:8081 {
-			header_up -Authorization
 			header_down -Access-Control-Allow-Origin
 			header_down -Access-Control-Allow-Methods
 			header_down -Access-Control-Allow-Headers

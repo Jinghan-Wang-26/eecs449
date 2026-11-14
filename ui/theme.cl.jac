@@ -29,9 +29,24 @@ small { color:var(--muted); font-size:12px; }
 .num { font-variant-numeric:tabular-nums; }
 .sr-only { position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap; }
 
+/* accounts */
+.account-shell { max-width:1040px; margin:0 auto; padding:28px 24px 60px; }
+.account-brand { display:flex; margin-bottom:48px; }
+.account-card { max-width:480px; margin:0 auto; padding:36px; background:var(--paper); border:1px solid var(--line); border-radius:24px; box-shadow:0 20px 60px -40px #123d2b; }
+.account-eyebrow { color:var(--green); font-size:11px; font-weight:800; letter-spacing:1.6px; }
+.account-card h1 { font-size:30px; letter-spacing:-.7px; margin:12px 0; }
+.account-intro { color:var(--muted); margin-bottom:24px; }
+.account-form { display:grid; gap:16px; }
+.account-form label { font-size:13px; }
+.account-form input { padding:12px; }
+.account-switch { display:flex; justify-content:center; gap:8px; align-items:center; margin-top:24px; }
+.account-footnote { margin:24px 0 0; padding-top:16px; border-top:1px solid var(--line); color:var(--muted); font-size:12px; }
+.account-name { max-width:150px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:12px; color:var(--muted); }
+@media(max-width:600px) { .account-shell { padding:20px 16px; } .account-brand { margin-bottom:28px; } .account-card { padding:24px; } .account-card h1 { font-size:27px; } }
+
 /* shell */
 .app-shell { max-width:1480px; margin:0 auto; padding:0 24px 20px; }
-.topbar { display:flex; align-items:center; gap:10px; padding:14px 0; }
+.topbar { display:flex; flex-wrap:wrap; align-items:center; gap:10px; padding:14px 0; }
 .brand { display:flex; align-items:center; gap:10px; font-size:19px; font-weight:800; letter-spacing:-.4px; color:var(--green-deep); text-decoration:none; margin-right:auto; }
 .brand-icon { display:grid; place-items:center; background:var(--green); color:#eaf6e4; width:30px; height:30px; border-radius:10px; font-size:17px; }
 .topbar button { font-size:13px; padding:7px 12px; }

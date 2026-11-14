@@ -17,7 +17,7 @@ if [[ "${LLM_BACKEND:-api}" != api ]]; then
     echo 'Cloud deployment requires LLM_BACKEND=api; the local Codex login is not included.' >&2
     exit 1
 fi
-# Public shared demo: no website password is required.
+# The public page presents account login; Jac authenticates shopping requests.
 jac_pid=''
 proxy_pid=''
 cleanup() {

@@ -1,4 +1,4 @@
-# Public shared course-demo workspace; visitors do not need a password.
+# Public login page; authenticated shopping data is isolated per account.
 # Review the paid compute/disk estimate in Render before creating the service.
 services:
   - type: web

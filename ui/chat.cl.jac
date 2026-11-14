@@ -6,7 +6,7 @@ sv import from ..server.chat { SendMessage, ChatHistory, StartShoppingPlan }
 import from .shopping { ShoppingPanel }
 import from .theme { AppStyles }
 
-def:pub ChatApp -> JsxElement {
+def:pub ChatApp(username: str = "", on_sign_out: any = None, signout_pending: bool = False, account_notice: str = "") -> JsxElement {
     has messages: list[dict] = [], draft: str = "", pending: bool = True,
         history_notice: str = "", workspace_epoch: int = 0,
         changes: list = [], pane: str = "plan", unread: int = 0, plan_updated: bool = False,
@@ -150,7 +150,10 @@ def:pub ChatApp -> JsxElement {
                     <button type="button" aria-pressed={pane == "assistant"} onClick={lambda e: MouseEvent { pane = "assistant"; unread = 0; }}>Assistant{if unread > 0 { <em>{str(unread)}</em> }}</button>
                 </div>
             }}
+            <span className="account-name" title={username}>{username}</span>
+            <button type="button" disabled={signout_pending} onClick={on_sign_out}>{"Signing out…" if signout_pending else "Sign out"}</button>
         </header>
+        {if account_notice { <p className="inline-alert" role="alert">{account_notice}</p>; }}
         <main className={"app-columns pane-" + pane + (" onboarding" if onboarding else "") + ("" if ready else " booting")}>
             <ShoppingPanel key={workspace_epoch} />
             <aside className="assistant-panel" aria-label="Shopping assistant">
