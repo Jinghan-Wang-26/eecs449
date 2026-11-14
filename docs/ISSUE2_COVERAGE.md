@@ -58,7 +58,7 @@ This document answers issue #2 for the target area. API selection and the origin
 
 - **Needs:** the ten demo categories: milk, eggs, rice, laundry detergent, dish soap, paper towels, yogurt, coffee, tofu and soy sauce. They include the README example (milk, eggs, rice, detergent) and mix dairy, staples, heavy household goods and specialty items.
 - **Stores:** the five nearest Kroger branches within 8 km, every Open Prices location within 8 km, and (with Geoapify) supermarkets that neither source covers.
-- **Same query and rules as the app:** Kroger searches use the app's own request (`filter.locationId`, `filter.fulfillment=ais`, 10 results). Rows are judged with `planning/retail.jac` `suitable` (current quotes) and `planning/visits.py` `match_record` (historical records). A `U` cell therefore means the source had candidates that the app would not offer, which points to a search-term or matching-rule gap rather than missing data.
+- **Same query and rules as the app:** Kroger searches use the app's own request (`filter.locationId`, `filter.fulfillment=ais`, 10 results). Rows are judged with `planning/retail.jac` `suitable` (current quotes) and `planning/visits.jac` `match_record` (historical records). A `U` cell therefore means the source had candidates that the app would not offer, which points to a search-term or matching-rule gap rather than missing data.
 
 ## 4. Results
 

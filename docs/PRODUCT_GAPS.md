@@ -36,7 +36,7 @@ Updated 2026-10-27. The README design is broader than the working local prototyp
 | Later | Automated delivery and broader optimization | Two-store current-price trips and manually entered checkout quotes now support real-mode comparisons ([walkthrough](MULTISTORE_DELIVERY.md)). Next: authorized merchant checkout/slot APIs, wider retailer coverage and larger route searches. Manual quotes are not API verified; no orders are placed. |
 | Later | Hosted notifications | Background checks plus opt-in SMTP email are implemented ([NOTIFICATIONS.md](NOTIFICATIONS.md)): one digest per check, once per reminder, quiet hours, exponential retry backoff. Delivery needs the local server to be running. Next: a hosted deployment with a managed email provider. |
 | Before public launch | Accounts and operations | Login UI, multi-user isolation tests, deployed model API, request limits, concurrent-update handling, backups and recovery, latency/cost monitoring. Local Codex transport is for trusted local use. |
-| Course alignment | More Jac business rules | Real-store matching, store choice, route choice and visit proposals moved from `planning/visits.py` to `planning/visit_rules.jac` (2026-10-31); Python keeps only provider calls, concurrency and timing. Remaining Python is adapter code (HTTP, SMTP, GTFS parsing, model transport) plus `ai/matching.py` candidate ranking and `planning/comparisons.py` orchestration. |
+| Course alignment | Native Jac application runtime | All 18 remaining Python runtime modules migrated to Jac on 2026-11-14, including matching, multi-store comparisons, settings and external adapters. Python remains in verification tooling and tests; see [migration evidence](JAC_MIGRATION.md). |
 
 ## Evidence and reproduction
 

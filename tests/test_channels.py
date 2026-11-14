@@ -1,4 +1,5 @@
 """Email sender with the network replaced."""
+import jaclang  # Enable imports of the native Jac application modules.
 import unittest
 from unittest import mock
 

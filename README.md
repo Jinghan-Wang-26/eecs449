@@ -16,7 +16,7 @@ CartCompass is a shopping-assistant prototype built around **Jac**, with three c
 
 Scheduled bus journeys are available for Ann Arbor/Ypsilanti through TheRide GTFS, with Geoapify-verified walking connections and no additional transit API key. See [bus setup and limits](docs/TRANSIT.md).
 
-New scheduling, bus routing and purchase-validation rules are implemented in Jac. External adapters and parts of the real-store recommender remain Python. Named accounts have isolated shopping workspaces; see [account setup and limits](docs/USER_ACCOUNTS.md).
+All first-party application runtime code is implemented in Jac, including the UI, accounts, shopping rules, model transport and external adapters. Python remains in independent verification scripts and regression tests; Jac uses Python standard-library APIs for networking, storage and concurrency. Named accounts have isolated shopping workspaces; see [account setup and limits](docs/USER_ACCOUNTS.md).
 
 For a public cloud course demo, see [Deploy to Render](docs/DEPLOY_RENDER.md). The deployment keeps the pinned Jac runtime, uses a model API, and persists accounts and their separate workspaces on a disk.
 
@@ -240,7 +240,7 @@ Updates are triggered by user actions, refreshes when the app opens, and schedul
 | A relevant new product is found | Connection to existing preferences | Place it in the discovery area |
 | An accepted plan's conditions change | Stockout, price increase, or unavailable delivery window | Show the change and alternatives |
 
-In real-store mode, suggestions come from the shopper's own purchases (`interests/live.jac`, `interests/suggest.py`): an item bought on two or more different days is suggested again once its usual gap has passed, and current Kroger promotions on things the shopper has bought or saved are shown as sale cards for two days. They are checked on page load, Check for updates and background checks, at most every six hours unless forced, and nothing is added to the list until the shopper taps Add to list. Discovery operates on the available product catalog or connected sources. Label a product as newly released only when supported by reliable release or listing evidence; otherwise describe it as something the user has not tried.
+In real-store mode, suggestions come from the shopper's own purchases (`interests/live.jac`, `interests/suggest.jac`): an item bought on two or more different days is suggested again once its usual gap has passed, and current Kroger promotions on things the shopper has bought or saved are shown as sale cards for two days. They are checked on page load, Check for updates and background checks, at most every six hours unless forced, and nothing is added to the list until the shopper taps Add to list. Discovery operates on the available product catalog or connected sources. Label a product as newly released only when supported by reliable release or listing evidence; otherwise describe it as something the user has not tried.
 
 Limit discovery recommendations, support quiet hours and snoozing, and deduplicate notifications about the same event. Repeatedly ignored reminders reduce notification frequency. Explicit negative feedback updates preferences. A single purchase does not automatically imply lasting interest.
 
@@ -417,7 +417,7 @@ record_feedback(event):
 
 ## Configuration
 
-Application settings live in `app.toml` and are validated by `app_settings.py`. They are separate from Jac framework settings in `jac.toml` and model credentials in `.env`. Planning, discovery, reminders, and synchronization read these settings when called. Unsupported live mode and automatic purchases are rejected explicitly.
+Application settings live in `app.toml` and are validated by `app_settings.jac`. They are separate from Jac framework settings in `jac.toml` and model credentials in `.env`. Planning, discovery, reminders, and synchronization read these settings when called. Unsupported live mode and automatic purchases are rejected explicitly.
 
 | Setting | Initial Default | Purpose |
 |---|---|---|
@@ -493,7 +493,7 @@ The course project prioritizes Phase 1, with selected Phase 2 features as time p
 
 Sign in or create an account before using the shopping workspace. Each account has separate lists, chat, preferences, plans, and budget history. See [account setup and isolation checks](docs/USER_ACCOUNTS.md).
 
-The app includes a persistent shopping workspace and chat. `main.jac` mounts `ui/chat.cl.jac`. `harness/agent.jac` routes chat through the validated intent parser in `ai/intents.py`; chat saves explicitly requested needs/profile fields, asks for missing planning information, and generates proposals automatically. Feedback and plan acceptance still require confirmation. Structured controls work without an LLM. `server/workflows.jac` implements profile, address, store, product and plan operations, and `server/walkers.jac` exposes the eleven named API walkers.
+The app includes a persistent shopping workspace and chat. `main.jac` mounts `ui/mobile.cl.jac`, which gates `ui/chat.cl.jac` behind the account login. `harness/agent.jac` routes chat through the validated intent parser in `ai/intents.jac`; chat saves explicitly requested needs/profile fields, asks for missing planning information, and generates proposals automatically. Feedback and plan acceptance still require confirmation. Structured controls work without an LLM. `server/workflows.jac` implements profile, address, store, product and plan operations, and `server/walkers.jac` exposes the eleven named API walkers.
 
 Real locations use Geoapify. The default product source is **Open Prices historical store price records**, with dates, currency and proof links. Coverage is incomplete and current price/stock remain unknown. Kroger branch snapshots now feed the same visit workflow with uncached acceptance rechecks and explicit review of changes; production OAuth, retailer queries and a scheduled-bus visit with quote rechecking were verified on 2026-10-27 at a public Ann Arbor address ([evidence](docs/samples/current-prices-verification.json)). See [current prices and credentials](docs/CURRENT_PRICES.md). Real mode also compares up to two physical stores and clearly labeled user-entered delivery checkout quotes, with continuous routes and explicit acceptance review. See [multi-store and delivery walkthrough](docs/MULTISTORE_DELIVERY.md). See [live setup](docs/SETUP_LIVE.md), [API research and real samples](docs/ISSUE6_API_RESEARCH.md), and [issue #8 implementation status](docs/ISSUE8_STATUS.md).
 
@@ -582,4 +582,4 @@ Tell chat what you want to buy and ask for a plan. It saves your stated needs/pr
 
 ### Jac business-rule migration
 
-Missing-information questions and plan summaries (`ai/conversation.jac`), profile/need validation (`integrations/validation.jac`), and package/unit pricing (`pricing.jac`) are implemented directly in Jac. Their previous Python implementations have been removed. External integrations and the real-store ranking module remain Python for now. See the [migration evidence](docs/ISSUE8_STATUS.md#initial-jac-migration-2026-10-23) for test coverage and remaining scope.
+Missing-information questions and plan summaries (`ai/conversation.jac`), profile/need validation (`integrations/validation.jac`), and package/unit pricing (`pricing.jac`) are implemented directly in Jac. Their previous Python implementations have been removed. The remaining 18 runtime modules were migrated on 2026-11-14. See [Jac runtime migration](docs/JAC_MIGRATION.md) for the module inventory, verification and retained Python tooling.

@@ -1,7 +1,7 @@
 """Real-store visit rules: historical evidence matching, bounded store choice,
 route choice and the single-store visit proposal.
 
-`planning/visits.py` keeps only provider calls, concurrency and timing and
+`planning/visits.jac` keeps only provider calls, concurrency and timing and
 passes their results here. Historical records are reference evidence: they
 never become current prices, stock or a budget guarantee.
 """

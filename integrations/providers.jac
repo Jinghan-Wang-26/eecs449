@@ -1,0 +1,704 @@
+"""Geoapify and Kroger adapters. Credentials stay on the server.
+
+Responses are normalized with provenance. Missing prices, inventory, weight,
+transit service and delivery fees remain unknown. No mock fallback is allowed.
+"""
+import base64;
+import copy;
+import hashlib;
+import json;
+import math;
+import os;
+import from pathlib { Path }
+import re;
+import threading;
+import time;
+import urllib.error;
+import urllib.parse;
+import urllib.request;
+import from datetime { datetime, timedelta, timezone }
+import from integrations.http_transport { urlopen }
+class ProviderError(ValueError) {}
+glob ROOT = Path(__file__).resolve().parent.parent;
+glob _CACHE = {};
+glob _LOCK = threading.Lock();
+glob _TOKEN = {'value': '', 'expires': 0, 'identity': ''};
+def credentials() -> any {
+    values = {};
+    path = ROOT / '.env';
+    if path.exists() {
+        for line in path.read_text().splitlines() {
+            line = line.strip();
+            if (not line or line.startswith('#') or ('=' not in line)) {
+                continue;
+            }
+            (key, value) = line.removeprefix('export ').split('=', 1);
+            values[key.strip()] = value.strip().strip('"\'');
+        }
+    }
+    for key in (
+        'KROGER_CLIENT_ID',
+        'KROGER_CLIENT_SECRET',
+        'GEOAPIFY_API_KEY',
+        'LLM_API_KEY',
+        'LLM_BASE_URL',
+        'LLM_MODEL',
+        'LLM_BACKEND',
+        'SMTP_HOST',
+        'SMTP_PORT',
+        'SMTP_USER',
+        'SMTP_PASSWORD',
+        'SMTP_FROM'
+    ) {
+        if (key in os.environ) {
+            values[key] = os.environ[key];
+        }
+    }
+    return values;
+}
+def credential_status() -> any {
+    values = credentials();
+    return {
+        key: bool(values.get(key))
+        for key in (
+            'KROGER_CLIENT_ID',
+            'KROGER_CLIENT_SECRET',
+            'GEOAPIFY_API_KEY',
+            'LLM_API_KEY'
+        )
+    };
+}
+def required(name: any) -> any {
+    value = credentials().get(name, '');
+    if not value {
+        raise ProviderError(
+            f'Missing {name}. Configure it in the local .env and retry.'
+        );
+    }
+    return value;
+}
+def now_iso() -> any {
+    return datetime.now(timezone.utc).isoformat(timespec='seconds');
+}
+def expiry(minutes: any = 30) -> any {
+    return (datetime.now(timezone.utc) + timedelta(minutes=minutes)).isoformat(
+        timespec='seconds'
+    );
+}
+def request_json(
+    url: any,
+    *,
+    params: any = None,
+    headers: any = None,
+    body: any = None,
+    form: any = False,
+    timeout: any = 12
+) -> any {
+    if params {
+        url += '?' + urllib.parse.urlencode(params);
+    }
+    data = None;
+    hdr = {
+        'Accept': 'application/json',
+        'User-Agent': 'CartCompass/0.2 (course shopping prototype)'
+    };
+    if (body is not None) {
+        data = (urllib.parse.urlencode(body) if form else json.dumps(body)).encode();
+        hdr['Content-Type'] = (
+            'application/x-www-form-urlencoded' if form else 'application/json'
+        );
+    }
+    hdr.update((headers or {}));
+    for attempt in range(2) {
+        req = urllib.request.Request(url, data=data, headers=hdr);
+        try {
+            with urlopen(req, timeout=timeout) as response {
+                raw = response.read(2000001);
+                if (len(raw) > 2000000) {
+                    raise ProviderError('Provider response exceeded the size limit.');
+                }
+                return json.loads(raw);
+            }
+        } except urllib.error.HTTPError as err {
+            if (
+                (data is None) and (err.code in (429, 502, 503, 504)) and (attempt == 0)
+            ) {
+                time.sleep(1);
+                continue;
+            }
+            detail = {
+                401: 'credentials rejected',
+                403: 'access not granted',
+                429: 'rate limit reached'
+            }.get(
+                err.code, 'request failed'
+            );
+            raise ProviderError(f'Provider {detail} (HTTP {err.code}).') from None;
+        } except (urllib.error.URLError, TimeoutError, OSError) {
+            raise ProviderError(
+                'Provider unavailable or timed out. Retry later; no live data was replaced with mock data.'
+            ) from None;
+        } except (ValueError, KeyError, TypeError) {
+            raise ProviderError(
+                'Provider returned an invalid JSON response.'
+            ) from None;
+        }
+    }
+}
+def cached(namespace: any, params: any, fetch: any, ttl: any = 300) -> any {
+    identity = hashlib.sha256(
+        json.dumps([namespace, params], sort_keys=True).encode()
+    ).hexdigest();
+    with _LOCK {
+        found = _CACHE.get(identity);
+        if (found and (found[0] > time.monotonic())) {
+            return copy.deepcopy(found[1]);
+        }
+    }
+    value = fetch();
+    with _LOCK {
+        if (len(_CACHE) >= 128) {
+            _CACHE.pop(next(iter(_CACHE)));
+        }
+        _CACHE[identity] = ((time.monotonic() + ttl), copy.deepcopy(value));
+    }
+    return value;
+}
+def coords(lat: any, lon: any) -> any {
+    (lat, lon) = (float(lat), float(lon));
+    if (
+        not math.isfinite(lat)
+        or not math.isfinite(lon)
+        or not ((-90 <= lat <= 90) and (-180 <= lon <= 180))
+    ) {
+        raise ProviderError('Invalid coordinates.');
+    }
+    return (lat, lon);
+}
+def geocode(address: any) -> any {
+    if (not isinstance(address, str) or not (3 <= len(address.strip()) <= 300)) {
+        raise ProviderError('Enter an address or neighborhood (3–300 characters).');
+    }
+    key = required('GEOAPIFY_API_KEY');
+    def fetch() -> any {
+        data = request_json(
+            'https://api.geoapify.com/v1/geocode/search',
+            params={
+                'text': address.strip(),
+                'filter': 'countrycode:us',
+                'format': 'json',
+                'limit': 5,
+                'apiKey': key
+            }
+        );
+        out = [];
+        for p in data.get('results', []) {
+            (lat, lon) = coords(p['lat'], p['lon']);
+            out.append(
+                {
+                    'id': (p.get('place_id') or f'{lat},{lon}'),
+                    'address': p.get('formatted', address),
+                    'lat': lat,
+                    'lon': lon,
+                    'precision': p.get('result_type', 'unknown'),
+                    'confidence': p.get('rank', {}).get('confidence'),
+                    'source': 'geoapify',
+                    'timezone': (p.get('timezone') or {}).get('name', '')
+                }
+            );
+        }
+        return out;
+    }
+    return cached('geocode', [address, key], fetch, 86400);
+}
+def nearby_places(lat: any, lon: any, radius_m: any = 5000) -> any {
+    (lat, lon) = coords(lat, lon);
+    key = required('GEOAPIFY_API_KEY');
+    radius_m = max(500, min(int(radius_m), 20000));
+    def fetch() -> any {
+        data = request_json(
+            'https://api.geoapify.com/v2/places',
+            params={
+                'categories': 'commercial.supermarket',
+                'filter': f'circle:{lon},{lat},{radius_m}',
+                'bias': f'proximity:{lon},{lat}',
+                'limit': 20,
+                'apiKey': key
+            }
+        );
+        return [
+            {
+                'id': f"geoapify:{f['properties']['place_id']}",
+                'name': f['properties'].get('name', 'Supermarket'),
+                'address': f['properties'].get('formatted', ''),
+                'lat': f['properties']['lat'],
+                'lon': f['properties']['lon'],
+                'source': 'geoapify',
+                'product_access': False,
+                ** place_metadata(f['properties']),
+                'osm_id': f['properties'].get('datasource', {}).get('raw', {}).get(
+                    'osm_id'
+                ),
+                'osm_type': f['properties'].get('datasource', {}).get('raw', {}).get(
+                    'osm_type'
+                )
+            } for f in data.get('features', [])
+        ];
+    }
+    return cached('places', [lat, lon, radius_m, key], fetch, 900);
+}
+def place_metadata(properties: any) -> any {
+    raw = (properties.get('datasource') or {}).get('raw') or {};
+    return {
+        'place_id': properties.get('place_id', ''),
+        'opening_hours': (
+            properties.get('opening_hours') or raw.get('opening_hours', '')
+        ),
+        'timezone': (properties.get('timezone') or {}).get('name', ''),
+        'hours_source': 'geoapify/openstreetmap',
+        'hours_retrieved_at': now_iso()
+    };
+}
+"""Enrich selected POIs only; never borrow hours from a nearby/name-only match."""
+def store_details(store: any) -> any {
+    place_id = store.get('place_id');
+    if (not place_id or (store.get('opening_hours') and store.get('timezone'))) {
+        return `dict(store);
+    }
+    key = required('GEOAPIFY_API_KEY');
+    def fetch() -> any {
+        data = request_json(
+            'https://api.geoapify.com/v2/place-details',
+            params={'id': place_id, 'features': 'details', 'apiKey': key}
+        );
+        for feature in data.get('features', []) {
+            properties = feature.get('properties', {});
+            raw = (properties.get('datasource') or {}).get('raw') or {};
+            kinds = {'N': 'NODE', 'W': 'WAY', 'R': 'RELATION'};
+            kind = lambda value: any :
+                kinds.get(str(value).upper(), str(value).upper());
+            same_osm = (
+                (store.get('osm_id') is not None)
+                and (raw.get('osm_id') is not None)
+                and (str(store['osm_id']) == str(raw['osm_id']))
+                and (kind(store.get('osm_type')) in ('NODE', 'WAY', 'RELATION'))
+                and (kind(store.get('osm_type')) == kind(raw.get('osm_type')))
+            );
+            if ((properties.get('place_id') == place_id) or same_osm) {
+                return place_metadata(properties);
+            }
+        }
+        raise ProviderError(
+            'Store details did not identify the selected place. Opening hours remain unverified.'
+        );
+    }
+    metadata = cached('place-details', [place_id, key], fetch, 3600);
+    return {
+        ** store,
+        ** {
+            k: v
+            for (k, v) in metadata.items()
+            if v
+        }
+    };
+}
+def kroger_token() -> any {
+    (client, secret) = (required('KROGER_CLIENT_ID'), required('KROGER_CLIENT_SECRET'));
+    identity = hashlib.sha256((client + ':' + secret).encode()).hexdigest();
+    with _LOCK {
+        if (
+            (_TOKEN['identity'] == identity) and (_TOKEN['expires'] > time.monotonic())
+        ) {
+            return _TOKEN['value'];
+        }
+    }
+    basic = base64.b64encode((client + ':' + secret).encode()).decode();
+    data = request_json(
+        'https://api.kroger.com/v1/connect/oauth2/token',
+        headers={'Authorization': ('Basic ' + basic)},
+        body={'grant_type': 'client_credentials', 'scope': 'product.compact'},
+        form=True
+    );
+    if not isinstance(data.get('access_token'), str) {
+        raise ProviderError('Kroger did not return an access token.');
+    }
+    with _LOCK {
+        _TOKEN.update(
+            value=data['access_token'],
+            identity=identity,
+            expires=(time.monotonic() + max(0, (float(data.get('expires_in', 0)) - 60)))
+        );
+    }
+    return data['access_token'];
+}
+def kroger_get(path: any, params: any) -> any {
+    return request_json(
+        ('https://api.kroger.com/v1/' + path),
+        params=params,
+        headers={'Authorization': ('Bearer ' + kroger_token())}
+    );
+}
+def hours_for(hours: any) -> any {
+    out = {};
+    for (name, day) in hours.items() {
+        if (not isinstance(day, `dict) or day.get('isClosed')) {
+            continue;
+        }
+        (opening, closing) = (day.get('open', ''), day.get('close', ''));
+        if (
+            re.fullmatch('\\d\\d:\\d\\d', opening)
+            and re.fullmatch('\\d\\d:\\d\\d', closing)
+            and (opening < closing)
+        ) {
+            out[name[:3].upper()] = opening + '-' + closing;
+        }
+    }
+    return out;
+}
+def distance_m(a: any, b: any) -> any {
+    (lat1, lon1, lat2, lon2) = map(math.radians, (*a, *b));
+    h = (
+        (math.sin(((lat2 - lat1) / 2)) ** 2) + (
+            math.cos(lat1) * math.cos(lat2) * (math.sin(((lon2 - lon1) / 2)) ** 2)
+        )
+    );
+    return (6371000 * 2 * math.asin(min(1, math.sqrt(h))));
+}
+def nearby_kroger(lat: any, lon: any, radius_m: any = 5000) -> any {
+    (lat, lon) = coords(lat, lon);
+    data = kroger_get(
+        'locations',
+        {
+            'filter.latLong.near': f'{lat},{lon}',
+            'filter.radiusInMiles': max(1, min(50, math.ceil((radius_m / 1609.344)))),
+            'filter.limit': 10
+        }
+    );
+    out = [];
+    for p in data.get('data', []) {
+        (geo, addr) = (p.get('geolocation', {}), p.get('address', {}));
+        if ((geo.get('latitude') is None) or (geo.get('longitude') is None)) {
+            continue;
+        }
+        (slat, slon) = coords(geo['latitude'], geo['longitude']);
+        dist = distance_m((lat, lon), (slat, slon));
+        if (dist > radius_m) {
+            continue;
+        }
+        out.append(
+            {
+                'id': ('kroger:' + p['locationId']),
+                'external_id': p['locationId'],
+                'name': p.get('name', 'Kroger'),
+                'address': ', '.join(
+                    str(addr.get(k, ''))
+                    for k in ('addressLine1', 'city', 'state', 'zipCode')
+                ),
+                'lat': slat,
+                'lon': slon,
+                'hours': hours_for(p.get('hours', {})),
+                'source': 'kroger',
+                'product_access': True,
+                'distance_m': round(dist),
+                'observed_at': now_iso()
+            }
+        );
+    }
+    return sorted(out, key=lambda s: any : s['distance_m']);
+}
+def street_number(address: any) -> any {
+    for part in (address or '').split(',') {
+        `match = re.match('\\s*(\\d+[A-Za-z]?)\\s+\\S', part);
+        if `match {
+            return `match[1].upper();
+        }
+    }
+    return '';
+}
+def merge_stores(places: any, retailer: any) -> any {
+    merged = copy.deepcopy(retailer);
+    for place in places {
+        number = street_number(place['address']);
+        candidates = [
+            s
+            for s in merged
+            if (
+                (distance_m((s['lat'], s['lon']), (place['lat'], place['lon'])) < 100)
+                and number
+                and (street_number(s['address']) == number)
+                and (
+                    ('kroger' in place['name'].lower())
+                    or (s['name'].lower() == place['name'].lower())
+                )
+            )
+        ];
+        if (len(candidates) == 1) {
+            candidates[0]['map_id'] = place['id'];
+        } else {
+            merged.append(place);
+        }
+    }
+    return merged;
+}
+def nearby(lat: any, lon: any, radius_m: any = 5000) -> any {
+    (stores, notices) = ([], []);
+    try {
+        stores = nearby_places(lat, lon, radius_m);
+    } except ProviderError as exc {
+        notices.append(str(exc));
+    }
+    try {
+        stores = merge_stores(stores, nearby_kroger(lat, lon, radius_m));
+    } except ProviderError as exc {
+        notices.append(str(exc));
+    }
+    return {'stores': stores, 'notices': notices};
+}
+def weight_from_size(size: any) -> any {
+    `match = re.fullmatch(
+        '\\s*(\\d+(?:\\.\\d+)?)\\s*(kg|g|lb|lbs|oz)\\s*', (size or ''), re.I
+    );
+    if not `match {
+        return None;
+    }
+    return round(
+        (
+            float(`match[1]) * {
+                'kg': 1,
+                'g': 0.001,
+                'lb': 0.45359237,
+                'lbs': 0.45359237,
+                'oz': 0.028349523125
+            }[`match[2].lower()]
+        ),
+        4
+    );
+}
+def normalize_products(
+    data: any, store_id: any, term: any, observed: any = None
+) -> any {
+    observed = observed or now_iso();
+    expires = (datetime.fromisoformat(observed) + timedelta(minutes=30)).isoformat();
+    out = [];
+    if (not isinstance(data, `dict) or not isinstance(data.get('data', []), `list)) {
+        raise ProviderError('Retailer returned an invalid product response.');
+    }
+    for p in data.get('data', []) {
+        if (not isinstance(p, `dict) or not isinstance(p.get('items', []), `list)) {
+            raise ProviderError('Retailer returned invalid product variants.');
+        }
+        for item in p.get('items', []) {
+            if (
+                not isinstance(item, `dict)
+                or `any(
+                    ((item.get(k) is not None) and not isinstance(item[k], `dict))
+                    for k in ('price', 'inventory', 'fulfillment')
+                )
+            ) {
+                raise ProviderError(
+                    'Retailer returned malformed price or inventory data.'
+                );
+            }
+            price = item.get('price') or {};
+            value = price.get('regular');
+            if (
+                (`type(value) not in (int, float))
+                or not math.isfinite(value)
+                or (value < 0)
+            ) {
+                value = None;
+            }
+            stock = (item.get('inventory') or {}).get('stockLevel', '');
+            stock = {
+                'HIGH': 'IN_STOCK',
+                'LOW': 'LOW',
+                'TEMPORARILY_OUT_OF_STOCK': 'OUT',
+                'OUT_OF_STOCK': 'OUT'
+            }.get(
+                stock, 'UNKNOWN'
+            );
+            sold_by = str(item.get('soldBy', '')).lower();
+            size = str((item.get('size') or ''));
+            product_id = str(p.get('productId', ''));
+            item_id = str(item.get('itemId', ''));
+            if (not product_id or not item_id) {
+                continue;
+            }
+            out.append(
+                {
+                    'key': f'kroger:{product_id}:{item_id}',
+                    'external_id': product_id,
+                    'item_id': item_id,
+                    'name': str((p.get('description') or '')),
+                    'brand': str((p.get('brand') or '')),
+                    'upc': str((p.get('upc') or '')),
+                    'categories': [
+                        c
+                        for c in (p.get('categories') or [])
+                        if isinstance(c, str)
+                    ][:5],
+                    'size_label': size,
+                    'weight_kg': weight_from_size(size),
+                    'store_id': store_id,
+                    'search_term': term,
+                    'price': (value if (sold_by == 'unit') else None),
+                    'reported_price': value,
+                    'sold_by': (sold_by or 'unknown'),
+                    'promotion': price.get('promo'),
+                    'currency': 'USD',
+                    'availability': stock,
+                    'in_store': (
+                        (item.get('fulfillment') or {}).get(
+                            'inStore', (item.get('fulfillment') or {}).get('instore')
+                        ) is True
+                    ),
+                    'source': 'kroger',
+                    'mode': 'live',
+                    'observed_at': observed,
+                    'valid_until': expires
+                }
+            );
+        }
+    }
+    return out;
+}
+def products(store_id: any, term: any, refresh: any = False) -> any {
+    if (not isinstance(store_id, str) or not re.fullmatch('\\d{1,20}', store_id)) {
+        raise ProviderError('Select a supported Kroger location first.');
+    }
+    if (not isinstance(term, str) or not (2 <= len(term.strip()) <= 80)) {
+        raise ProviderError('Enter a product search term (2–80 characters).');
+    }
+    identity = required('KROGER_CLIENT_ID');
+    required('KROGER_CLIENT_SECRET');
+    fetch = lambda() :
+        normalize_products(
+            kroger_get(
+                'products',
+                {
+                    'filter.locationId': store_id,
+                    'filter.term': term,
+                    'filter.fulfillment': 'ais',
+                    'filter.limit': 10
+                }
+            ),
+            store_id,
+            term
+        );
+    if refresh {
+        return fetch();
+    }
+    return cached('products', [store_id, term, identity], fetch, 300);
+}
+"""Uncached exact-product recheck at the same branch; never trust search order."""
+def product_at(store_id: any, product_id: any, term: any) -> any {
+    if (
+        not re.fullmatch('\\d{1,20}', str(store_id))
+        or not re.fullmatch('\\d{1,20}', str(product_id))
+    ) {
+        raise ProviderError('Invalid retailer location or product identifier.');
+    }
+    required('KROGER_CLIENT_ID');
+    required('KROGER_CLIENT_SECRET');
+    data = kroger_get(('products/' + str(product_id)), {'filter.locationId': store_id});
+    product = data.get('data');
+    if not isinstance(product, `dict) {
+        raise ProviderError('Retailer did not return the requested product.');
+    }
+    if (str(product.get('productId')) != str(product_id)) {
+        raise ProviderError(
+            'Retailer returned a different product; quote was not accepted.'
+        );
+    }
+    return normalize_products({'data': [product]}, store_id, term);
+}
+def route(origin: any, destination: any, mode: any) -> any {
+    modes = {'WALK': 'walk', 'BIKE': 'bicycle', 'CAR': 'drive'};
+    if (mode not in modes) {
+        raise ProviderError(
+            f'{mode} route estimates are not available from this adapter. Bus vehicle routing is not public-transit routing.'
+        );
+    }
+    (a, b) = (coords(*origin), coords(*destination));
+    key = required('GEOAPIFY_API_KEY');
+    def fetch() -> any {
+        legs = [];
+        for (start, end) in ((a, b), (b, a)) {
+            data = request_json(
+                'https://api.geoapify.com/v1/routing',
+                params={
+                    'waypoints': f'{start[0]},{start[1]}|{end[0]},{end[1]}',
+                    'mode': modes[mode],
+                    'apiKey': key
+                }
+            );
+            if not data.get('features') {
+                raise ProviderError('No route found for this transport mode.');
+            }
+            legs.append(data['features'][0]['properties']);
+        }
+        outbound = math.ceil((legs[0]['time'] / 60));
+        returning = math.ceil((legs[1]['time'] / 60));
+        minutes = outbound + returning;
+        return {
+            'min': minutes,
+            'walk_min': (
+                math.ceil((max(x['time'] for x in legs) / 60))
+                    if (mode == 'WALK')
+                    else 0
+            ),
+            'outbound_min': outbound,
+            'return_min': returning,
+            'distance_m': sum(x['distance'] for x in legs),
+            'cost': (0 if (mode in ('WALK', 'BIKE')) else None),
+            'transfers': 0,
+            'source': 'geoapify',
+            'observed_at': now_iso(),
+            'valid_until': expiry(60)
+        };
+    }
+    return cached('route', [a, b, mode, key], fetch, 900);
+}
+def reverse_geocode(lat: any, lon: any, accuracy_m: any = 0) -> any {
+    (lat, lon) = coords(lat, lon);
+    accuracy_m = float(accuracy_m);
+    if (not math.isfinite(accuracy_m) or not (0 <= accuracy_m <= 100000)) {
+        raise ProviderError('Invalid location accuracy.');
+    }
+    key = required('GEOAPIFY_API_KEY');
+    data = cached(
+        'reverse',
+        [lat, lon, key],
+        lambda() :
+            request_json(
+                'https://api.geoapify.com/v1/geocode/reverse',
+                params={
+                    'lat': lat,
+                    'lon': lon,
+                    'format': 'json',
+                    'limit': 1,
+                    'apiKey': key
+                }
+            ),
+        900
+    );
+    rows = data.get('results', []);
+    if not rows {
+        raise ProviderError(
+            'No address found for this location. Please type an address instead.'
+        );
+    }
+    row = rows[0];
+    return [
+        {
+            'id': f'gps:{lat:.6f}:{lon:.6f}',
+            'lat': lat,
+            'lon': lon,
+            'address': (row.get('formatted') or f'{lat:.5f}, {lon:.5f}'),
+            'precision': 'device location',
+            'accuracy_m': accuracy_m,
+            'source': 'geoapify',
+            'timezone': (row.get('timezone') or {}).get('name', '')
+        }
+    ];
+}

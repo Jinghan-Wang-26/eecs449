@@ -1,4 +1,5 @@
 """Synthetic historical evidence and route responses; no external calls."""
+import jaclang  # Enable imports of the native Jac application modules.
 import copy
 import unittest
 from unittest.mock import patch

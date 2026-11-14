@@ -1,3 +1,4 @@
+import jaclang  # Enable imports of the native Jac application modules.
 import unittest
 from unittest.mock import patch
 from ai.explanations import explain_plans

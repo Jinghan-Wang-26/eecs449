@@ -99,7 +99,7 @@ That field means the store sells the product, not that it is in stock. Only
   complete cheap baskets. Known costs over budget and known weight over the
   carrying limit block acceptance. Unknown full weight remains visible.
 - Estimated trip totals require all item prices, a tax estimate and a
-  transport cost. Tax comes from the store address (`planning/tax.py`): Michigan
+  transport cost. Tax comes from the store address (`planning/tax.jac`): Michigan
   stores use built-in rules (groceries exempt, non-food goods 6%, decided from the
   item name and Kroger's product category). Other states use the sales-tax rate
   saved in Preferences; without one, tax and the total stay Unknown. Prepared food,

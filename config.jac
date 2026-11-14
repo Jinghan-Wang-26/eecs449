@@ -1,4 +1,4 @@
-"""LLM settings; application settings are validated in app_settings.py."""
+"""LLM settings; application settings are validated in app_settings.jac."""
 
 import os;
 import pathlib;

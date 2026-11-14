@@ -1,3 +1,4 @@
+import jaclang  # Enable imports of the native Jac application modules.
 import unittest
 from interests.suggest import purchase_days, usual_due, sale_categories, best_sale, search_term
 

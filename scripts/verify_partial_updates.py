@@ -1,4 +1,5 @@
 """Opt-in, two-call LLM check for partial shopping updates. Uses synthetic context."""
+import jaclang  # Enable imports of the native Jac application modules.
 import argparse
 import json
 from pathlib import Path

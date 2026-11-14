@@ -1,5 +1,14 @@
 # Issue #8 implementation and verification
 
+## Jac runtime update (2026-11-14)
+
+All first-party runtime modules now use Jac, including the 18 former Python
+modules for settings, matching, real-store comparisons, HTTP/retailer/history
+adapters, GTFS input, SMTP and model transport. The dated notes below retain
+their original migration context; current paths and verification are documented
+in [JAC_MIGRATION.md](JAC_MIGRATION.md). Python is retained for independent
+regression tests and verification scripts, not for application business logic.
+
 ## Current retailer workflow (2026-10-27)
 
 Kroger branch snapshots now connect address search, shopping-list matching, route and
