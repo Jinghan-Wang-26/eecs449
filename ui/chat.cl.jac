@@ -141,17 +141,17 @@ def:pub ChatApp(username: str = "", on_sign_out: any = None, signout_pending: bo
         <AppStyles />
         <header className="topbar">
             <a className="brand" href="#" aria-label="CartCompass home"><span className="brand-icon" aria-hidden="true">↗</span>CartCompass</a>
-            <button type="button" onClick={lambda e: MouseEvent { open_view("budget"); }}>Budget</button>
+            <div className="trip-controls"><button type="button" onClick={lambda e: MouseEvent { open_view("budget"); }}>Budget</button>
             <button type="button" onClick={lambda e: MouseEvent { open_view("profile"); }}>Preferences</button>
-            <button type="button" className="new-trip" disabled={pending} title="Starts a fresh list and conversation. Your address, preferences and purchase history stay saved." onClick={lambda e: MouseEvent { manual = False; new_plan(); }}>+ New trip</button>
+            <button type="button" className="new-trip" disabled={pending} title="Starts a fresh list and conversation. Your address, preferences and purchase history stay saved." onClick={lambda e: MouseEvent { manual = False; new_plan(); }}>+ New trip</button></div>
             {if not onboarding {
                 <div className="pane-switch" role="group" aria-label="Show">
                     <button type="button" aria-pressed={pane == "plan"} onClick={lambda e: MouseEvent { pane = "plan"; plan_updated = False; }}>Plan{if plan_updated { <em>new</em> }}</button>
                     <button type="button" aria-pressed={pane == "assistant"} onClick={lambda e: MouseEvent { pane = "assistant"; unread = 0; }}>Assistant{if unread > 0 { <em>{str(unread)}</em> }}</button>
                 </div>
             }}
-            <span className="account-name" title={username}>{username}</span>
-            <button type="button" disabled={signout_pending} onClick={on_sign_out}>{"Signing out…" if signout_pending else "Sign out"}</button>
+            <div className="account-controls"><span className="account-name" title={username}>{username}</span>
+            <button type="button" disabled={signout_pending} onClick={on_sign_out}>{"Signing out…" if signout_pending else "Sign out"}</button></div>
         </header>
         {if account_notice { <p className="inline-alert" role="alert">{account_notice}</p>; }}
         <main className={"app-columns pane-" + pane + (" onboarding" if onboarding else "") + ("" if ready else " booting")}>
@@ -167,7 +167,7 @@ def:pub ChatApp(username: str = "", on_sign_out: any = None, signout_pending: bo
                         <span className="orb welcome-orb" aria-hidden="true"></span>
                         <h1>What do you need to buy?</h1>
                         <p>Say it in your own words. I'll ask where you're starting from and when you're free, then compare stores, buses and delivery for you.</p>
-                        <form onSubmit={send} className="welcome-composer"><input aria-label="Tell CartCompass what you need" type="text" value={draft} autoFocus={True} onChange={lambda e: ChangeEvent { draft = e.target.value; }} placeholder="Milk, eggs, rice…" /><button className="go" type="submit" disabled={pending or not draft.strip()}>Start ↗</button></form>
+                        <form onSubmit={send} className="welcome-composer"><input aria-label="Tell CartCompass what you need" type="text" value={draft} onChange={lambda e: ChangeEvent { draft = e.target.value; }} placeholder="Milk, eggs, rice…" /><button className="go" type="submit" disabled={pending or not draft.strip()}>Start ↗</button></form>
                         <div className="examples">{[<button key={ex} type="button" onClick={lambda e: MouseEvent { draft = ex; }}>{ex}</button> for ex in examples]}</div>
                         <div className="welcome-links">
                             <button type="button" className="text-button" onClick={lambda e: MouseEvent { start_myself(); }}>I'd rather add items myself</button>

@@ -1,0 +1,2 @@
+# Optional browser verification only; not needed by the deployed server.
+playwright==1.58.0

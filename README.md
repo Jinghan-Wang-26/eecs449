@@ -16,9 +16,11 @@ CartCompass is a shopping-assistant prototype built around **Jac**, with three c
 
 Scheduled bus journeys are available for Ann Arbor/Ypsilanti through TheRide GTFS, with Geoapify-verified walking connections and no additional transit API key. See [bus setup and limits](docs/TRANSIT.md).
 
-New scheduling, bus routing and purchase-validation rules are implemented in Jac. External adapters and parts of the real-store recommender remain Python. This is a local single-user application; a hosted multi-user release needs additional work.
+New scheduling, bus routing and purchase-validation rules are implemented in Jac. External adapters and parts of the real-store recommender remain Python. Named accounts have isolated shopping workspaces; see [account setup and limits](docs/USER_ACCOUNTS.md).
 
 For a public cloud course demo, see [Deploy to Render](docs/DEPLOY_RENDER.md). The deployment keeps the pinned Jac runtime, uses a model API, and persists accounts and their separate workspaces on a disk.
+
+**Mobile app:** install CartCompass on your phone as a PWA with the same account and shopping workspace. See [installation, offline behavior and testing](docs/MOBILE_APP.md). The mobile shell and business interface remain in Jac.
 
 ## Table of Contents
 

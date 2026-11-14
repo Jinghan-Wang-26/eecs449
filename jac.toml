@@ -31,3 +31,14 @@ directory = "tests"
 base_route_app = "app"
 
 [plugins.client]
+
+# Public manifest and icons; the custom worker never caches private API data.
+[plugins.client.app_meta_data]
+title = "CartCompass | Your shopping assistant"
+description = "Plan your shopping around nearby stores, your budget and your schedule."
+viewport = "width=device-width,initial-scale=1,viewport-fit=cover"
+theme_color = "#1d5a3f"
+manifest = "/static/mobile/app.webmanifest"
+icon = "/static/mobile/icon.svg"
+apple_touch_icon = "/static/mobile/apple-touch-icon.png"
+meta_apple_mobile_web_app_title = "CartCompass"

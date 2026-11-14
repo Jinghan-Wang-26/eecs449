@@ -38,3 +38,9 @@ jobs:
         run: python scripts/verify_accounts.py
       - name: Client build
         run: jac build main.jac
+      - name: Mobile browser dependencies
+        run: |
+          python -m pip install -r requirements-browser.txt
+          python -m playwright install --with-deps chromium
+      - name: PWA installation, offline privacy and mobile account flow
+        run: python scripts/verify_mobile.py

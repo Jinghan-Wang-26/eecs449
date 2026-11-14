@@ -29,6 +29,21 @@ small { color:var(--muted); font-size:12px; }
 .num { font-variant-numeric:tabular-nums; }
 .sr-only { position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap; }
 
+/* Installable mobile shell. Only public assets are available offline. */
+.mobile-frame { min-height:100dvh; padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left); }
+.mobile-content { display:block; min-width:0; width:100%; padding:0; margin:0; border:0; }
+.mobile-app-bar { max-width:1480px; margin:0 auto; padding:6px 24px; display:flex; align-items:center; justify-content:space-between; gap:12px; border-bottom:1px solid var(--line); color:var(--muted); font-size:12px; }
+.mobile-app-bar button { padding:5px 12px; font-size:12px; background:transparent; }
+.mobile-install-notice { max-width:1480px; margin:0 auto; padding:8px 24px; font-size:13px; }
+.mobile-offline { position:sticky; top:0; z-index:45; padding:12px 20px; background:var(--amber-bg); color:#6d4004; display:grid; gap:3px; border-bottom:1px solid #e8cba1; }
+.mobile-offline span { font-size:13px; }
+.mobile-install-dialog { width:min(480px, calc(100% - 32px)); max-height:calc(100dvh - 48px); overflow-y:auto; border:1px solid var(--line); border-radius:20px; padding:24px; color:var(--ink); background:var(--paper); }
+.mobile-install-dialog::backdrop { background:rgba(18,38,27,.5); }
+.mobile-install-dialog form { display:flex; justify-content:flex-end; }
+.mobile-install-dialog img { border-radius:14px; margin-bottom:16px; }
+.mobile-install-dialog ol { padding-left:22px; } .mobile-install-dialog li { margin:16px 0; }
+.mobile-help-note { color:var(--muted); font-size:13px; }
+
 /* accounts */
 .account-shell { max-width:1040px; margin:0 auto; padding:28px 24px 60px; }
 .account-brand { display:flex; margin-bottom:48px; }
@@ -50,6 +65,7 @@ small { color:var(--muted); font-size:12px; }
 .brand { display:flex; align-items:center; gap:10px; font-size:19px; font-weight:800; letter-spacing:-.4px; color:var(--green-deep); text-decoration:none; margin-right:auto; }
 .brand-icon { display:grid; place-items:center; background:var(--green); color:#eaf6e4; width:30px; height:30px; border-radius:10px; font-size:17px; }
 .topbar button { font-size:13px; padding:7px 12px; }
+.trip-controls, .account-controls { display:flex; align-items:center; gap:8px; }
 .topbar .new-trip { background:var(--ink); color:#fff; border-color:var(--ink); }
 .pane-switch { display:none; }
 .app-columns { display:grid; grid-template-columns:minmax(0,1.55fr) minmax(340px,1fr); align-items:start; gap:16px; }
@@ -404,6 +420,36 @@ button.text-button { background:transparent; border:0; padding:3px 0; font-size:
   .interest-row { flex-wrap:wrap; }
   .app-footer { flex-direction:column; gap:3px; }
   .toast { right:12px; left:12px; width:auto; }
+}
+@media(max-width:860px) {
+  .mobile-app-bar { padding:6px 12px; }
+  .mobile-install-notice { padding:8px 12px; }
+  button, .topbar button, .pane-switch button, .mobile-app-bar button, button.text-button { min-height:44px; }
+  input, select, textarea, .chat-composer input { font-size:16px; min-height:44px; }
+  input[type=checkbox] { min-height:24px; min-width:24px; }
+  .topbar .brand { flex:1 1 auto; margin-right:0; font-size:16px; }
+  .topbar .account-controls { order:1; margin-left:auto; }
+  .topbar .account-name { max-width:56px; }
+  .topbar .account-controls button { padding:7px 9px; }
+  .topbar .trip-controls { order:2; display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); width:100%; }
+  .trip-controls button { padding:7px 6px; }
+  .topbar .pane-switch { order:3; }
+  .account-switch { flex-wrap:wrap; }
+  .slot-row { grid-template-columns:1fr 1fr; }
+  .chat-composer, .welcome-composer { min-width:0; }
+  .welcome { min-width:0; width:100%; }
+  .assistant-panel { min-height:360px; height:calc(100dvh - 235px); }
+  .composer-wrap { padding-bottom:max(12px, env(safe-area-inset-bottom)); }
+  .stage-nav button { min-width:0; overflow-wrap:anywhere; }
+  .row-actions button { min-width:44px; }
+  .mobile-install-dialog form button { min-width:64px; }
+  .toast { top:max(12px, env(safe-area-inset-top)); }
+}
+@media(display-mode:standalone) {
+  .mobile-app-bar { display:none; }
+}
+@media(display-mode:standalone) and (max-width:860px) {
+  .assistant-panel { height:calc(100dvh - 180px); }
 }
 @media(prefers-reduced-motion:reduce) {
   *, *::before, *::after { scroll-behavior:auto!important; transition:none!important; animation:none!important; }
