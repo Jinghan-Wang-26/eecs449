@@ -17,7 +17,8 @@ glob DEFAULTS = {
     'allow_substitutions': 'ask',
     'auto_purchase': False,
     'material_price_change': 0.5,
-    'background_check_minutes': 30
+    'background_check_minutes': 30,
+    'max_active_needs': 15
 };
 def get_settings(overrides: (dict | None) = None) -> dict {
     config = `dict(DEFAULTS);
@@ -43,7 +44,8 @@ def get_settings(overrides: (dict | None) = None) -> dict {
         'reminder_cooldown_hours': (0, 720),
         'quiet_hours_start': (0, 23),
         'quiet_hours_end': (0, 23),
-        'background_check_minutes': (5, 1440)
+        'background_check_minutes': (5, 1440),
+        'max_active_needs': (1, 30)
     };
     for (name, (low, high)) in bounds.items() {
         value = config[name];

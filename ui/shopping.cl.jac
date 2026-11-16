@@ -7,6 +7,7 @@ import from .budget { BudgetPanel }
 import from .tripbar { TripBar, StageNav }
 import from .setup { TripSetup }
 import from .interests { InterestStrip }
+import from .recipe { RecipeIdeas, RecipeSheet, RecipeToast }
 import from .routeline { RouteStage }
 import from .instore { InStore, TripComplete }
 import from .planview { facts, recommended, money, kg, carried, item_amount, trip_ends, tally, tally_label, window_label, open_plans, accepted_plans, describe_changes, short_address, clock }
@@ -127,6 +128,14 @@ def:pub ShoppingPanel -> JsxElement {
     def toggle_pick(key: str) -> None {
         updated = JSON.parse(JSON.stringify(picked));
         updated[key] = not updated.get(key, False);
+        picked = updated;
+        try { window.localStorage.setItem("cartcompass-picked", JSON.stringify(updated)); } except Exception { notice = "Basket ticks are kept only until this page reloads."; }
+    }
+
+    """Tick or untick every shelf item at once (Shop stage "Check all")."""
+    def pick_all(keys: list, value: bool) -> None {
+        updated = JSON.parse(JSON.stringify(picked));
+        for key in keys { updated[key] = value; }
         picked = updated;
         try { window.localStorage.setItem("cartcompass-picked", JSON.stringify(updated)); } except Exception { notice = "Basket ticks are kept only until this page reloads."; }
     }
@@ -408,6 +417,8 @@ def:pub ShoppingPanel -> JsxElement {
             <div className="toast" role="status"><span><small>New reminder</small>{toast["message"]}</span><span></span>
                 <div className="toast-actions"><button type="button" onClick={lambda e: MouseEvent { toast = {}; show_reminders(); }}>View</button><button type="button" className="ghost" onClick={lambda e: MouseEvent { toast = {}; }}>Dismiss</button></div></div>
         }}
+        {if snapshot.get("recipes", None) { <RecipeSheet recipes={snapshot["recipes"]} busy={busy} operate={operate} /> }}
+        {if snapshot.get("recipes", None) { <RecipeToast recipes={snapshot["recipes"]} busy={busy} operate={operate} /> }}
         <TripBar title={trip["title"]} sub={trip["sub"]} pill={trip["pill"]} tone={trip["tone"]} stats={trip["stats"]} prefs={trip["prefs"]} edit={lambda { edit_preferences(); }} first_use={trip["first"]} compact={view == "" and (stage or "list") == "list"} />
         {if view == "" {
             <StageNav stage={stage or "list"} progress={progress()} go={go} />
@@ -458,6 +469,7 @@ def:pub ShoppingPanel -> JsxElement {
             {if view == "" and (stage or "list") == "list" {
             <div>
                 <div className="list-intro"><div><span className="section-eyebrow">STEP 1 · YOUR ESSENTIALS</span><h3 id="chg-list">Your shopping list</h3><p>Add items here, or let the assistant build your list.</p></div><button type="button" className="text-button" onClick={lambda e: MouseEvent { window.dispatchEvent(new(CustomEvent, "cartcompass-assistant")); }}>Ask assistant ↗</button></div>
+                {if snapshot.get("recipes", None) { <RecipeIdeas recipes={snapshot["recipes"]} busy={busy} operate={operate} /> }}
                 <div className="quick-add" aria-label="Add a shopping item">
                     <form onSubmit={save}>
                         <label>Item <input id="quick-item" aria-label="Item" list="categories" placeholder="e.g. milk, eggs or rice" required value={category} onChange={lambda e: ChangeEvent { category = e.target.value; }} /><datalist id="categories">{[<option key={name} value={name} /> for name in ["milk", "eggs", "rice", "laundry detergent", "paper towels", "yogurt", "dish soap", "tofu", "soy sauce", "coffee"]]}</datalist></label>
@@ -466,7 +478,7 @@ def:pub ShoppingPanel -> JsxElement {
                     </form>
                 </div>
                 {if len(items) == 0 { <div className="list-placeholder"><img src="/static/illustrations/grocery-trip.svg" width="96" height="64" alt="" aria-hidden="true" /><div><strong>A little planning goes a long way.</strong><p>Add your first item above to get started.</p></div></div> }}
-                <div className="shopping-items">{[<div key={item["category"]} className={"interest-row paused" if item["status"] == "PAUSED" else "interest-row"}><div className="item-copy"><span className="item-badge" aria-hidden="true">{str(item.get("qty", 1)) + "×"}</span><div><span className="item-name">{item["category"]}</span><span className="item-meta">{"Not this trip" if item["status"] == "PAUSED" else spec_text(item) or (str(item.get("qty", 1)) + (" package" if item.get("qty", 1) == 1 else " packages"))}</span></div></div><div className="row-actions">
+                <div className="shopping-items">{[<div key={item["category"]} className={"interest-row paused" if item["status"] == "PAUSED" else "interest-row"}><div className="item-copy"><span className="item-thumb" aria-hidden="true"><img src={item.get("image", "") or "/static/illustrations/ingredient.svg"} alt="" loading="lazy" referrerPolicy="no-referrer" onError={lambda e: any { if e.target.dataset.fallback != "1" { e.target.dataset.fallback = "1"; e.target.src = "/static/illustrations/ingredient.svg"; } }} /><b>{str(item.get("qty", 1)) + "×"}</b></span><div><span className="item-name">{item["category"]}</span><span className="item-meta">{"Not this trip" if item["status"] == "PAUSED" else spec_text(item) or (str(item.get("qty", 1)) + (" package" if item.get("qty", 1) == 1 else " packages"))}</span></div>{if snapshot.get("recipes", {}).get("links", {}).get(item["category"], "") != "" { <span className="recipe-tag" title="Added from a recipe">{"For " + snapshot["recipes"]["links"][item["category"]]}</span> }}</div><div className="row-actions">
                     <button type="button" disabled={busy} title={"Put it back on this trip" if item["status"] == "PAUSED" else "Keep it saved but leave it out of this trip"} onClick={lambda e: MouseEvent { operate("interest_status", {"category": item["category"], "status": "ACTIVE" if item["status"] == "PAUSED" else "PAUSED"}); }}>{"Add back" if item["status"] == "PAUSED" else "Not this trip"}</button>
                     <button type="button" disabled={busy} onClick={lambda e: MouseEvent { operate("feedback", {"id": crypto.randomUUID(), "type": "feedback", "target": item["category"], "reason": "PURCHASED"}); }}>Already have it</button>
                 </div></div> for item in items]}</div>
@@ -502,7 +514,7 @@ def:pub ShoppingPanel -> JsxElement {
                     {if len(accepted) > 0 {
                         <div>
                             {if recorded.get("plan", None) == accepted[0]["key"] { <TripComplete summary={recorded} budget={snapshot.get("budget", None)} plan={accepted[0]} busy={busy} operate={operate} open_budget={lambda { view = "budget"; }} /> }}
-                            <InStore plan={accepted[0]} picked={picked} toggle={toggle_pick} busy={busy} operate={operate} finished={finished} />
+                            <InStore plan={accepted[0]} picked={picked} toggle={toggle_pick} pick_all={pick_all} busy={busy} operate={operate} finished={finished} />
                         </div>
                     } elif recorded.get("store", None) {
                         <TripComplete summary={recorded} budget={snapshot.get("budget", None)} plan={find_plan(recorded["plan"])} busy={busy} operate={operate} open_budget={lambda { view = "budget"; }} />

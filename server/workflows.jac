@@ -39,8 +39,9 @@ def invalidate_plans(p: UserProfile, message: str) -> None {
 def save_need(p: UserProfile, data: dict) -> any {
     spec = need_spec(data);
     found = [n for n in items_of(p) if n.kind != InterestKind.DISCOVER and n.product_spec.get("type") == spec["type"]];
-    if not found and len([n for n in items_of(p) if n.plannable()]) >= 6 {
-        raise ValueError("Use at most six active shopping needs in this prototype.");
+    limit = get_settings()["max_active_needs"];
+    if not found and len([n for n in items_of(p) if n.plannable()]) >= limit {
+        raise ValueError(f"Your list holds at most {limit} items. Remove or pause one first.");
     }
     item = found[0] if found else add_need(p, spec);
     if found {
@@ -173,7 +174,7 @@ def refresh_live(p: UserProfile) -> list {
     notices = [];
     batch = [];
     stores = [s for s in state.nearby_stores if s.get("product_access", False) and s.get("source") == "kroger"][:3];
-    needs = [n for n in items_of(p) if n.status == InterestStatus.ACTIVE and n.kind != InterestKind.DISCOVER][:6];
+    needs = [n for n in items_of(p) if n.status == InterestStatus.ACTIVE and n.kind != InterestKind.DISCOVER][:get_settings()["max_active_needs"]];
     for s in stores {
         for n in needs {
             try { fetch_products(p, s["id"], n.product_spec["type"], batch); }

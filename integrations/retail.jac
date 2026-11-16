@@ -1,16 +1,17 @@
 """Bounded retailer lookups. Matching and acceptance decisions live in Jac."""
 import from integrations.providers { products, product_at, ProviderError }
-glob MAX_NEEDS = 8;
+import from app_settings { get_settings }
 def quotes_for(
     store: any, needs: any, previous: any = None, refresh: any = False
 ) -> any {
     (rows, errors) = ({}, {});
     previous = previous or {};
+    limit = get_settings()['max_active_needs'];
     for (index, need) in enumerate(needs) {
         category = need['type'];
         rows[category] = [];
-        if (index >= MAX_NEEDS) {
-            errors[category] = 'Lookup limit reached (8 needs per store). Split the shopping list.';
+        if (index >= limit) {
+            errors[category] = f'Lookup limit reached ({limit} needs per store). Split the shopping list.';
             continue;
         }
         try {
@@ -40,5 +41,5 @@ def quotes_for(
             errors[category] = str(error);
         }
     }
-    return {'rows': rows, 'errors': errors, 'limit': MAX_NEEDS};
+    return {'rows': rows, 'errors': errors, 'limit': limit};
 }

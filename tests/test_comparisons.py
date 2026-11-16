@@ -125,6 +125,19 @@ class ComparisonTests(unittest.TestCase):
         p=compose(best,None,stores(),route(),ctx(),NOW)
         self.assertEqual(p['estimated_total'],5);self.assertTrue(p['accept_allowed']);self.assertEqual(p['known_net_weight_kg'],2)
 
+    def test_long_lists_compare_every_store_set_in_linear_time(self):
+        # 25 needs at 3 stores used to exceed the 4,096-assignment cap, fixing the
+        # first needs to the first store. Each store set now gets its cheapest basket.
+        prices={'s1':lambda i:3.0,'s2':lambda i:1.0 if i%2 else 5.0,'s3':lambda i:1.0 if i%2==0 else 5.0}
+        plans=[{'kind':'CURRENT_STORE_VISIT','store':{'id':sid},'items':[{'category':f'n{i}','quote':{'price':f(i),'availability':'IN_STOCK'}} for i in range(25)]} for sid,f in prices.items()]
+        choices=allocations(plans,{'needs':[{'type':f'n{i}','qty':1} for i in range(25)]})
+        self.assertEqual(len(choices),6)
+        best=min(choices,key=lambda rows:sum(r['quote']['price'] for r in rows))
+        self.assertEqual(sorted({r['store']['id'] for r in best}),['s2','s3'])
+        self.assertEqual(sum(r['quote']['price'] for r in best),25.0)
+        self.assertTrue(all(len({r['store']['id'] for r in rows})<=2 for rows in choices))
+        self.assertEqual(allocations(plans,{'needs':[]}),[[]])
+
     def test_accumulated_weight_and_budget_block(self):
         c=ctx();c['profile']['carry_limit_kg']=1.5
         picked=[item('rice',stores()[0],2),item('milk',stores()[1],3)]

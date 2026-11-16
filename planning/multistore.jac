@@ -3,7 +3,7 @@ import copy;
 import hashlib;
 import json;
 import uuid;
-import from itertools { product }
+import from itertools { combinations }
 import from app_settings { instant }
 import from planning.retail { money, fresh_quote }
 import from planning.delivery { delivery_issues }
@@ -27,10 +27,27 @@ def allocations(plans: list, context: dict, delivery: any = None) -> list {
         if not rows { return []; }
         choices.append(rows);
     }
+    if not choices { return [[]]; }
+    # At most two stores per trip. Route and time depend only on which stores are
+    # visited, so for each store set the cheapest pick per need is the best basket.
+    # This stays linear in the list size, unlike enumerating every assignment.
+    store_ids = [];
+    for rows in choices {
+        for row in rows {
+            if row['store']['id'] not in store_ids { store_ids.append(row['store']['id']); }
+        }
+    }
     results = [];
-    for picks in product(*choices) {
-        if len({item['store']['id'] for item in picks}) <= 2 { results.append(list(picks)); }
-        if len(results) >= 4096 { break; }
+    for size in [1, 2] {
+        for group in combinations(store_ids, size) {
+            picks = [];
+            for rows in choices {
+                allowed = [row for row in rows if row['store']['id'] in group];
+                if not allowed { break; }
+                picks.append(min(allowed, key=lambda row: dict: (row['quote']['price'], group.index(row['store']['id']))));
+            }
+            if len(picks) == len(choices) and len({item['store']['id'] for item in picks}) == size { results.append(picks); }
+        }
     }
     return results;
 }

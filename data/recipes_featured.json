@@ -1,0 +1,61 @@
+{
+ "note": "Fallback dish ideas from TheMealDB (https://www.themealdb.com/) for an empty list or when the API is unavailable.",
+ "dishes": [
+  {
+   "id": "52820",
+   "name": "Katsu Chicken curry",
+   "category": "Chicken",
+   "image": "https://www.themealdb.com/images/media/meals/vwrpps1503068729.jpg/medium",
+   "thumb": "https://www.themealdb.com/images/media/meals/vwrpps1503068729.jpg/small"
+  },
+  {
+   "id": "52963",
+   "name": "Shakshuka",
+   "category": "Vegetarian",
+   "image": "https://www.themealdb.com/images/media/meals/g373701551450225.jpg/medium",
+   "thumb": "https://www.themealdb.com/images/media/meals/g373701551450225.jpg/small"
+  },
+  {
+   "id": "52956",
+   "name": "Chicken Congee",
+   "category": "Chicken",
+   "image": "https://www.themealdb.com/images/media/meals/1529446352.jpg/medium",
+   "thumb": "https://www.themealdb.com/images/media/meals/1529446352.jpg/small"
+  },
+  {
+   "id": "52770",
+   "name": "Spaghetti Bolognese",
+   "category": "Beef",
+   "image": "https://www.themealdb.com/images/media/meals/sutysw1468247559.jpg/medium",
+   "thumb": "https://www.themealdb.com/images/media/meals/sutysw1468247559.jpg/small"
+  },
+  {
+   "id": "52772",
+   "name": "Teriyaki Chicken Casserole",
+   "category": "Chicken",
+   "image": "https://www.themealdb.com/images/media/meals/wvpsxx1468256321.jpg/medium",
+   "thumb": "https://www.themealdb.com/images/media/meals/wvpsxx1468256321.jpg/small"
+  },
+  {
+   "id": "52955",
+   "name": "Egg Drop Soup",
+   "category": "Vegetarian",
+   "image": "https://www.themealdb.com/images/media/meals/1529446137.jpg/medium",
+   "thumb": "https://www.themealdb.com/images/media/meals/1529446137.jpg/small"
+  },
+  {
+   "id": "52854",
+   "name": "Pancakes",
+   "category": "Dessert",
+   "image": "https://www.themealdb.com/images/media/meals/rwuyqx1511383174.jpg/medium",
+   "thumb": "https://www.themealdb.com/images/media/meals/rwuyqx1511383174.jpg/small"
+  },
+  {
+   "id": "52818",
+   "name": "Chicken Fajita Mac and Cheese",
+   "category": "Chicken",
+   "image": "https://www.themealdb.com/images/media/meals/qrqywr1503066605.jpg/medium",
+   "thumb": "https://www.themealdb.com/images/media/meals/qrqywr1503066605.jpg/small"
+  }
+ ]
+}

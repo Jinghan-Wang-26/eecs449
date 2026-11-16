@@ -2,7 +2,7 @@
 nothing reaches the budget until the shopper records what they actually paid."""
 import from .planview { money, kg, item_amount, delivered_items, carried, tally, tally_label }
 
-def:pub InStore(plan: dict, picked: dict, toggle: any, busy: bool, operate: any, finished: any) -> JsxElement {
+def:pub InStore(plan: dict, picked: dict, toggle: any, pick_all: any, busy: bool, operate: any, finished: any) -> JsxElement {
     has recording: bool = False, rows: dict = {}, saving: bool = False, problem: str = "";
     weights = {};
     for row in carried(plan) { weights[row["name"]] = row["kg"]; }
@@ -133,7 +133,7 @@ def:pub InStore(plan: dict, picked: dict, toggle: any, busy: bool, operate: any,
     }
 
     return <section aria-label="Shopping list for this visit">
-        <div className="stage-head"><h3>{"At " + plan["store"]["name"]}</h3><small>{str(picked_count) + " of " + str(len(shelf)) + " in your basket"}</small></div>
+        <div className="stage-head"><h3>{"At " + plan["store"]["name"]}</h3><span className="basket-count"><small>{str(picked_count) + " of " + str(len(shelf)) + " in your basket"}</small>{if len(shelf) > 1 { <button type="button" className="text-button check-all" aria-pressed={picked_count == len(shelf)} onClick={lambda e: MouseEvent { pick_all([plan["key"] + "|" + item["category"] for item in shelf], picked_count < len(shelf)); }}>{"Uncheck all" if picked_count == len(shelf) else "Check all"}</button> }}</span></div>
         {if len(shelf) > 0 {
             <div className="store-list">{[<div key={item["category"]} className={"store-item" + (" picked" if is_picked(item) else "")}>
                 <button type="button" className="pick" aria-pressed={is_picked(item)} aria-label={("Put back " if is_picked(item) else "Put in basket: ") + item["category"]} onClick={lambda e: MouseEvent { toggle(plan["key"] + "|" + item["category"]); }}>{"✓" if is_picked(item) else ""}</button>

@@ -22,6 +22,8 @@ For a public cloud course demo, see [Deploy to Render](docs/DEPLOY_RENDER.md). T
 
 **Mobile app:** install CartCompass on your phone as a PWA with the same account and shopping workspace. See [installation, offline behavior and testing](docs/MOBILE_APP.md). The mobile shell and business interface remain in Jac.
 
+**Dish ideas:** the List step suggests dishes with photos based on what is already on your list. Open a recipe, choose servings, and add only the ingredients you still need, with Undo. Recipes and photos come from TheMealDB. See [dish ideas and recipe ingredients](docs/RECIPES.md).
+
 ## Table of Contents
 
 - [Overview and Design Principles](#overview-and-design-principles)
