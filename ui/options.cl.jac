@@ -23,7 +23,7 @@ def:pub Metrics(row: dict, carry_limit: any) -> JsxElement {
             <div className={"unknown" if row["total"] is None else ""}><small>Estimated total</small><strong id="chg-total">{money(row["total"])}</strong></div>
         }}
         <div className={"unknown" if row["minutes"] is None else ""}><small>Active time</small><strong>{duration(row["minutes"])}</strong></div>
-        <div className={"bad" if over else ("unknown" if row["weight"] is None or row.get("weight_missing", 0) > 0 else "ok")}><small>{"Over your " + kg(carry_limit) + " limit" if over else ("You carry at least" if row["weight"] is not None and row.get("weight_missing", 0) > 0 else "You carry")}</small><strong>{kg(row["weight"])}</strong></div>
+        <div className={"bad" if over else ("unknown" if row["weight"] is None or row.get("weight_missing", 0) > 0 else "ok")}><small>{"Over your " + kg(carry_limit) + " limit" if over else ("You carry at least" if row["weight"] is not None and row.get("weight_missing", 0) > 0 else ("You carry about" if row.get("weight_estimated", False) else "You carry"))}</small><strong>{kg(row["weight"])}</strong></div>
     </div>;
 }
 

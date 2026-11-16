@@ -110,7 +110,7 @@ def:pub plan_weight(plan: dict) -> any {
 def:pub facts(plan: dict) -> dict {
     eligible = plan.get("accept_allowed", False) and plan["status"] == "PROPOSED";
     return {"key": plan["key"], "title": plan_title(plan), "total": plan_total(plan), "minutes": plan_minutes(plan),
-        "weight": plan_weight(plan), "weight_missing": weight_tally(plan)["missing"], "items": plan_items_total(plan), "items_taxed": plan.get("tax_estimate", None) is not None, "labels": plan.get("comparison_labels", []), "eligible": eligible, "status": plan["status"],
+        "weight": plan_weight(plan), "weight_missing": weight_tally(plan)["missing"], "weight_estimated": len([r for r in carried(plan) if r["estimated"]]) > 0, "items": plan_items_total(plan), "items_taxed": plan.get("tax_estimate", None) is not None, "labels": plan.get("comparison_labels", []), "eligible": eligible, "status": plan["status"],
         "blockers": plan.get("blockers", []), "plan": plan};
 }
 
@@ -236,8 +236,9 @@ def:pub carried(plan: dict) -> list {
     for item in plan.get("items", []) {
         if item.get("fulfillment", None) == "DELIVERY" { continue; }
         weight = (item.get("quote", None) or {}).get("weight_kg", None);
+        estimated = weight is not None and (item.get("quote", None) or {}).get("weight_estimated", False);
         if weight is None { weight = (item.get("evidence", None) or {}).get("weight_kg", None); }
-        out.append({"name": item["category"], "kg": None if weight is None else weight * item["qty"], "item": item});
+        out.append({"name": item["category"], "kg": None if weight is None else weight * item["qty"], "estimated": estimated, "item": item});
     }
     return out;
 }

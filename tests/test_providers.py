@@ -1,3 +1,4 @@
+import copy
 """Offline contract tests: all response objects here are SYNTHETIC, not live evidence."""
 import io
 import json
@@ -25,7 +26,9 @@ class ProviderTests(unittest.TestCase):
         self.assertEqual(a['store_id'],'01400999')
         self.assertAlmostEqual(a['weight_kg'],.9072)
         self.assertEqual((a['price'],a['availability'],a['source'],a['mode']),(3.5,'LOW','kroger','live'))
-        self.assertIsNone(b['price']); self.assertIsNone(b['weight_kg'])
+        self.assertIsNone(b['price'])
+        # A volume label gives an estimated weight (about 1 kg per litre), marked as such.
+        self.assertEqual(b['weight_kg'],3.785);self.assertTrue(b['weight_estimated']);self.assertFalse(a['weight_estimated'])
         self.assertEqual(b['availability'],'UNKNOWN')
         self.assertEqual(a['valid_until'],'2026-10-12T10:30:00+00:00')
 
@@ -51,6 +54,18 @@ class ProviderTests(unittest.TestCase):
             result[0]['price']=999
             self.assertEqual(p.products('01400999','rice')[0]['price'],3.5)
             self.assertEqual(get.call_count,1)
+
+    def test_weight_from_mass_volume_egg_counts_and_combined_labels(self):
+        cases={('1 gal','Kroger 2% Milk'):(3.785,True),('1/2 gal','Milk'):(1.8925,True),('64 fl oz','Orange Juice'):(1.8944,True),
+               ('12 ct','Large Eggs'):(0.72,True),('18 ct / 36 oz','Brown Eggs'):(1.0206,False),('5 lb','Rice'):(2.268,False),
+               ('1.75 L','Juice'):(1.75,True),('6 rolls','Paper Towels'):(None,False),('12 ct','Granola Bars'):(None,False),('','Milk'):(None,False)}
+        for (size,name),(kg,estimated) in cases.items():
+            self.assertEqual(p.weight_basis(size,name),{'kg':kg,'estimated':estimated},size)
+        # Historical records keep using stated mass only.
+        self.assertIsNone(p.weight_from_size('1 gal'));self.assertEqual(p.weight_from_size('8 oz'),0.2268)
+        raw=copy.deepcopy(RAW);raw['data'][0]['description']='Kroger 2% Milk';raw['data'][0]['items'][0]['size']='1 gal'
+        row=p.normalize_products(raw,'1','milk')[0]
+        self.assertEqual(row['weight_kg'],3.785);self.assertTrue(row['weight_estimated'])
 
     def test_token_expiry_uses_wall_clock_and_401_refreshes_once(self):
         keys=lambda key:'secret' if key.endswith('SECRET') else 'id'
