@@ -151,7 +151,7 @@ def cached(namespace: any, params: any, fetch: any, ttl: any = 300) -> any {
     ).hexdigest();
     with _LOCK {
         found = _CACHE.get(identity);
-        if (found and (found[0] > time.monotonic())) {
+        if (found and (found[0] > time.time())) {
             return copy.deepcopy(found[1]);
         }
     }
@@ -160,7 +160,7 @@ def cached(namespace: any, params: any, fetch: any, ttl: any = 300) -> any {
         if (len(_CACHE) >= 128) {
             _CACHE.pop(next(iter(_CACHE)));
         }
-        _CACHE[identity] = ((time.monotonic() + ttl), copy.deepcopy(value));
+        _CACHE[identity] = ((time.time() + ttl), copy.deepcopy(value));
     }
     return value;
 }
@@ -309,7 +309,7 @@ def kroger_token() -> any {
     identity = hashlib.sha256((client + ':' + secret).encode()).hexdigest();
     with _LOCK {
         if (
-            (_TOKEN['identity'] == identity) and (_TOKEN['expires'] > time.monotonic())
+            (_TOKEN['identity'] == identity) and (_TOKEN['expires'] > time.time())
         ) {
             return _TOKEN['value'];
         }
@@ -328,17 +328,30 @@ def kroger_token() -> any {
         _TOKEN.update(
             value=data['access_token'],
             identity=identity,
-            expires=(time.monotonic() + max(0, (float(data.get('expires_in', 0)) - 60)))
+            # Wall-clock expiry: the monotonic clock pauses while a laptop sleeps, which
+            # kept an expired token in use after wake-up and made Kroger return 401.
+            expires=(time.time() + max(0, (float(data.get('expires_in', 0)) - 60)))
         );
     }
     return data['access_token'];
 }
 def kroger_get(path: any, params: any) -> any {
-    return request_json(
-        ('https://api.kroger.com/v1/' + path),
-        params=params,
-        headers={'Authorization': ('Bearer ' + kroger_token())}
-    );
+    for attempt in range(2) {
+        try {
+            return request_json(
+                ('https://api.kroger.com/v1/' + path),
+                params=params,
+                headers={'Authorization': ('Bearer ' + kroger_token())}
+            );
+        } except ProviderError as error {
+            # A revoked or expired bearer token: drop it and ask for a new one once.
+            if attempt == 0 and '(HTTP 401)' in str(error) {
+                with _LOCK { _TOKEN.update(value='', expires=0); }
+                continue;
+            }
+            raise error;
+        }
+    }
 }
 def hours_for(hours: any) -> any {
     out = {};

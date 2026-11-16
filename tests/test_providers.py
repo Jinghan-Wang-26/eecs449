@@ -52,6 +52,31 @@ class ProviderTests(unittest.TestCase):
             self.assertEqual(p.products('01400999','rice')[0]['price'],3.5)
             self.assertEqual(get.call_count,1)
 
+    def test_token_expiry_uses_wall_clock_and_401_refreshes_once(self):
+        keys=lambda key:'secret' if key.endswith('SECRET') else 'id'
+        token={'access_token':'fresh','expires_in':1800}
+        # A token whose wall-clock expiry has passed is replaced, even if the process slept.
+        with patch.object(p,'required',side_effect=keys),patch.object(p,'request_json',return_value=token):
+            p.kroger_token()
+            p._TOKEN.update(expires=p.time.time()-1)
+            with patch.object(p,'request_json',return_value={'access_token':'renewed','expires_in':1800}) as request:
+                self.assertEqual(p.kroger_token(),'renewed');self.assertEqual(request.call_count,1)
+        # 401 on an API call drops the cached token, fetches a new one and retries once.
+        p._TOKEN.update(value='stale',expires=p.time.time()+600,identity=p.hashlib.sha256(b'id:secret').hexdigest())
+        calls=[p.ProviderError('Provider credentials rejected (HTTP 401).'),token,{'data':[]}]
+        def fake(url,**kw):
+            value=calls.pop(0)
+            if isinstance(value,Exception):raise value
+            return value
+        with patch.object(p,'required',side_effect=keys),patch.object(p,'request_json',side_effect=fake) as request:
+            self.assertEqual(p.kroger_get('locations',{}),{'data':[]})
+            self.assertEqual(request.call_count,3)
+            self.assertEqual(request.call_args.kwargs['headers']['Authorization'],'Bearer fresh')
+        # A second 401 after refreshing is reported, not retried forever.
+        p._TOKEN.update(value='',expires=0)
+        with patch.object(p,'required',side_effect=keys),patch.object(p,'request_json',side_effect=lambda url,**kw:token if 'oauth2' in url else (_ for _ in ()).throw(p.ProviderError('Provider credentials rejected (HTTP 401).'))):
+            with self.assertRaisesRegex(p.ProviderError,'401'):p.kroger_get('locations',{})
+
     def test_oauth_cached_and_scope(self):
         with patch.object(p,'required',side_effect=lambda key:'secret' if key.endswith('SECRET') else 'id'),patch.object(p,'request_json',return_value={'access_token':'token','expires_in':1800}) as request:
             self.assertEqual(p.kroger_token(),'token');self.assertEqual(p.kroger_token(),'token')
