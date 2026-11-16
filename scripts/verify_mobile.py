@@ -40,12 +40,22 @@ def main():
                 # Installation is disabled in incognito contexts. Use an isolated,
                 # temporary regular profile for real eligibility checks.
                 context = p.chromium.launch_persistent_context(str(work / 'browser-profile'), **launch,
-                    viewport={'width': 390, 'height': 844}, is_mobile=True, has_touch=True, device_scale_factor=1)
+                    locale='zh-CN', viewport={'width': 390, 'height': 844}, is_mobile=True, has_touch=True, device_scale_factor=1)
                 page = context.new_page()
                 errors = []
                 page.on('pageerror', lambda error: errors.append(str(error)))
                 page.goto(url)
                 expect(page.get_by_role('heading', name='Welcome to CartCompass')).to_be_visible()
+                assert page.evaluate('navigator.language') == 'zh-CN'
+                expect(page.locator('html')).to_have_attribute('lang', 'en')
+                expect(page.locator('html')).to_have_attribute('translate', 'no')
+                expect(page.locator('meta[name="google"]')).to_have_attribute('content', 'notranslate')
+                page.get_by_role('button', name='Sign in', exact=True).click()
+                assert page.get_by_label('Username', exact=True).evaluate('(el) => el.validationMessage') == 'Please fill out this field.'
+                page.get_by_label('Username', exact=True).fill('valid-user')
+                assert page.get_by_label('Username', exact=True).evaluate('(el) => el.validationMessage') == ''
+                page.get_by_label('Username', exact=True).fill('')
+                print('PASS English page and required-field messages with zh-CN browser locale', flush=True)
                 page.evaluate('navigator.serviceWorker.ready')
                 page.wait_for_function('navigator.serviceWorker.controller !== null')
                 assert page.evaluate('navigator.serviceWorker.controller.scriptURL') == url + '/cartcompass-sw.js'
@@ -87,12 +97,25 @@ def main():
                     expect(page.locator('.account-name')).to_have_text(name, timeout=30000)
 
                 signup('mobile-alice')
+                expect(page.locator('.welcome-art')).to_be_visible()
+                page.wait_for_function("document.querySelector('.welcome-art')?.naturalWidth > 0")
+                page.screenshot(path='/tmp/cartcompass-ui/welcome-390.png', full_page=True, animations='disabled')
                 # Guided setup must work without a model or retailer credential.
                 page.get_by_role('button', name="I'd rather add items myself", exact=True).click()
                 expect(page.get_by_label('Item', exact=True)).to_be_visible()
                 expect(page.get_by_role('button', name='Add items to continue →')).to_be_disabled()
+                expect(page.locator('.list-placeholder img')).to_be_visible()
+                page.screenshot(path='/tmp/cartcompass-ui/empty-list-390.png', full_page=True, animations='disabled')
                 page.get_by_label('Item', exact=True).fill('milk')
+                page.get_by_label('Packages', exact=True).fill('0')
+                page.get_by_role('button', name='Add to list', exact=True).click()
+                assert page.get_by_label('Packages', exact=True).evaluate('(el) => el.validationMessage') == 'Please enter a value greater than or equal to 1.'
+                expect(page.locator('.shopping-items .item-name')).to_have_count(0)
+                page.get_by_label('Packages', exact=True).fill('1.5')
+                page.get_by_role('button', name='Add to list', exact=True).click()
+                assert page.get_by_label('Packages', exact=True).evaluate('(el) => el.validationMessage') == 'Please enter a value in increments of 1.'
                 page.get_by_label('Packages', exact=True).fill('2')
+                assert page.get_by_label('Packages', exact=True).evaluate('(el) => el.validationMessage') == ''
                 page.get_by_role('button', name='Add to list', exact=True).click()
                 expect(page.locator('.shopping-items .item-name')).to_have_text('milk')
                 expect(page.locator('.shopping-panel')).to_be_visible()
@@ -175,6 +198,18 @@ def main():
                 page.get_by_role('button', name='Assistant', exact=True).click()
                 print('PASS phone sign-up, shopping list, conversation and Plan/Assistant navigation', flush=True)
 
+                # A localized browser error must not become user-facing application text.
+                page.evaluate("""() => {
+                    window.__originalFetch = window.fetch;
+                    window.fetch = (...args) => String(args[0]).includes('/walker/SendMessage')
+                        ? Promise.reject(new TypeError('\\u7f51\\u7edc\\u9519\\u8bef')) : window.__originalFetch(...args);
+                }""")
+                page.get_by_label('Message your shopping assistant').fill('Please help with this trip')
+                page.get_by_role('button', name='Send', exact=False).click()
+                expect(page.get_by_text('The chat request failed. Check your connection and try again.', exact=True)).to_be_visible()
+                page.evaluate('window.fetch = window.__originalFetch; delete window.__originalFetch')
+                print('PASS English dynamic quantity validation, recovery and localized network-error handling', flush=True)
+
                 # Inspect actual Cache Storage after private responses have flowed through it.
                 cache_data = page.evaluate("""async () => {
                     const result = [];
@@ -205,6 +240,7 @@ def main():
                 assert result == 'network-required'
                 page.reload()
                 expect(page.get_by_role('heading', name='You are offline')).to_be_visible()
+                expect(page.locator('html')).to_have_attribute('translate', 'no')
                 assert 'Alice private' not in page.content() and 'mobile-alice' not in page.content()
                 page.screenshot(path='/tmp/cartcompass-pwa-offline.png', full_page=True, animations='disabled')
                 print('PASS private data absent from caches, offline actions disabled, public fallback on relaunch', flush=True)
@@ -229,6 +265,8 @@ def main():
                 # Chromium appinstalled is browser-owned; simulate only the UI event here.
                 page.evaluate("window.dispatchEvent(new Event('appinstalled'))")
                 expect(page.get_by_role('button', name='Install app', exact=True)).not_to_be_visible()
+                from verify_plan_layout import verify_plan_layout
+                verify_plan_layout(page, context, url)
                 assert not errors, errors
                 print('PASS installed-state UI and no browser JavaScript errors', flush=True)
                 context.close()

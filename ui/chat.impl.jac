@@ -52,8 +52,8 @@ impl ChatApp.send(e: FormEvent) -> None {
         if reported and len(reported) > 0 {
             answer = str(reported[0]);
         }
-    } except Exception as err {
-        answer = "The chat request failed. " + str(err);
+    } except Exception {
+        answer = "The chat request failed. Check your connection and try again.";
     }
     messages = prior + [
         {"role": "user", "content": text},

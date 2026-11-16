@@ -185,6 +185,7 @@ def geocode(address: any) -> any {
             'https://api.geoapify.com/v1/geocode/search',
             params={
                 'text': address.strip(),
+                'lang': 'en',
                 'filter': 'countrycode:us',
                 'format': 'json',
                 'limit': 5,
@@ -209,7 +210,7 @@ def geocode(address: any) -> any {
         }
         return out;
     }
-    return cached('geocode', [address, key], fetch, 86400);
+    return cached('geocode', [address, key, 'en'], fetch, 86400);
 }
 def nearby_places(lat: any, lon: any, radius_m: any = 5000) -> any {
     (lat, lon) = coords(lat, lon);
@@ -220,6 +221,7 @@ def nearby_places(lat: any, lon: any, radius_m: any = 5000) -> any {
             'https://api.geoapify.com/v2/places',
             params={
                 'categories': 'commercial.supermarket',
+                'lang': 'en',
                 'filter': f'circle:{lon},{lat},{radius_m}',
                 'bias': f'proximity:{lon},{lat}',
                 'limit': 20,
@@ -245,7 +247,7 @@ def nearby_places(lat: any, lon: any, radius_m: any = 5000) -> any {
             } for f in data.get('features', [])
         ];
     }
-    return cached('places', [lat, lon, radius_m, key], fetch, 900);
+    return cached('places', [lat, lon, radius_m, key, 'en'], fetch, 900);
 }
 def place_metadata(properties: any) -> any {
     raw = (properties.get('datasource') or {}).get('raw') or {};
@@ -668,7 +670,7 @@ def reverse_geocode(lat: any, lon: any, accuracy_m: any = 0) -> any {
     key = required('GEOAPIFY_API_KEY');
     data = cached(
         'reverse',
-        [lat, lon, key],
+        [lat, lon, key, 'en'],
         lambda() :
             request_json(
                 'https://api.geoapify.com/v1/geocode/reverse',
@@ -676,6 +678,7 @@ def reverse_geocode(lat: any, lon: any, accuracy_m: any = 0) -> any {
                     'lat': lat,
                     'lon': lon,
                     'format': 'json',
+                    'lang': 'en',
                     'limit': 1,
                     'apiKey': key
                 }

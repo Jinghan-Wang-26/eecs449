@@ -179,7 +179,7 @@ def:pub ChatApp(username: str = "", on_sign_out: any = None, signout_pending: bo
                 {if history_notice { <p className="inline-alert" role="alert">{history_notice}</p> }}
                 {if welcome {
                     <section className="welcome" aria-label="Start a shopping trip">
-                        <span className="orb welcome-orb" aria-hidden="true"></span>
+                        <img className="welcome-art" src="/static/illustrations/grocery-trip.svg" width="240" height="156" alt="" aria-hidden="true" />
                         <h1>What do you need to buy?</h1>
                         <p>Say it in your own words. I'll ask where you're starting from and when you're free, then compare stores, buses and delivery for you.</p>
                         <form onSubmit={send} className="welcome-composer"><input aria-label="Tell CartCompass what you need" type="text" value={draft} onChange={lambda e: ChangeEvent { draft = e.target.value; }} placeholder="Milk, eggs, rice…" /><button className="go" type="submit" disabled={pending or not draft.strip()}>Start ↗</button></form>

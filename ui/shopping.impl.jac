@@ -28,8 +28,8 @@ impl ShoppingPanel.operate(action: str, data: dict, source: str = "") -> bool {
                 ok = True;
             }
         }
-    } except Exception as err {
-        failure = "Shopping request failed: " + str(err);
+    } except Exception {
+        failure = "The shopping request failed. Check your connection and try again.";
         notice = failure;
         error_notice = failure;
     }

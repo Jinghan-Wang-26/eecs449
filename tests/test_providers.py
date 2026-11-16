@@ -70,9 +70,14 @@ class ProviderTests(unittest.TestCase):
         with patch.object(p,'required',return_value='key'),patch.object(p,'request_json',return_value={'results':[{'lat':42,'lon':-83,'place_id':'a','formatted':'Public address'}]}) as request:
             self.assertEqual(p.geocode('Public address')[0]['id'],'a')
             self.assertEqual(request.call_args.kwargs['params']['filter'],'countrycode:us')
+            self.assertEqual(request.call_args.kwargs['params']['lang'],'en')
         with patch.object(p,'required',return_value='key'),patch.object(p,'request_json',return_value={'features':[]}) as request:
             p.nearby_places(42,-83)
             self.assertEqual(request.call_args.kwargs['params']['filter'],'circle:-83.0,42.0,5000')
+            self.assertEqual(request.call_args.kwargs['params']['lang'],'en')
+        with patch.object(p,'required',return_value='key'),patch.object(p,'request_json',return_value={'results':[{'formatted':'Public address'}]}) as request:
+            self.assertEqual(p.reverse_geocode(42,-83)[0]['address'],'Public address')
+            self.assertEqual(request.call_args.kwargs['params']['lang'],'en')
 
     def test_poi_name_alone_never_links_inventory(self):
         store={'id':'kroger:1','name':'Kroger','address':'100 Test St','lat':42,'lon':-83,'product_access':True}

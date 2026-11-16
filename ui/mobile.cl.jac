@@ -1,5 +1,6 @@
 """Installable mobile shell. Personal data always requires the online Jac API."""
 import from .account { AccountApp }
+import from .language { install_english_ui }
 
 
 def:pub MobileApp -> JsxElement {
@@ -7,6 +8,7 @@ def:pub MobileApp -> JsxElement {
         installing: bool = False, install_notice: str = "";
 
     can with [] entry {
+        remove_language_handlers = install_english_ui();
         online = navigator.onLine;
         display = window.matchMedia("(display-mode: standalone)");
         installed = display.matches or navigator.standalone == True;
@@ -30,6 +32,7 @@ def:pub MobileApp -> JsxElement {
             });
         }
         return lambda {
+            remove_language_handlers();
             window.removeEventListener("online", connection);
             window.removeEventListener("offline", connection);
             window.removeEventListener("beforeinstallprompt", capture_prompt);
@@ -56,7 +59,7 @@ def:pub MobileApp -> JsxElement {
         installing = False;
     }
 
-    return <div className="mobile-frame">
+    return <div className="mobile-frame notranslate" lang="en" translate="no">
         {if not installed {
             <aside className="mobile-app-bar" aria-label="Mobile app">
                 <span>Take CartCompass with you</span>
