@@ -11,7 +11,9 @@ concurrency:
   cancel-in-progress: true
 jobs:
   verify:
-    runs-on: ubuntu-latest
+    # Keep the runner compatible with the pinned Playwright in requirements-browser.txt.
+    # ubuntu-latest can move to an OS that this browser release does not support.
+    runs-on: ubuntu-24.04
     timeout-minutes: 15
     env:
       LLM_BACKEND: api
