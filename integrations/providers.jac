@@ -151,7 +151,7 @@ def cached(namespace: any, params: any, fetch: any, ttl: any = 300) -> any {
     ).hexdigest();
     with _LOCK {
         found = _CACHE.get(identity);
-        if (found and (found[0] > time.monotonic())) {
+        if (found and (found[0] > time.time())) {
             return copy.deepcopy(found[1]);
         }
     }
@@ -160,7 +160,7 @@ def cached(namespace: any, params: any, fetch: any, ttl: any = 300) -> any {
         if (len(_CACHE) >= 128) {
             _CACHE.pop(next(iter(_CACHE)));
         }
-        _CACHE[identity] = ((time.monotonic() + ttl), copy.deepcopy(value));
+        _CACHE[identity] = ((time.time() + ttl), copy.deepcopy(value));
     }
     return value;
 }
@@ -309,7 +309,7 @@ def kroger_token() -> any {
     identity = hashlib.sha256((client + ':' + secret).encode()).hexdigest();
     with _LOCK {
         if (
-            (_TOKEN['identity'] == identity) and (_TOKEN['expires'] > time.monotonic())
+            (_TOKEN['identity'] == identity) and (_TOKEN['expires'] > time.time())
         ) {
             return _TOKEN['value'];
         }
@@ -328,17 +328,30 @@ def kroger_token() -> any {
         _TOKEN.update(
             value=data['access_token'],
             identity=identity,
-            expires=(time.monotonic() + max(0, (float(data.get('expires_in', 0)) - 60)))
+            # Wall-clock expiry: the monotonic clock pauses while a laptop sleeps, which
+            # kept an expired token in use after wake-up and made Kroger return 401.
+            expires=(time.time() + max(0, (float(data.get('expires_in', 0)) - 60)))
         );
     }
     return data['access_token'];
 }
 def kroger_get(path: any, params: any) -> any {
-    return request_json(
-        ('https://api.kroger.com/v1/' + path),
-        params=params,
-        headers={'Authorization': ('Bearer ' + kroger_token())}
-    );
+    for attempt in range(2) {
+        try {
+            return request_json(
+                ('https://api.kroger.com/v1/' + path),
+                params=params,
+                headers={'Authorization': ('Bearer ' + kroger_token())}
+            );
+        } except ProviderError as error {
+            # A revoked or expired bearer token: drop it and ask for a new one once.
+            if attempt == 0 and '(HTTP 401)' in str(error) {
+                with _LOCK { _TOKEN.update(value='', expires=0); }
+                continue;
+            }
+            raise error;
+        }
+    }
 }
 def hours_for(hours: any) -> any {
     out = {};
@@ -456,25 +469,44 @@ def nearby(lat: any, lon: any, radius_m: any = 5000) -> any {
     }
     return {'stores': stores, 'notices': notices};
 }
-def weight_from_size(size: any) -> any {
-    `match = re.fullmatch(
-        '\\s*(\\d+(?:\\.\\d+)?)\\s*(kg|g|lb|lbs|oz)\\s*', (size or ''), re.I
-    );
-    if not `match {
-        return None;
+glob MASS_KG: dict = {'kg': 1, 'g': 0.001, 'lb': 0.45359237, 'lbs': 0.45359237, 'oz': 0.028349523125},
+     # Liquids are taken as about 1 kg per litre (milk and juice are 1.00-1.05).
+     VOLUME_L: dict = {'gal': 3.785, 'gallon': 3.785, 'qt': 0.946, 'pt': 0.473, 'fl oz': 0.0296, 'l': 1, 'ml': 0.001},
+     EGG_KG: float = 0.06;
+
+"""Net weight in kg from a package label, and whether it is an estimate.
+A stated mass is exact; volumes ("1 gal", "64 fl oz") and egg counts ("12 ct")
+are estimates; other counts ("6 rolls") stay unknown. Combined labels such as
+"18 ct / 36 oz" prefer the stated mass."""
+def weight_basis(size: any, name: any = '') -> dict {
+    parts = [part.strip().lower() for part in re.split('[/,]| - ', str(size or '')) if part.strip()];
+    found = {'mass': None, 'volume': None, 'count': None};
+    for part in parts {
+        hit = re.fullmatch('(\\d+(?:\\.\\d+)?)\\s*(fl\\.? ?oz|kg|g|lbs?|oz|gal(?:lon)?|qt|pt|l|ml|ct|count)', part);
+        if not hit { continue; }
+        amount = float(hit[1]);
+        unit = re.sub('fl\\.? ?oz', 'fl oz', hit[2]);
+        if unit in MASS_KG and found['mass'] is None { found['mass'] = amount * MASS_KG[unit]; }
+        elif unit in VOLUME_L and found['volume'] is None { found['volume'] = amount * VOLUME_L[unit]; }
+        elif unit in ['ct', 'count'] and found['count'] is None { found['count'] = amount; }
     }
-    return round(
-        (
-            float(`match[1]) * {
-                'kg': 1,
-                'g': 0.001,
-                'lb': 0.45359237,
-                'lbs': 0.45359237,
-                'oz': 0.028349523125
-            }[`match[2].lower()]
-        ),
-        4
-    );
+    # "1/2 gal" is split on "/" above; read simple fractions from the whole label.
+    half = re.fullmatch('\\s*(\\d+)/(\\d+)\\s*(gal(?:lon)?|qt|pt|l|lbs?|oz|kg)\\s*', str(size or '').lower());
+    if half {
+        amount = float(half[1]) / float(half[2]);
+        if half[3] in MASS_KG { found['mass'] = amount * MASS_KG[half[3]]; }
+        else { found['volume'] = amount * VOLUME_L[half[3]]; }
+    }
+    if found['mass'] is not None { return {'kg': round(found['mass'], 4), 'estimated': False}; }
+    if found['volume'] is not None { return {'kg': round(found['volume'], 4), 'estimated': True}; }
+    if found['count'] is not None and 'egg' in str(name).lower() { return {'kg': round(found['count'] * EGG_KG, 4), 'estimated': True}; }
+    return {'kg': None, 'estimated': False};
+}
+
+"""Stated net mass only; estimates come from weight_basis."""
+def weight_from_size(size: any) -> any {
+    basis = weight_basis(size);
+    return None if basis['estimated'] else basis['kg'];
 }
 def normalize_products(
     data: any, store_id: any, term: any, observed: any = None
@@ -540,7 +572,8 @@ def normalize_products(
                         if isinstance(c, str)
                     ][:5],
                     'size_label': size,
-                    'weight_kg': weight_from_size(size),
+                    'weight_kg': weight_basis(size, p.get('description'))['kg'],
+                    'weight_estimated': weight_basis(size, p.get('description'))['estimated'],
                     'store_id': store_id,
                     'search_term': term,
                     'price': (value if (sold_by == 'unit') else None),

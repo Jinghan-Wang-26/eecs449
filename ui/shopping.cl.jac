@@ -375,7 +375,7 @@ def:pub ShoppingPanel -> JsxElement {
                 row = facts(plan);
                 ends = trip_ends(plan.get("route", None));
                 over = row["weight"] is not None and row["weight"] > profile["carry_limit_kg"];
-                carry_value = "Unknown" if row["weight"] is None else ("≥ " if row["weight_missing"] > 0 else "") + str(Math.round(row["weight"] * 10) / 10);
+                carry_value = "Unknown" if row["weight"] is None else ("≥ " if row["weight_missing"] > 0 else ("≈ " if row.get("weight_estimated", False) else "")) + str(Math.round(row["weight"] * 10) / 10);
                 review = plan["status"] == "NEEDS_REVIEW";
                 Object.assign(out, {"sub": (("Leave " + ends["leave"] + (" · home " + ends["home"] if ends["home"] else "")) if stage == "route" and ends["leave"] else (str(fits) + " of " + str(len(opens)) + " options fit your limits")),
                     "pill": ("NEEDS REVIEW" if review else ("READY TO ACCEPT" if stage == "route" else str(fits) + (" OPTION FITS" if fits == 1 else " OPTIONS FIT"))), "tone": "amber" if review else "",
