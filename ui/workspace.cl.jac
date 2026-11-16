@@ -34,7 +34,8 @@ def:pub WorkspacePanel(workspace: dict, busy: bool, operate: any, category: str,
             "memberships": [v.strip() for v in memberships.split(",") if v.strip()]};
         if tax != "" { values["tax_rate"] = tax; }
         if travel != "" { values["transport_cost"] = travel; }
-        await operate("update_profile", values);
+        saved = await operate("update_profile", values);
+        if saved { window.dispatchEvent(new(CustomEvent, "cartcompass-action", {"detail": "go:list"})); }
     }
 
     def toggle_mode(value: str) -> None {
@@ -55,15 +56,12 @@ def:pub WorkspacePanel(workspace: dict, busy: bool, operate: any, category: str,
     return <section className="workspace-panel">
         {if view == "profile" {
         <div>
-            <AddressPicker workspace={workspace} busy={busy} operate={operate} />
-            <section><h3>Your shopping profile</h3><p>Tell the assistant your preferences, or adjust them here. Saved preferences carry over to your next trip.</p>
+            <div id="trip-start" tabIndex={-1}><AddressPicker workspace={workspace} busy={busy} operate={operate} /></div>
+            <section><h3>Make this trip work for you</h3><p>Save your time and travel preferences once. You can also update them in the assistant.</p>
             <form onSubmit={save_profile} className="profile-grid">
-                <label>Budget ($)<input aria-label="Budget" type="number" min="0" value={budget} onChange={lambda e: ChangeEvent { budget = e.target.value; }} /></label>
-                <label>Carrying limit (kg)<input aria-label="Carrying limit" type="number" min="0.1" step="0.1" value={carry} onChange={lambda e: ChangeEvent { carry = e.target.value; }} /></label>
-                <label>Maximum walking segment (minutes)<input aria-label="Maximum walking minutes" type="number" min="0" max="240" value={max_walk} onChange={lambda e: ChangeEvent { max_walk = e.target.value; }} /></label>
-                <label>Max bus transfers each way<input aria-label="Maximum bus transfers" type="number" min="0" max="10" step="1" value={max_transfers} onChange={lambda e: ChangeEvent { max_transfers = e.target.value; }} /></label>
-                <div className="wide"><label>How you travel</label><div className="chip-group" role="group" aria-label="Transport">{[<button key={m["id"]} type="button" aria-pressed={m["id"] in modes} onClick={lambda e: MouseEvent { toggle_mode(m["id"]); }}>{m["label"]}</button> for m in [{"id": "WALK", "label": "Walk"}, {"id": "BUS", "label": "Bus"}, {"id": "BIKE", "label": "Bike"}, {"id": "CAR", "label": "Car"}]]}</div></div>
-                <div className="wide"><label>When you're free</label>
+                <label>Weekly budget ($) · optional<input aria-label="Budget" type="number" min="0" value={budget} onChange={lambda e: ChangeEvent { budget = e.target.value; }} /></label>
+                <div className="wide preference-group" id="trip-transport" tabIndex={-1}><h4>How you travel</h4><div className="chip-group" role="group" aria-label="Transport">{[<button key={m["id"]} type="button" aria-pressed={m["id"] in modes} onClick={lambda e: MouseEvent { toggle_mode(m["id"]); }}>{m["label"]}</button> for m in [{"id": "WALK", "label": "Walk"}, {"id": "BUS", "label": "Bus"}, {"id": "BIKE", "label": "Bike"}, {"id": "CAR", "label": "Car"}]]}</div></div>
+                <div className="wide preference-group" id="trip-time" tabIndex={-1}><h4>When you're free</h4><p>Choose a day and a time window for your shopping trip.</p>
                     {[<div key={str(idx)} className="slot-row">
                         {if slot["raw"] {
                             <input aria-label={"Free time " + str(idx + 1)} value={slot["raw"]} onChange={lambda e: ChangeEvent { set_slot(idx, "raw", e.target.value); }} />
@@ -76,10 +74,15 @@ def:pub WorkspacePanel(workspace: dict, busy: bool, operate: any, category: str,
                     </div> for (idx, slot) in enumerate(slots)]}
                     <button type="button" onClick={lambda e: MouseEvent { slots = slots.concat([{"day": "SAT", "start": "14:00", "end": "17:00", "raw": ""}]); }}>+ Add a time</button>
                 </div>
+                <details className="wide preference-advanced"><summary>Walking, carrying & other preferences</summary><div className="profile-grid">
+                <label>Carrying limit (kg)<input aria-label="Carrying limit" type="number" min="0.1" step="0.1" value={carry} onChange={lambda e: ChangeEvent { carry = e.target.value; }} /></label>
+                <label>Maximum walking segment (minutes)<input aria-label="Maximum walking minutes" type="number" min="0" max="240" value={max_walk} onChange={lambda e: ChangeEvent { max_walk = e.target.value; }} /></label>
+                <label>Max bus transfers each way<input aria-label="Maximum bus transfers" type="number" min="0" max="10" step="1" value={max_transfers} onChange={lambda e: ChangeEvent { max_transfers = e.target.value; }} /></label>
                 <label title="Michigan stores use built-in rules: groceries exempt, other goods 6%.">Sales tax rate outside Michigan (e.g. 0.07)<input aria-label="Tax rate" type="number" min="0" max="0.3" step="0.001" value={tax} onChange={lambda e: ChangeEvent { tax = e.target.value; }} /></label>
                 <label>Estimated round-trip transport ($)<input aria-label="Transport cost" type="number" min="0" step="0.01" value={travel} onChange={lambda e: ChangeEvent { travel = e.target.value; }} /></label>
                 <label title="Products must be labelled with every tag, e.g. vegan, gluten-free.">Dietary needs (e.g. vegan, gluten-free)<input aria-label="Dietary tags" value={dietary} onChange={lambda e: ChangeEvent { dietary = e.target.value; }} /></label>
-                <button type="submit" className="go" disabled={busy}>Save preferences</button>
+                </div></details>
+                <div className="wide preferences-save"><span>Preferences carry over to your next trip.</span><button type="submit" className="go" disabled={busy}>{"Saving…" if busy else "Save preferences"}</button></div>
             </form>
             </section>
             <p className="attribution"><a href="https://www.geoapify.com/" target="_blank" rel="noreferrer">Powered by Geoapify</a> · © OpenStreetMap contributors. Historical product prices: Open Prices / Open Food Facts (ODbL). Optional current product data: Kroger.</p>

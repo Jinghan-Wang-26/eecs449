@@ -1,9 +1,9 @@
 # Deploy CartCompass to Render
 
-This deployment is a **public shared course demo**. Visitors need no password
-and see the same shopping workspace. Anyone with the URL can read/change shared
-data and trigger configured API calls. Use public/example addresses only.
-The local `.env`, databases and Codex login are excluded from the Docker image.
+This deployment serves a public sign-in page and authenticated, per-user
+shopping workspaces. Visitors create an account before accessing shopping data.
+See [user accounts and isolation](USER_ACCOUNTS.md). The local `.env`, databases
+and Codex login are excluded from the Docker image.
 
 ## 1. Accounts and costs
 
@@ -59,7 +59,7 @@ availability or prove that a planning request is making progress.
 
 Render terminates HTTPS. Caddy forwards requests to
 Jac on internal port 8081. Only the proxy's `PORT` is exposed. Do not expose
-port 8081 as a second public service. Application/API paths are publicly accessible. The two services run as uid 10001 after the entrypoint prepares the
+port 8081 as a second public service. The login page is public; shopping APIs require a valid user session. Caddy must forward the Authorization header to Jac. The two services run as uid 10001 after the entrypoint prepares the
 dedicated data directory. Do not change `LLM_BACKEND` to `codex` on Render.
 
 ### Troubleshooting startup
@@ -100,8 +100,8 @@ python scripts/verify_cloud.py https://YOUR-SERVICE.onrender.com
 
 Then verify in the browser:
 
-1. Open a private window: the app must load without a password prompt.
-2. Start a new trip. Request milk and rice; answer missing-information questions
+1. Open a private window: the sign-in page must load. Create an account; confirm that anonymous shopping API requests return HTTP 401.
+2. Sign in and start a new trip. Request milk and rice; answer missing-information questions
    and use a public address such as Michigan Union in Ann Arbor.
 3. Select transport/time constraints and generate a real-store plan. Check
    observed timestamps, unknown data, and scheduled rather than live bus times.
@@ -112,8 +112,8 @@ Then verify in the browser:
 Model intent requests have a 60-second response timeout; map/retailer requests
 retain their shorter timeout and IPv4-first transport. Full planning can take
 longer than an individual request. Concurrent planners can still contend on
-this prototype's synchronous server; use it as a small shared demo, not a
-public multi-user service. Monitor memory and logs during real route testing.
+this prototype's synchronous server; use it as a small course demo with separate
+accounts. Data isolation does not provide concurrent request scaling. Monitor memory and logs during real route testing.
 Logs may include application reports, so do not share raw logs containing
 addresses or shopping history. Email reminders remain optional; configure the
 `SMTP_*` variables separately if needed.

@@ -1,3 +1,4 @@
+import jaclang  # Enable imports of the native Jac application modules.
 import unittest
 from app_settings import elapsed_hours, instant, later
 

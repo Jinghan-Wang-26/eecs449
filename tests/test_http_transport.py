@@ -1,4 +1,5 @@
 """Connection regressions for a host with unreachable IPv6 provider addresses."""
+import jaclang  # Enable imports of the native Jac application modules.
 import socket
 import ssl
 import unittest

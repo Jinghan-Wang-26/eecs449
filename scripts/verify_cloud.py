@@ -41,8 +41,8 @@ def main():
         code, page = request('/')
         checks['public_page'] = code == 200 and b'<html' in page.lower()
         code, payload = request('/walker/ChatHistory', body={})
-        history = json.loads(payload) if code == 200 else {}
-        checks['public_history'] = code == 200 and history.get('ok') is True and isinstance(history.get('data', {}).get('reports'), list)
+        checks['anonymous_history_blocked'] = code == 401
+        checks['anonymous_shopping_blocked'] = request('/walker/ShoppingAction', body={})[0] == 401
     except (OSError, ValueError):
         print('Deployment probe failed to connect or received an invalid response. No credentials were printed.')
         return 1

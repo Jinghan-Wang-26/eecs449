@@ -50,7 +50,7 @@ def user_roots -> list[str] {
     conn = um._conn;
     if conn is None { return []; }
     with um._lock {
-        rows = conn.execute("SELECT root_id FROM users").fetchall();
+        rows = conn.execute("SELECT root_id FROM users WHERE username != ?", ("__guest__",)).fetchall();
     }
     return [str(row[0]) for row in rows];
 }
@@ -91,7 +91,7 @@ def run_background_reminders -> None {
         now = stamp();
         for root_id in user_roots() {
             result = check_root(root_id, now);
-            if result["ran"] or result["delivered"] not in [0, "disabled"] {
+            if result["ran"] or result.get("delivered", "disabled") not in [0, "disabled"] {
                 logger.info(f"Background reminders for {root_id[:8]}: {result}");
             }
         }

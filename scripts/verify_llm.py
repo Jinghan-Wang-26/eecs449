@@ -2,6 +2,7 @@
 
 Default: two calls. --limit 10 runs the English acceptance set. Not run in CI.
 """
+import jaclang  # Enable imports of the native Jac application modules.
 import argparse
 import json
 from pathlib import Path

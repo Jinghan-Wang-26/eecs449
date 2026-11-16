@@ -1,4 +1,5 @@
 """Opt-in real provider check at a fixed public address; no LLM calls or private addresses."""
+import jaclang  # Enable imports of the native Jac application modules.
 import argparse
 import json
 from pathlib import Path

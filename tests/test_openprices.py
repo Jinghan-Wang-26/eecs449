@@ -1,4 +1,5 @@
 """Synthetic Open Prices contract fixtures; real HTTP evidence is in docs/samples."""
+import jaclang  # Enable imports of the native Jac application modules.
 import unittest
 from unittest.mock import patch
 from integrations import openprices as op

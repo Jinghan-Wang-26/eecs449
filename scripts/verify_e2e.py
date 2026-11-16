@@ -26,6 +26,7 @@ import threading
 import time
 import tomllib
 import urllib.request
+import urllib.error
 import uuid
 from datetime import date, timedelta
 from email import message_from_bytes
@@ -34,6 +35,8 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 JAC = ROOT / '.venv' / 'bin' / 'jac'
+if not JAC.exists():
+    JAC = Path(shutil.which('jac') or 'jac')
 ADDRESS = 'e2e-shopper@example.com'
 received = []
 
@@ -87,6 +90,7 @@ def free_port():
 class Server:
     def __init__(self, port, env, log_path):
         self.port, self.env, self.log_path, self.proc = port, env, log_path, None
+        self.token = None
 
     def start(self):
         log = open(self.log_path, 'a')
@@ -97,7 +101,16 @@ class Server:
             if self.proc.poll() is not None:
                 raise RuntimeError('server exited during startup; see ' + str(self.log_path))
             try:
-                urllib.request.urlopen(f'http://127.0.0.1:{self.port}/', timeout=2)
+                with urllib.request.urlopen(f'http://127.0.0.1:{self.port}/', timeout=2):
+                    pass
+                if self.token is None:
+                    identity = {'type': 'username', 'value': 'e2e-shopper'}
+                    credential = {'type': 'password', 'password': 'Isolated test password!'}
+                    self.request('/user/register', {'identities': [identity], 'credential': credential})
+                    code, payload = self.request('/user/login', {'identity': identity, 'credential': credential})
+                    if code != 200:
+                        raise RuntimeError('isolated test account login failed')
+                    self.token = payload['data']['token']
                 return
             except OSError:
                 time.sleep(1)
@@ -111,11 +124,24 @@ class Server:
             except subprocess.TimeoutExpired:
                 self.proc.kill()
 
+    def request(self, path, body=None, token=None, method=None):
+        headers = {'Content-Type': 'application/json'}
+        if token:
+            headers['Authorization'] = 'Bearer ' + token
+        req = urllib.request.Request(f'http://127.0.0.1:{self.port}' + path,
+                                     data=None if body is None else json.dumps(body).encode(),
+                                     headers=headers, method=method)
+        try:
+            with urllib.request.urlopen(req, timeout=120) as response:
+                return response.status, json.load(response)
+        except urllib.error.HTTPError as error:
+            return error.code, json.load(error)
+
     def call(self, action, data=None):
         request = urllib.request.Request(
             f'http://127.0.0.1:{self.port}/walker/ShoppingAction', method='POST',
             data=json.dumps({'action': action, 'data': data or {}}).encode(),
-            headers={'Content-Type': 'application/json'})
+            headers={'Content-Type': 'application/json', 'Authorization': 'Bearer ' + self.token})
         with urllib.request.urlopen(request, timeout=120) as response:
             envelope = json.load(response)
         reports = (envelope.get('data') or {}).get('reports') or []

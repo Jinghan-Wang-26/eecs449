@@ -1,3 +1,4 @@
+import jaclang  # Enable imports of the native Jac application modules.
 import copy
 import unittest
 from app_settings import instant

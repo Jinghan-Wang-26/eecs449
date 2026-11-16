@@ -1,0 +1,31 @@
+{
+  "id": "/",
+  "name": "CartCompass",
+  "short_name": "CartCompass",
+  "description": "Your personal shopping assistant for nearby stores, lists and trip planning.",
+  "lang": "en",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#eef2ed",
+  "theme_color": "#1d5a3f",
+  "categories": [
+    "shopping",
+    "productivity"
+  ],
+  "prefer_related_applications": false,
+  "icons": [
+    {
+      "src": "/static/mobile/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/static/mobile/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

@@ -4,6 +4,7 @@ Run from repository root: python scripts/verify_live.py
 No credential values, provider URL query keys or home addresses are printed.
 Only the fixed public demo address is written to evidence output.
 """
+import jaclang  # Enable imports of the native Jac application modules.
 import argparse
 import json
 from pathlib import Path

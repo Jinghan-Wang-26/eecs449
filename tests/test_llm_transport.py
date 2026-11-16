@@ -1,4 +1,5 @@
 """No subprocesses or network calls in these transport regression tests."""
+import jaclang  # Enable imports of the native Jac application modules.
 import json
 import unittest
 from unittest.mock import patch

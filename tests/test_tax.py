@@ -1,3 +1,4 @@
+import jaclang  # Enable imports of the native Jac application modules.
 import unittest
 from planning.tax import estimate, state_of, taxable
 

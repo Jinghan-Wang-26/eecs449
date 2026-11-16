@@ -3,7 +3,7 @@ flows (recording several purchases) can stop at the first failure."""
 
 impl ShoppingPanel.operate(action: str, data: dict, source: str = "") -> bool {
     if busy { return False; }
-    busy = True;
+    busy = True; active_action = action;
     ok = False;
     try {
         result = root spawn ShoppingAction(action=action, data=data);
@@ -33,7 +33,7 @@ impl ShoppingPanel.operate(action: str, data: dict, source: str = "") -> bool {
         notice = failure;
         error_notice = failure;
     }
-    busy = False;
+    busy = False; active_action = "";
     return ok;
 }
 
@@ -41,5 +41,5 @@ impl ShoppingPanel.save(e: FormEvent) -> None {
     e.preventDefault();
     ok = await operate("save_interest", {"category": category.strip().lower(), "kind": "NEED", "qty": quantity,
         "target_price": "0", "replenishment_days": "0", "last_purchased_at": ""});
-    if ok { category = ""; quantity = "1"; }
+    if ok { category = ""; quantity = "1"; document.getElementById("quick-item")?.focus({"preventScroll": True}); }
 }

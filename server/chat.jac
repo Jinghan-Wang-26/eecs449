@@ -1,7 +1,8 @@
 """Chat session and the walker the page calls."""
+import from server.accounts { account_profile }
 
 import from harness.agent { handle_request }
-import from models.graph { profile_of, owned }
+import from models.graph { owned }
 import from models.profile { UserProfile }
 import from models.events { ShoppingWorkspace }
 import from config { SYSTEM_PROMPT }
@@ -39,15 +40,15 @@ def send_message(p: UserProfile, text: str) -> str {
     return answer;
 }
 
-walker:pub ChatHistory {
+walker ChatHistory {
     has clear: bool = False;
-    can load with Root entry { report saved_history(profile_of(here), self.clear); }
+    can load with Root entry { report saved_history(account_profile(here), self.clear); }
 }
 
-walker:pub StartShoppingPlan {
+walker StartShoppingPlan {
     has request_id: str = "";
     can start with Root entry {
-        p = profile_of(here);
+        p = account_profile(here);
         try {
             message = start_new_plan(p, self.request_id, stamp());
             report {"messages": saved_history(p), "message":message};
@@ -55,12 +56,12 @@ walker:pub StartShoppingPlan {
     }
 }
 
-walker:pub SendMessage {
+walker SendMessage {
     has history: list = [],
         text: str = "";
 
     can reply with Root entry {
-        try { report send_message(profile_of(here), self.text); }
+        try { report send_message(account_profile(here), self.text); }
         except ValueError as err { report str(err); }
     }
 }

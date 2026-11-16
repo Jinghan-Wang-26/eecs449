@@ -1,93 +1,94 @@
-"""Named public shopping operations, scoped to the requesting root's profile."""
+"""Named authenticated shopping operations, scoped to the requesting root's profile."""
+import from server.accounts { account_profile }
+
 import from server.shopping { shopping_operation }
-import from models.graph { profile_of }
 import from app_settings { stamp }
 import from server.chat { send_message }
 
-walker:pub update_profile {
+walker update_profile {
     has data: dict = {};
     can run with Root entry {
-        try { report shopping_operation(profile_of(here), "update_profile", self.data, stamp()); }
+        try { report shopping_operation(account_profile(here), "update_profile", self.data, stamp()); }
         except ValueError as err { report {"error": str(err)}; }
     }
 }
 
-walker:pub update_interest {
+walker update_interest {
     has data: dict = {};
     can run with Root entry {
-        try { report shopping_operation(profile_of(here), "save_interest", self.data, stamp()); }
+        try { report shopping_operation(account_profile(here), "save_interest", self.data, stamp()); }
         except ValueError as err { report {"error": str(err)}; }
     }
 }
 
-walker:pub refresh_offers {
+walker refresh_offers {
     has data: dict = {};
     can run with Root entry {
-        try { report shopping_operation(profile_of(here), "refresh", self.data, stamp()); }
+        try { report shopping_operation(account_profile(here), "refresh", self.data, stamp()); }
         except ValueError as err { report {"error": str(err)}; }
     }
 }
 
-walker:pub build_candidates {
+walker build_candidates {
     has data: dict = {};
     can run with Root entry {
-        try { report shopping_operation(profile_of(here), "plan", self.data, stamp()); }
+        try { report shopping_operation(account_profile(here), "plan", self.data, stamp()); }
         except ValueError as err { report {"error": str(err)}; }
     }
 }
 
-walker:pub plan_shopping {
+walker plan_shopping {
     has data: dict = {};
     can run with Root entry {
-        try { report shopping_operation(profile_of(here), "plan", self.data, stamp()); }
+        try { report shopping_operation(account_profile(here), "plan", self.data, stamp()); }
         except ValueError as err { report {"error": str(err)}; }
     }
 }
 
-walker:pub plan_action {
+walker plan_action {
     has data: dict = {};
     can run with Root entry {
-        try { report shopping_operation(profile_of(here), "plan_action", self.data, stamp()); }
+        try { report shopping_operation(account_profile(here), "plan_action", self.data, stamp()); }
         except ValueError as err { report {"error": str(err)}; }
     }
 }
 
-walker:pub feedback {
+walker feedback {
     has data: dict = {};
     can run with Root entry {
-        try { report shopping_operation(profile_of(here), "feedback", self.data, stamp()); }
+        try { report shopping_operation(account_profile(here), "feedback", self.data, stamp()); }
         except ValueError as err { report {"error": str(err)}; }
     }
 }
 
-walker:pub discover_products {
+walker discover_products {
     has data: dict = {};
     can run with Root entry {
-        try { report shopping_operation(profile_of(here), "discover", self.data, stamp()); }
+        try { report shopping_operation(account_profile(here), "discover", self.data, stamp()); }
         except ValueError as err { report {"error": str(err)}; }
     }
 }
 
-walker:pub check_reminders {
+walker check_reminders {
     has data: dict = {};
     can run with Root entry {
-        try { report shopping_operation(profile_of(here), "view", self.data, stamp()); }
+        try { report shopping_operation(account_profile(here), "view", self.data, stamp()); }
         except ValueError as err { report {"error": str(err)}; }
     }
 }
 
-walker:pub sync {
+walker sync {
     has data: dict = {};
     can run with Root entry {
-        try { report shopping_operation(profile_of(here), "sync", self.data, stamp()); }
+        try { report shopping_operation(account_profile(here), "sync", self.data, stamp()); }
         except ValueError as err { report {"error": str(err)}; }
     }
 }
 
-walker:pub chat {
+walker chat {
     has text: str = "", history: list = [];
     can run with Root entry {
-        try { report send_message(profile_of(here), self.text); }
+        try { report send_message(account_profile(here), self.text); }
         except ValueError as err { report {"error": str(err)}; }
     }
 }

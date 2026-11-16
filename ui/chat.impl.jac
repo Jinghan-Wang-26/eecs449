@@ -1,7 +1,7 @@
 """Send handler for the chat page."""
 
 impl ChatApp.new_plan() -> None {
-    if pending { return; }
+    if pending or summary.get("busy", False) { return; }
     pending = True;
     try {
         result = root spawn StartShoppingPlan(request_id=crypto.randomUUID());
@@ -10,6 +10,9 @@ impl ChatApp.new_plan() -> None {
             if payload.get("error") { history_notice = payload["error"]; }
             else {
                 messages = payload["messages"]; draft = ""; history_notice = "";
+                changes = []; unread = 0; plan_updated = False;
+                manual = False; pane = "assistant"; summary = {};
+                document.getElementById("new-trip-dialog")?.close();
                 workspace_epoch = workspace_epoch + 1;
             }
         } else { history_notice = "Could not start a new shopping plan. Please retry."; }
