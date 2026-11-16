@@ -17,6 +17,7 @@
 			not {
 				method GET HEAD
 				header Sec-Fetch-Mode navigate
+				header Sec-Fetch-Dest document
 			}
 		}
 		respond @cross_site "Cross-site requests are not allowed." 403
