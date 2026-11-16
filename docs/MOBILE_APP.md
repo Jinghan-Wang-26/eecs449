@@ -26,6 +26,12 @@ use the bottom **Plan / Assistant** navigation to switch views. **+ New trip**
 opens a confirmation explaining which trip data is reset. Select **Start new
 trip** to continue or **Keep this trip** to cancel.
 The interface supports safe areas, 44px buttons and 16px form inputs.
+Plan cards adapt to the width of the shopping panel, including narrow desktop
+columns: the price moves above time and weight on small screens, long source
+and tax notes wrap, and expanded details stay separate from the route button.
+The Options header omits duplicate statistics on narrow panels. A single local
+SVG illustration appears on the welcome and empty-list screens; it has empty
+alternative text because it is decorative and makes no external image request.
 
 ## Offline behavior and updates
 
@@ -56,7 +62,7 @@ our worker with it or run `jac build --client pwa` for this application.
 fall-through (a successful response followed by a second HTTP error). It
 serves only files inside the project's public `assets/` directory; generated
 client JavaScript and CSS retain their dedicated Jac handlers.
-Change the `cartcompass-public-v1` cache version when changing cached public
+Change the `cartcompass-public-v2` cache version when changing cached public
 assets. A new worker activates after existing app windows close; it does not
 force-refresh an active shopping conversation. Client code itself loads from
 the network, so a normal online reload gets the latest deployed UI.
@@ -97,7 +103,14 @@ The check covers manifest/icons/installation criteria, install-help UI,
 mobile and desktop widths, login and account switching, visible item entry,
 missing-detail shortcuts, preference saving, trip-reset confirmation, shopping navigation,
 service-worker scope, cache privacy, disabled offline actions, offline launch,
-reconnection and logout. It uses synthetic browser install events to test the
+reconnection and logout. It also runs `verify_plan_layout.py` with populated
+synthetic store/bus plans from `ui_plan_fixture.jac`. It checks 11 widths from
+320 to 1440 CSS pixels, expanded evidence, route/acceptance controls, phone
+landscape and 125% zoom. Assertions inspect card contents as well as the page
+width, so clipping inside an overflow-hidden parent cannot mask a failure.
+No real model or retailer credentials are used. Screenshots are written to
+`/tmp/cartcompass-ui/`, including `welcome-390.png` and `options-390.png`.
+It uses synthetic browser install events to test the
 UI; actual Android/iPhone installation still requires a physical-device test.
 
 ## Scope

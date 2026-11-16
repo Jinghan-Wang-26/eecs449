@@ -2,10 +2,12 @@
 
 import os;
 import pathlib;
+import from ai.language { ENGLISH_POLICY }
 
 glob LLM_BASE_URL: str = "https://api.openai.com/v1";
 glob LLM_MODEL: str = "gpt-4o-mini";
-glob SYSTEM_PROMPT: str = "You are CartCompass. Shopping facts come only from verified tools; never invent prices, inventory, or routes. The shopping panel confirms profile changes, addresses, products, and plans.";
+
+glob SYSTEM_PROMPT: str = "You are CartCompass. Shopping facts come only from verified tools; never invent prices, inventory, or routes. The shopping panel confirms profile changes, addresses, products, and plans." + " " + ENGLISH_POLICY;
 
 def load_env_file() -> None {
     if os.getenv("CARTCOMPASS_ENV_LOADED") == "1" {

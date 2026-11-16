@@ -403,7 +403,7 @@ def:pub ShoppingPanel -> JsxElement {
     accepted = accepted_plans(snapshot);
     next_step = planning_step();
 
-    return <section className="shopping-panel" aria-label="Shopping workspace">
+    return <section className="shopping-panel" data-stage={view or stage or "list"} aria-label="Shopping workspace">
         {if toast.get("key", None) {
             <div className="toast" role="status"><span><small>New reminder</small>{toast["message"]}</span><span></span>
                 <div className="toast-actions"><button type="button" onClick={lambda e: MouseEvent { toast = {}; show_reminders(); }}>View</button><button type="button" className="ghost" onClick={lambda e: MouseEvent { toast = {}; }}>Dismiss</button></div></div>
@@ -465,7 +465,7 @@ def:pub ShoppingPanel -> JsxElement {
                         <button type="submit" className="go" disabled={busy or not category.strip()}>Add to list</button>
                     </form>
                 </div>
-                {if len(items) == 0 { <div className="list-placeholder"><span aria-hidden="true">＋</span><p>Your list starts here. Add your first item above.</p></div> }}
+                {if len(items) == 0 { <div className="list-placeholder"><img src="/static/illustrations/grocery-trip.svg" width="96" height="64" alt="" aria-hidden="true" /><div><strong>A little planning goes a long way.</strong><p>Add your first item above to get started.</p></div></div> }}
                 <div className="shopping-items">{[<div key={item["category"]} className={"interest-row paused" if item["status"] == "PAUSED" else "interest-row"}><div className="item-copy"><span className="item-badge" aria-hidden="true">{str(item.get("qty", 1)) + "×"}</span><div><span className="item-name">{item["category"]}</span><span className="item-meta">{"Not this trip" if item["status"] == "PAUSED" else spec_text(item) or (str(item.get("qty", 1)) + (" package" if item.get("qty", 1) == 1 else " packages"))}</span></div></div><div className="row-actions">
                     <button type="button" disabled={busy} title={"Put it back on this trip" if item["status"] == "PAUSED" else "Keep it saved but leave it out of this trip"} onClick={lambda e: MouseEvent { operate("interest_status", {"category": item["category"], "status": "ACTIVE" if item["status"] == "PAUSED" else "PAUSED"}); }}>{"Add back" if item["status"] == "PAUSED" else "Not this trip"}</button>
                     <button type="button" disabled={busy} onClick={lambda e: MouseEvent { operate("feedback", {"id": crypto.randomUUID(), "type": "feedback", "target": item["category"], "reason": "PURCHASED"}); }}>Already have it</button>

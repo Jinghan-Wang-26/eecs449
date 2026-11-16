@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="240" height="156" viewBox="0 0 240 156" fill="none">
+  <ellipse cx="119" cy="140" rx="82" ry="8" fill="#DDE8DC"/>
+  <path d="M32 114C4 69 40 18 85 33C112 6 177 13 187 57C228 69 227 128 185 132H64C48 132 37 125 32 114Z" fill="#EDF2E7"/>
+  <path d="M31 109C21 86 46 75 65 87M185 117C221 116 216 78 196 81" stroke="#9BAF9D" stroke-width="2" stroke-linecap="round" stroke-dasharray="4 6"/>
+  <path d="M184 47C184 38 191 32 199 32C207 32 214 38 214 47C214 58 199 70 199 70S184 58 184 47Z" fill="#D7A65D"/>
+  <circle cx="199" cy="46" r="5" fill="#FFF9EB"/>
+  <path d="M81 72L91 37C93 30 101 26 106 30C112 34 110 42 108 49L101 80" fill="#E9C88D" stroke="#B28D56" stroke-width="2"/>
+  <path d="M94 42L103 47M91 53L100 58" stroke="#B28D56" stroke-width="2" stroke-linecap="round"/>
+  <path d="M126 80C105 63 112 42 126 39C127 51 135 55 134 71C132 52 141 31 157 29C162 48 155 64 138 80" fill="#67946B"/>
+  <path d="M132 79L147 45" stroke="#365D40" stroke-width="2" stroke-linecap="round"/>
+  <path d="M148 66L155 53H171L179 66V96H148V66Z" fill="#FFFDF6" stroke="#A6B7A6" stroke-width="2" stroke-linejoin="round"/>
+  <path d="M148 66H179M155 53L164 66V95" stroke="#A6B7A6" stroke-width="2"/>
+  <path d="M63 76H179L169 133C168 137 164 139 160 139H84C79 139 75 136 74 131L63 76Z" fill="#1D5A3F"/>
+  <path d="M94 76V68C94 54 117 54 117 68V76M128 76V68C128 54 151 54 151 68V76" stroke="#174A34" stroke-width="4" stroke-linecap="round"/>
+  <path d="M83 88L89 126M158 88L152 126" stroke="#80A98A" stroke-width="2" stroke-linecap="round" opacity=".5"/>
+  <circle cx="122" cy="108" r="16" fill="#EDF2E7"/>
+  <path d="M115 115L129 101M116 101H129V114" stroke="#1D5A3F" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="42" cy="57" r="3" fill="#D7A65D"/>
+  <path d="M173 23V31M169 27H177" stroke="#A6B7A6" stroke-width="2" stroke-linecap="round"/>
+</svg>

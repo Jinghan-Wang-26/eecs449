@@ -33,7 +33,7 @@ def:pub CostBreakdown(plan: dict, profile: dict) -> JsxElement {
         {if plan.get("delivery_quote", None) { <span>{"Delivery checkout "}<b>{money(plan.get("delivery_total", None))}</b>{" "}<span className="ev user">your entered quote</span></span> }}
         {if plan.get("transport_estimate", None) is not None { <span>{"Transport "}<b>{money(plan["transport_estimate"])}</b>{if plan["transport_estimate"] > 0 and profile.get("transport_cost", -1) >= 0 { <span>{" "}<span className="ev user">your estimate</span></span> }}</span> } elif plan.get("route", None) { <span>{"Transport "}<b>Unknown</b>{" · "}<button type="button" className="text-button" onClick={lambda e: MouseEvent { window.dispatchEvent(new(CustomEvent, "cartcompass-view", {"detail": "profile"})); }}>add your fare</button></span> }}
         {if plan.get("tax_basis", None) in ["STATE_RULES", "YOUR_RATE", "MIXED"] {
-            <span>{"Tax "}<b>{money(plan["tax_estimate"])}</b>{" "}<span className={"ev" + ("" if plan["tax_basis"] == "STATE_RULES" else " user")}>{"estimate · " + plan["tax_note"]}</span></span>
+            <span className="tax-line">{"Tax "}<b>{money(plan["tax_estimate"])}</b>{" "}<span className="cost-note">{"estimate · " + plan["tax_note"]}</span></span>
         } elif plan.get("tax_basis", None) == "UNKNOWN" {
             <span>{"Tax "}<b>Unknown</b>{" · "}<button type="button" className="text-button" title={plan["tax_note"]} onClick={lambda e: MouseEvent { window.dispatchEvent(new(CustomEvent, "cartcompass-view", {"detail": "profile"})); }}>add your tax rate</button></span>
         } elif plan.get("tax_basis", None) is None and profile["tax_rate"] >= 0 {
@@ -71,12 +71,13 @@ def:pub PlanOptions(plans: list, workspace: dict, busy: bool, operate: any, sele
                 <Metrics row={best} carry_limit={limit} />
                 <TimeStrip plan={best["plan"]} />
                 <CostBreakdown plan={best["plan"]} profile={profile} />
-                <div>{[<span key={label} className="label-chip">{label}</span> for label in best["labels"]]}
+                <div className="plan-evidence">{[<span key={label} className="label-chip">{label}</span> for label in best["labels"]]}
                     {if best["plan"].get("quote_checked_at", None) { <span className="ev">{(best["plan"]["store"]["name"] if best["plan"].get("store", None) else "Retailer") + " · checked " + best["plan"]["quote_checked_at"].slice(11, 16) + " · stock not reserved"}</span> }}
                 </div>
                 {if workspace.get("budget_notes", {}).get(best["key"]) { <p className="budget-note">{workspace["budget_notes"][best["key"]]}</p> }}
-                <div className="cta-row"><details><summary>Full plan details</summary><VisitDetails plan={best["plan"]} /></details>
-                    <button className="primary cta" onClick={lambda e: MouseEvent { select(best["key"]); }}>Review route →</button></div>
+                <div className="plan-actions"><span>Check the route before you decide.</span>
+                    <button type="button" className="primary cta" onClick={lambda e: MouseEvent { select(best["key"]); }}>Review route →</button></div>
+                <details className="plan-disclosure"><summary>Full plan details</summary><VisitDetails plan={best["plan"]} /></details>
             </article>
         }}
         {[<div key={row["key"]} className="plan-alt">

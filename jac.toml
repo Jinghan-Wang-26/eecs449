@@ -42,3 +42,5 @@ manifest = "/static/mobile/app.webmanifest"
 icon = "/static/mobile/icon.svg"
 apple_touch_icon = "/static/mobile/apple-touch-icon.png"
 meta_apple_mobile_web_app_title = "CartCompass"
+# Emit this in the initial HTML, before the client mounts.
+meta_google = "notranslate"

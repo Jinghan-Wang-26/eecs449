@@ -2,7 +2,7 @@
  * NEVER cache accounts, walkers, tokens, shopping responses, or submitted data.
  * Keep this worker at the origin root so the installed app's / is in scope.
  */
-const CACHE = "cartcompass-public-v1";
+const CACHE = "cartcompass-public-v2";
 const OFFLINE = "/static/mobile/offline.html";
 const PUBLIC_FILES = [
   OFFLINE,

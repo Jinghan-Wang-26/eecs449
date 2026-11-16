@@ -1,5 +1,6 @@
 """LLM only proposes structured intents; it cannot call tools or invent quotes."""
 import json;
+import from ai.language { ENGLISH_POLICY, contains_cjk }
 import from urllib.parse { urlsplit }
 import from integrations.providers { credentials, request_json, ProviderError }
 import from integrations.validation { profile_patch, need_patch }
@@ -59,7 +60,7 @@ def validate_intent(value: any) -> dict {
     if (not isinstance(question, str) or (len(question) > 1000)) {
         raise ValueError('Invalid clarification from model.');
     }
-    out['question'] = question;
+    out['question'] = "Could you clarify your shopping request? You can tell me what to buy, your budget, or when you can shop." if contains_cjk(question) else question;
     store_id = value.get('store_id', '');
     if (not isinstance(store_id, str) or (len(store_id) > 100)) {
         raise ValueError('Invalid store selection from model.');
@@ -109,7 +110,7 @@ def parse_request(text: any, history: any = None, context: any = None) -> dict {
         raise ValueError('Please enter a shopping request of at most 4000 characters.');
     }
     messages = [
-        {'role': 'system', 'content': SYSTEM},
+        {'role': 'system', 'content': SYSTEM + '\n' + ENGLISH_POLICY},
         {
             'role': 'system',
             'content': ('Current saved context: ' + json.dumps((context or {})))
