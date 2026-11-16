@@ -80,6 +80,8 @@ node ShoppingWorkspace {
     has historical_prices: dict = {};
     has visit_plans: list = [], visit_search: dict = {}, search_radius_m: int = 5000;
     has interest_checked_at: str = "";
+    # Dish ideas, the open recipe, which list items came from which dish, and the last add (for undo).
+    has recipe_feed: dict = {}, recipe_draft: dict = {}, recipe_links: dict = {}, last_recipe_add: dict = {};
     has address_candidates: list = [],
         nearby_stores: list = [],
         product_results: list = [],

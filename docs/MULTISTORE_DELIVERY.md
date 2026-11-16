@@ -60,8 +60,12 @@ ranking rules live in Jac. Python handles provider requests and orchestration.
   quote input supports up to six distinct needs.
 - Up to three retailer branches are queried, with at most ten returned product
   variants per need. The existing conservative matcher chooses one product per
-  need/branch. The optimizer compares assignments of these chosen products and
-  both store orders; it does not search all products, all stores, or reserve stock.
+  need/branch. For each set of one or two branches, the optimizer assigns every
+  need to the cheaper of those branches (route and time depend only on the set),
+  then compares both store orders. This stays linear in list size; earlier
+  exhaustive assignment was capped at 4,096 combinations and fixed the first needs
+  of longer lists to one branch. It does not search all products, all stores, or
+  reserve stock.
 - Route evidence covers every directed segment and a return home. Supported
   regular hours are checked; missing/unsupported hours remain Unknown. Road
   durations are current estimates, not forecasts. TheRide segments use dated

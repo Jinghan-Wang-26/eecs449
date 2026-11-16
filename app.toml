@@ -7,6 +7,8 @@ max_discovery_items_per_week = 3
 reminder_cooldown_hours = 24
 # Minutes between background refreshes for users who turn on background reminders.
 background_check_minutes = 30
+# Shopping-list size. Retailer lookups grow with it (branches x needs per search).
+max_active_needs = 20
 quiet_hours_start = 22
 quiet_hours_end = 8
 allow_substitutions = "ask"

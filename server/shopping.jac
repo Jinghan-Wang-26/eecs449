@@ -19,6 +19,8 @@ import from interests.live { live_suggestions }
 import from notify.background { set_background, background_view }
 import from budget.ledger { add_expense, correct_expense, void_expense, budget_view, plan_budget_notes }
 import from notify.delivery { set_delivery, test_delivery, delivery_view }
+import from server.recipes { recipe_operation, recipe_view }
+import from integrations.mealdb { ingredient_image }
 import from sync.engine { sync_events }
 
 def shopping_operation(p: UserProfile, action: str, data: dict, now: str) -> dict {
@@ -87,6 +89,8 @@ def shopping_operation(p: UserProfile, action: str, data: dict, now: str) -> dic
         message = correct_expense(p, data, now, cfg);
     } elif action == "expense_void" {
         message = void_expense(p, data, now, cfg);
+    } elif action.startswith("recipe_") {
+        message = recipe_operation(p, action, data, now, cfg);
     } elif action == "notify_settings" {
         message = set_delivery(p, data);
     } elif action == "notify_test" {
@@ -124,7 +128,7 @@ def shopping_operation(p: UserProfile, action: str, data: dict, now: str) -> dic
             # Run address lookup first so missing credentials do not partially apply a request.
             if proposal["address"] { workflow(p, "geocode", {"address": proposal["address"]}, now); }
             current = [n.product_spec["type"] for n in items_of(p) if n.plannable()];
-            if len(set(current + [n["type"] for n in proposal["needs"]])) > 6 { raise ValueError("Use at most six active needs."); }
+            if len(set(current + [n["type"] for n in proposal["needs"]])) > cfg["max_active_needs"] { raise ValueError(f"Your list holds at most {cfg['max_active_needs']} items."); }
             if proposal["profile"] { workflow(p, "update_profile", proposal["profile"], now); }
             for spec in proposal["needs"] { save_need(p, spec); }
             if proposal["needs"] { invalidate_plans(p, "Shopping request changed."); }
@@ -148,7 +152,7 @@ def shopping_operation(p: UserProfile, action: str, data: dict, now: str) -> dic
         cat = catalog_of(p);
         if cat.mode == "mock" and not [cat ->:Has:->][?:Product] { load_mock(cat, now=now); }
     }
-    if action not in ["view", "background", "expense_add", "expense_correct", "expense_void", "notify_settings", "notify_test"] {
+    if action not in ["view", "background", "expense_add", "expense_correct", "expense_void", "notify_settings", "notify_test"] and not action.startswith("recipe_") {
         if refresh_requested and cfg["data_mode"] == "live" { refresh_live(p); }
         updates = [];
         if refresh_requested and cfg["data_mode"] == "mock" {
@@ -171,13 +175,13 @@ def shopping_operation(p: UserProfile, action: str, data: dict, now: str) -> dic
     }
     needs = [{"category": n.product_spec.get("type", ""), "kind": n.kind.name, "status": n.status.name,
               "qty": n.product_spec.get("qty", 1), "brand": n.product_spec.get("brand", ""), "variant": n.product_spec.get("variant", ""), "size": n.product_spec.get("size", ""),
-              "in_current_list": getattr(n, "in_current_list", True)}
+              "in_current_list": getattr(n, "in_current_list", True), "image": ingredient_image(n.product_spec.get("type", ""))}
              for n in items_of(p) if n.kind != InterestKind.DISCOVER and n.status != InterestStatus.ARCHIVED];
     workspace = workspace_view(p, now);
     workspace["budget_notes"] = plan_budget_notes(p, workspace["plans"] + workspace["visit_plans"], now, cfg);
     return {"message": message, "discoveries": discoveries, "reminders": inbox(p, now, cfg),
             "interests": needs, "categories": sorted(set([prod.category for prod in [cat ->:Has:->][?:Product]])),
-            "quiet": quiet(now, cfg), "background": background_view(p, now, cfg), "budget": budget_view(p, now, cfg), "delivery": delivery_view(p), "data_mode": cfg["data_mode"], "checked_at": now, "workspace": workspace};
+            "quiet": quiet(now, cfg), "background": background_view(p, now, cfg), "budget": budget_view(p, now, cfg), "delivery": delivery_view(p), "recipes": recipe_view(p, cfg), "data_mode": cfg["data_mode"], "checked_at": now, "workspace": workspace};
 }
 
 walker ShoppingAction {

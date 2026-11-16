@@ -3,6 +3,7 @@ import copy
 import unittest
 from unittest.mock import patch
 import jaclang
+from app_settings import get_settings
 from integrations import providers as api
 from integrations.retail import quotes_for
 from planning import visits
@@ -111,8 +112,11 @@ class RetailAdapterTests(unittest.TestCase):
 
     def test_failure_does_not_reuse_old_quote_and_list_is_bounded(self):
         with patch('integrations.retail.products',side_effect=api.ProviderError('Unavailable')) as fetch:
-            result=quotes_for(STORE,[{'type':'item'+str(i),'qty':1} for i in range(9)])
-        self.assertEqual(fetch.call_count,8);self.assertEqual(len(result['errors']),9)
+            limit=get_settings()['max_active_needs']
+            result=quotes_for(STORE,[{'type':'item'+str(i),'qty':1} for i in range(limit+1)])
+        # Lookups stop at the configured list size (max_active_needs in app.toml).
+        self.assertEqual(fetch.call_count,limit);self.assertEqual(len(result['errors']),limit+1)
+        self.assertIn(f'Lookup limit reached ({limit} needs per store)',result['errors']['item'+str(limit)])
         self.assertTrue(all(not rows for rows in result['rows'].values()))
 
     def test_weight_price_and_missing_selling_basis_never_multiply_by_packages(self):

@@ -82,10 +82,19 @@ def handle_request(p: UserProfile, text: str, history: list) -> str {
         if view["plans"] { return str(explain_plans(text, view["plans"])); }
         return question(context, list(missing_fields(context))[0], lang) if missing_fields(context) else ("Ask me to generate a shopping plan.");
     }
+    if proposal["intent"] == "recipe" {
+        result = shopping_operation(p, "recipe_find", {"query": proposal["dish"], "servings": proposal["servings"]}, now);
+        draft = result["recipes"]["draft"];
+        buy = len(draft["groups"]["to_buy"]);
+        return (f"Here is {draft['name']} for {draft['servings']} servings. I suggest buying {buy} ingredient{'s' if buy != 1 else ''}"
+                + (f"; {len(draft['groups']['on_list'])} already on your list" if draft["groups"]["on_list"] else "")
+                + ". Review the recipe on your list and choose what to add. Nothing is added until you confirm.");
+    }
     # A new conversational turn supersedes old draft-only requests, never accepts a plan.
     state.pending_intent = {}; state.pending_id = "";
     current = [n.product_spec["type"] for n in items_of(p) if n.plannable()];
-    if len(set(current + [n["type"] for n in proposal["needs"]])) > 6 { raise ValueError("Use at most six active needs."); }
+    limit = get_settings()["max_active_needs"];
+    if len(set(current + [n["type"] for n in proposal["needs"]])) > limit { raise ValueError(f"Your list holds at most {limit} items."); }
     if proposal["intent"] == "plan" or proposal["needs"] { state.chat_planning = True; }
     if proposal["profile"] { shopping_operation(p, "update_profile", proposal["profile"], now); }
     for spec in proposal["needs"] {
