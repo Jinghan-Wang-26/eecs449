@@ -192,7 +192,7 @@ def price_records(location_id: any, page: any = 1) -> any {
 def nearby_with_history(
     lat: any, lon: any, radius_m: any = 5000, include_kroger: any = True
 ) -> any {
-    import from integrations.providers { nearby_places, nearby_kroger, credential_status }
+    import from integrations.providers { nearby_places, nearby_kroger, credential_status, merge_stores }
     notices = [];
     maps = [];
     stores = [];
@@ -260,10 +260,17 @@ def nearby_with_history(
     if (
         include_kroger and flags['KROGER_CLIENT_ID'] and flags['KROGER_CLIENT_SECRET']
     ) {
-        try {
-            stores += nearby_kroger(lat, lon, radius_m);
-        } except ProviderError as error {
-            notices.append(('Kroger: ' + str(error)));
+        # One retry: a transient token or network failure would otherwise drop every
+        # current price and leave only location-only stores.
+        for attempt in range(2) {
+            try {
+                branches = nearby_kroger(lat, lon, radius_m);
+                # Drop map POIs that are these same branches (Geoapify lists them as "Kroger").
+                maps = merge_stores(maps, branches);
+                break;
+            } except ProviderError as error {
+                if attempt == 1 { notices.append(('Kroger: ' + str(error))); }
+            }
         }
     }
     if (

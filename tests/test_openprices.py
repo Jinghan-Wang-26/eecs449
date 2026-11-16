@@ -47,6 +47,24 @@ class OpenPricesTests(unittest.TestCase):
             self.assertEqual(len(op.nearby_with_history(42,-83)['stores']),1)
             historical['osm_id']=124
             self.assertEqual(len(op.nearby_with_history(42,-83)['stores']),2)
+    def test_kroger_branches_replace_their_map_pois_and_failures_retry_then_warn(self):
+        # Real formats from 2795 Windwood Drive, Ann Arbor (2026-11-16): the map lists the
+        # Plymouth Nixon branch as plain "Kroger" 37 m from the API branch.
+        poi={'id':'geo:k','name':'Kroger','address':'Kroger, 2641 Plymouth Road, Ann Arbor, MI 48105, United States of America','lat':42.3045371,'lon':-83.7089245,'product_access':False}
+        other={'id':'geo:b','name':"Busch's Fresh Food Market",'address':"Busch's, 2240 South Main Street, Ann Arbor, MI 48103",'lat':42.30,'lon':-83.70,'product_access':False}
+        branch={'id':'kroger:01800361','name':'Kroger - Plymouth Nixon','address':'2641 Plymouth Rd, Ann Arbor, MI, 48105','lat':42.304858,'lon':-83.70905,'source':'kroger','product_access':True}
+        keys={'KROGER_CLIENT_ID':True,'KROGER_CLIENT_SECRET':True}
+        with patch.object(p,'nearby_places',return_value=[poi,other]),patch.object(p,'credential_status',return_value=keys),patch.object(p,'nearby_kroger',return_value=[branch]),patch.object(op,'nearby_history',return_value={'stores':[],'truncated':False}):
+            names=[s['name'] for s in op.nearby_with_history(42.317,-83.706)['stores']]
+        self.assertEqual(sorted(names),["Busch's Fresh Food Market",'Kroger - Plymouth Nixon'])
+        with patch.object(p,'nearby_places',return_value=[poi]),patch.object(p,'credential_status',return_value=keys),patch.object(p,'nearby_kroger',side_effect=[p.ProviderError('timed out'),[branch]]) as kroger,patch.object(op,'nearby_history',return_value={'stores':[],'truncated':False}):
+            result=op.nearby_with_history(42.317,-83.706)
+        self.assertEqual(kroger.call_count,2);self.assertEqual([s['name'] for s in result['stores']],['Kroger - Plymouth Nixon'])
+        self.assertFalse(any(n.startswith('Kroger:') for n in result['notices']))
+        with patch.object(p,'nearby_places',return_value=[poi]),patch.object(p,'credential_status',return_value=keys),patch.object(p,'nearby_kroger',side_effect=p.ProviderError('Provider unavailable or timed out.')),patch.object(op,'nearby_history',return_value={'stores':[],'truncated':False}):
+            result=op.nearby_with_history(42.317,-83.706)
+        self.assertEqual([s['name'] for s in result['stores']],['Kroger'])
+        self.assertIn('Kroger: Provider unavailable or timed out.',result['notices'])
 
 if __name__=='__main__':unittest.main()
 

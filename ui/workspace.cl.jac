@@ -93,6 +93,9 @@ def:pub WorkspacePanel(workspace: dict, busy: bool, operate: any, category: str,
         {if not workspace["profile"]["address"] {
             <AddressPicker workspace={workspace} busy={busy} operate={operate} auto={auto_locate} confirmed={on_address} />
         }}
+        {if len([note for note in workspace["notices"] if note.startswith("Kroger:")]) > 0 {
+            <div className="error-banner" role="alert"><span>{"Current Kroger prices could not be loaded (" + [note for note in workspace["notices"] if note.startswith("Kroger:")][0][8:] + "). Stores below may show Unknown prices."}</span><button type="button" disabled={busy} onClick={lambda e: MouseEvent { operate("recommend_visits", {"radius_m": workspace["search_radius_m"]}); }}>Try again</button></div>
+        }}
         {if len(workspace["notices"]) > 0 {
             <details className="plan-fold"><summary>About these results</summary>{[<p key={str(i)}>{note}</p> for (i, note) in enumerate(workspace["notices"])]}</details>
         }}
